@@ -2,6 +2,7 @@ package omnibeat.app
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -12,11 +13,22 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 private val Context.stationDataStore by preferencesDataStore(name = "stations")
+private const val DEFAULT_APP_VOLUME = 0.75f
+private val appVolumeKey = floatPreferencesKey("app_volume")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 
 class StationRepository(private val context: Context) {
+    val appVolume: Flow<Float> = context.stationDataStore.data
+        .map { preferences -> preferences[appVolumeKey] ?: DEFAULT_APP_VOLUME }
+
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
+
+    suspend fun saveAppVolume(volume: Float) {
+        context.stationDataStore.edit { preferences ->
+            preferences[appVolumeKey] = volume.coerceIn(0f, 1f)
+        }
+    }
 
     suspend fun saveStations(stations: List<Station>) {
         context.stationDataStore.edit { preferences ->

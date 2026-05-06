@@ -79,6 +79,12 @@ fun OmniBeatApp() {
             }
         }
 
+        LaunchedEffect(repository) {
+            repository.appVolume.collect { savedVolume ->
+                appVolume = savedVolume
+            }
+        }
+
         LaunchedEffect(player, appVolume) {
             player.volume = appVolume
         }
@@ -170,7 +176,10 @@ fun OmniBeatApp() {
                                 player.play()
                             }
                         },
-                        onVolumeChange = { appVolume = it },
+                        onVolumeChange = { volume ->
+                            appVolume = volume
+                            scope.launch { repository.saveAppVolume(volume) }
+                        },
                     )
                 },
             ) { padding ->
