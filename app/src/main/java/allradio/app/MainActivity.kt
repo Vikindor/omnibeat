@@ -5,8 +5,12 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +28,9 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
@@ -53,6 +59,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,7 +67,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -97,16 +107,6 @@ private data class Station(
     val formatLabel: String,
     val sourceUrl: String,
 )
-
-private enum class StreamStatus {
-    Idle,
-    Resolving,
-    Buffering,
-    Playing,
-    Paused,
-    Ended,
-    Error,
-}
 
 private val RadioBackground = Color(0xFF0D0D10)
 private val RadioSurface = Color(0xFF18181D)
@@ -146,24 +146,19 @@ private fun AllRadioApp(stations: List<Station>) {
         var selectedStation by remember { mutableStateOf<Station?>(null) }
         var playableUrl by remember { mutableStateOf("") }
         var trackText by remember { mutableStateOf("No stream is playing") }
-        var status by remember { mutableStateOf(StreamStatus.Idle) }
+        var resolving by remember { mutableStateOf(false) }
+        var buffering by remember { mutableStateOf(false) }
         var errorText by remember { mutableStateOf<String?>(null) }
+        var appVolume by remember { mutableFloatStateOf(0.75f) }
+
+        LaunchedEffect(player, appVolume) {
+            player.volume = appVolume
+        }
 
         DisposableEffect(player) {
             val listener = object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
-                    status = when (playbackState) {
-                        Player.STATE_BUFFERING -> StreamStatus.Buffering
-                        Player.STATE_READY -> if (player.isPlaying) StreamStatus.Playing else StreamStatus.Paused
-                        Player.STATE_ENDED -> StreamStatus.Ended
-                        else -> if (selectedStation == null) StreamStatus.Idle else status
-                    }
-                }
-
-                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    if (player.playbackState == Player.STATE_READY) {
-                        status = if (isPlaying) StreamStatus.Playing else StreamStatus.Paused
-                    }
+                    buffering = playbackState == Player.STATE_BUFFERING
                 }
 
                 override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
@@ -186,7 +181,8 @@ private fun AllRadioApp(stations: List<Station>) {
 
                 override fun onPlayerError(error: PlaybackException) {
                     errorText = error.message ?: "Playback error"
-                    status = StreamStatus.Error
+                    resolving = false
+                    buffering = false
                 }
             }
 
@@ -233,8 +229,10 @@ private fun AllRadioApp(stations: List<Station>) {
                         station = selectedStation,
                         playableUrl = playableUrl,
                         trackText = errorText ?: trackText,
-                        status = status,
+                        loading = resolving || buffering,
+                        resolving = resolving,
                         isPlaying = player.isPlaying,
+                        appVolume = appVolume,
                         onPlayPause = {
                             if (player.isPlaying) {
                                 player.pause()
@@ -242,6 +240,7 @@ private fun AllRadioApp(stations: List<Station>) {
                                 player.play()
                             }
                         },
+                        onVolumeChange = { appVolume = it },
                     )
                 },
             ) { padding ->
@@ -257,44 +256,114 @@ private fun AllRadioApp(stations: List<Station>) {
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                     )
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        itemsIndexed(stations) { index, station ->
-                            StationRow(
-                                station = station,
-                                selected = selectedIndex == index,
-                                onClick = {
-                                    selectedIndex = index
-                                    selectedStation = station
-                                    playableUrl = station.sourceUrl
-                                    trackText = "Resolving stream..."
-                                    errorText = null
-                                    status = StreamStatus.Resolving
-                                    scope.launch { drawerState.close() }
-                                    scope.launch {
-                                        runCatching {
-                                            withContext(Dispatchers.IO) {
-                                                resolvePlayableUrl(station.sourceUrl)
-                                            }
-                                        }.onSuccess { resolvedUrl ->
-                                            playableUrl = resolvedUrl
-                                            trackText = "Waiting for metadata..."
-                                            player.setMediaItem(MediaItem.fromUri(Uri.parse(resolvedUrl)))
-                                            player.prepare()
-                                            player.play()
-                                        }.onFailure { error ->
-                                            errorText = "Could not resolve stream: ${error.message}"
-                                            status = StreamStatus.Error
-                                        }
+                    StationList(
+                        stations = stations,
+                        selectedIndex = selectedIndex,
+                        onStationClick = { index, station ->
+                            selectedIndex = index
+                            selectedStation = station
+                            playableUrl = station.sourceUrl
+                            trackText = "Resolving stream..."
+                            errorText = null
+                            resolving = true
+                            buffering = false
+                            scope.launch { drawerState.close() }
+                            scope.launch {
+                                runCatching {
+                                    withContext(Dispatchers.IO) {
+                                        resolvePlayableUrl(station.sourceUrl)
                                     }
-                                },
-                            )
-                        }
-                    }
+                                }.onSuccess { resolvedUrl ->
+                                    resolving = false
+                                    playableUrl = resolvedUrl
+                                    trackText = "Waiting for metadata..."
+                                    player.setMediaItem(MediaItem.fromUri(Uri.parse(resolvedUrl)))
+                                    player.prepare()
+                                    player.play()
+                                }.onFailure { error ->
+                                    resolving = false
+                                    buffering = false
+                                    errorText = "Could not resolve stream: ${error.message}"
+                                }
+                            }
+                        },
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StationList(
+    stations: List<Station>,
+    selectedIndex: Int,
+    onStationClick: (Int, Station) -> Unit,
+) {
+    val listState = rememberLazyListState()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            itemsIndexed(stations) { index, station ->
+                StationRow(
+                    station = station,
+                    selected = selectedIndex == index,
+                    onClick = { onStationClick(index, station) },
+                )
+            }
+        }
+        StationScrollIndicator(
+            listState = listState,
+            itemCount = stations.size,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun StationScrollIndicator(
+    listState: LazyListState,
+    itemCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    val visibleItems = listState.layoutInfo.visibleItemsInfo
+    if (itemCount == 0 || visibleItems.isEmpty() || visibleItems.size >= itemCount) {
+        return
+    }
+
+    val viewportHeight = listState.layoutInfo.viewportSize.height.toFloat().coerceAtLeast(1f)
+    val averageItemHeight = visibleItems.map { it.size }.average().toFloat().coerceAtLeast(1f)
+    val contentHeight = averageItemHeight * itemCount
+    val scrollOffset = listState.firstVisibleItemIndex * averageItemHeight + listState.firstVisibleItemScrollOffset
+    val thumbHeightFraction = (viewportHeight / contentHeight).coerceIn(0.12f, 1f)
+    val thumbTopFraction = (scrollOffset / (contentHeight - viewportHeight).coerceAtLeast(1f))
+        .coerceIn(0f, 1f - thumbHeightFraction)
+
+    Canvas(
+        modifier = modifier
+            .width(3.dp)
+            .fillMaxHeight(),
+    ) {
+        drawRect(
+            color = RadioOutline.copy(alpha = 0.55f),
+            size = size,
+        )
+        drawRect(
+            color = RadioPrimary,
+            topLeft = androidx.compose.ui.geometry.Offset(
+                x = 0f,
+                y = size.height * thumbTopFraction,
+            ),
+            size = androidx.compose.ui.geometry.Size(
+                width = size.width,
+                height = size.height * thumbHeightFraction,
+            ),
+        )
     }
 }
 
@@ -377,9 +446,12 @@ private fun PlayerPanel(
     station: Station?,
     playableUrl: String,
     trackText: String,
-    status: StreamStatus,
+    loading: Boolean,
+    resolving: Boolean,
     isPlaying: Boolean,
+    appVolume: Float,
     onPlayPause: () -> Unit,
+    onVolumeChange: (Float) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -427,7 +499,7 @@ private fun PlayerPanel(
             modifier = Modifier.padding(top = 12.dp),
         ) {
             TextButton(
-                enabled = station != null && status != StreamStatus.Resolving,
+                enabled = station != null && !resolving,
                 onClick = onPlayPause,
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = RadioText,
@@ -441,34 +513,66 @@ private fun PlayerPanel(
                 Spacer(Modifier.width(8.dp))
                 Text(if (isPlaying) "Pause" else "Play")
             }
-            if (status == StreamStatus.Resolving || status == StreamStatus.Buffering) {
+            if (loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(28.dp),
                     strokeWidth = 2.dp,
                     color = RadioPrimary,
                 )
             }
-            Text(
-                text = status.label,
-                color = RadioTextMuted,
-                fontSize = 13.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Spacer(Modifier.weight(1f))
+            VolumeIndicator(
+                volume = appVolume,
+                onVolumeChange = onVolumeChange,
+                modifier = Modifier
+                    .width(118.dp)
+                    .height(38.dp),
             )
         }
     }
 }
 
-private val StreamStatus.label: String
-    get() = when (this) {
-        StreamStatus.Idle -> "Idle"
-        StreamStatus.Resolving -> "Connecting"
-        StreamStatus.Buffering -> "Buffering"
-        StreamStatus.Playing -> "Playing"
-        StreamStatus.Paused -> "Paused"
-        StreamStatus.Ended -> "Ended"
-        StreamStatus.Error -> "Error"
+@Composable
+private fun VolumeIndicator(
+    volume: Float,
+    onVolumeChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(
+        modifier = modifier.pointerInput(onVolumeChange) {
+            awaitEachGesture {
+                val down = awaitFirstDown()
+                onVolumeChange((down.position.x / size.width).coerceIn(0f, 1f))
+                drag(down.id) { change ->
+                    onVolumeChange((change.position.x / size.width).coerceIn(0f, 1f))
+                    change.consume()
+                }
+            }
+        },
+    ) {
+        val w = size.width
+        val h = size.height
+        val topStart = h * 0.62f
+        val outline = Path().apply {
+            moveTo(0f, h)
+            lineTo(0f, topStart)
+            lineTo(w, 0f)
+            lineTo(w, h)
+            close()
+        }
+        val filledWidth = w * volume.coerceIn(0f, 1f)
+        val filledTop = topStart - (topStart * (filledWidth / w))
+        val filled = Path().apply {
+            moveTo(0f, h)
+            lineTo(0f, topStart)
+            lineTo(filledWidth, filledTop)
+            lineTo(filledWidth, h)
+            close()
+        }
+        drawPath(filled, RadioPrimaryDark)
+        drawPath(outline, RadioText.copy(alpha = 0.9f), style = Stroke(width = 2.dp.toPx()))
     }
+}
 
 @Throws(IOException::class)
 private fun resolvePlayableUrl(sourceUrl: String): String {
