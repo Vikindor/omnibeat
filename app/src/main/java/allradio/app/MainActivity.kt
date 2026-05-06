@@ -8,9 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
@@ -47,8 +46,9 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.darkColorScheme
@@ -67,10 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -150,6 +147,7 @@ private fun AllRadioApp(stations: List<Station>) {
         var buffering by remember { mutableStateOf(false) }
         var errorText by remember { mutableStateOf<String?>(null) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
+        var isPlaying by remember { mutableStateOf(false) }
 
         LaunchedEffect(player, appVolume) {
             player.volume = appVolume
@@ -159,6 +157,11 @@ private fun AllRadioApp(stations: List<Station>) {
             val listener = object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     buffering = playbackState == Player.STATE_BUFFERING
+                    isPlaying = player.isPlaying
+                }
+
+                override fun onIsPlayingChanged(isPlayingNow: Boolean) {
+                    isPlaying = isPlayingNow
                 }
 
                 override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
@@ -231,11 +234,12 @@ private fun AllRadioApp(stations: List<Station>) {
                         trackText = errorText ?: trackText,
                         loading = resolving || buffering,
                         resolving = resolving,
-                        isPlaying = player.isPlaying,
+                        isPlaying = isPlaying,
                         appVolume = appVolume,
                         onPlayPause = {
                             if (player.isPlaying) {
                                 player.pause()
+                                isPlaying = false
                             } else {
                                 player.play()
                             }
@@ -498,79 +502,78 @@ private fun PlayerPanel(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(top = 12.dp),
         ) {
-            TextButton(
+            Button(
                 enabled = station != null && !resolving,
                 onClick = onPlayPause,
-                colors = ButtonDefaults.textButtonColors(
+                shape = RoundedCornerShape(percent = 50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RadioOutline,
                     contentColor = RadioText,
+                    disabledContainerColor = RadioSurfaceHigh,
                     disabledContentColor = RadioTextMuted,
                 ),
+                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                modifier = Modifier
+                    .width(122.dp)
+                    .height(44.dp),
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                     contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = RadioPrimary,
+                    modifier = Modifier.size(24.dp),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(if (isPlaying) "Pause" else "Play")
             }
-            if (loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(28.dp),
-                    strokeWidth = 2.dp,
-                    color = RadioPrimary,
-                )
+            Spacer(Modifier.weight(1f))
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.width(28.dp),
+            ) {
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        strokeWidth = 2.dp,
+                        color = RadioPrimary,
+                    )
+                }
             }
             Spacer(Modifier.weight(1f))
-            VolumeIndicator(
+            VolumeSlider(
                 volume = appVolume,
                 onVolumeChange = onVolumeChange,
-                modifier = Modifier
-                    .width(118.dp)
-                    .height(38.dp),
             )
         }
     }
 }
 
 @Composable
-private fun VolumeIndicator(
+private fun VolumeSlider(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    Canvas(
-        modifier = modifier.pointerInput(onVolumeChange) {
-            awaitEachGesture {
-                val down = awaitFirstDown()
-                onVolumeChange((down.position.x / size.width).coerceIn(0f, 1f))
-                drag(down.id) { change ->
-                    onVolumeChange((change.position.x / size.width).coerceIn(0f, 1f))
-                    change.consume()
-                }
-            }
-        },
+    Box(
+        modifier = Modifier
+            .width(122.dp)
+            .height(44.dp)
+            .background(RadioOutline, RoundedCornerShape(percent = 50))
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        val w = size.width
-        val h = size.height
-        val topStart = h * 0.62f
-        val outline = Path().apply {
-            moveTo(0f, h)
-            lineTo(0f, topStart)
-            lineTo(w, 0f)
-            lineTo(w, h)
-            close()
-        }
-        val filledWidth = w * volume.coerceIn(0f, 1f)
-        val filledTop = topStart - (topStart * (filledWidth / w))
-        val filled = Path().apply {
-            moveTo(0f, h)
-            lineTo(0f, topStart)
-            lineTo(filledWidth, filledTop)
-            lineTo(filledWidth, h)
-            close()
-        }
-        drawPath(filled, RadioPrimaryDark)
-        drawPath(outline, RadioText.copy(alpha = 0.9f), style = Stroke(width = 2.dp.toPx()))
+        Slider(
+            value = volume,
+            onValueChange = onVolumeChange,
+            valueRange = 0f..1f,
+            colors = SliderDefaults.colors(
+                thumbColor = RadioText,
+                activeTrackColor = RadioPrimary,
+                inactiveTrackColor = RadioOutline,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(28.dp),
+        )
     }
 }
 
