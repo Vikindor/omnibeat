@@ -336,50 +336,51 @@ private fun AllRadioApp() {
                             )
                         }
                     }
-                    StationList(
-                        stations = stations,
-                        selectedIndex = selectedIndex,
-                        onStationEdit = { index, station ->
-                            editorState = StationEditorState(
-                                stationIndex = index,
-                                name = station.name,
-                                sourceUrl = station.sourceUrl,
-                            )
-                        },
-                        onStationClick = { index, station ->
-                            selectedIndex = index
-                            selectedStation = station
-                            playableUrl = station.sourceUrl
-                            trackText = "Resolving stream..."
-                            errorText = null
-                            resolving = true
-                            buffering = false
-                            scope.launch { drawerState.close() }
-                            scope.launch {
-                                runCatching {
-                                    withContext(Dispatchers.IO) {
-                                        resolvePlayableUrl(station.sourceUrl)
-                                    }
-                                }.onSuccess { resolvedUrl ->
-                                    resolving = false
-                                    playableUrl = resolvedUrl
-                                    trackText = "Waiting for metadata..."
-                                    player.setMediaItem(MediaItem.fromUri(Uri.parse(resolvedUrl)))
-                                    player.prepare()
-                                    player.play()
-                                }.onFailure { error ->
-                                    resolving = false
-                                    buffering = false
-                                    errorText = "Could not resolve stream: ${error.message}"
-                                }
-                            }
-                        },
-                    )
                     if (stations.isEmpty()) {
                         EmptyStationsState(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = 32.dp),
+                        )
+                    } else {
+                        StationList(
+                            stations = stations,
+                            selectedIndex = selectedIndex,
+                            onStationEdit = { index, station ->
+                                editorState = StationEditorState(
+                                    stationIndex = index,
+                                    name = station.name,
+                                    sourceUrl = station.sourceUrl,
+                                )
+                            },
+                            onStationClick = { index, station ->
+                                selectedIndex = index
+                                selectedStation = station
+                                playableUrl = station.sourceUrl
+                                trackText = "Resolving stream..."
+                                errorText = null
+                                resolving = true
+                                buffering = false
+                                scope.launch { drawerState.close() }
+                                scope.launch {
+                                    runCatching {
+                                        withContext(Dispatchers.IO) {
+                                            resolvePlayableUrl(station.sourceUrl)
+                                        }
+                                    }.onSuccess { resolvedUrl ->
+                                        resolving = false
+                                        playableUrl = resolvedUrl
+                                        trackText = "Waiting for metadata..."
+                                        player.setMediaItem(MediaItem.fromUri(Uri.parse(resolvedUrl)))
+                                        player.prepare()
+                                        player.play()
+                                    }.onFailure { error ->
+                                        resolving = false
+                                        buffering = false
+                                        errorText = "Could not resolve stream: ${error.message}"
+                                    }
+                                }
+                            },
                         )
                     }
                 }
@@ -442,11 +443,29 @@ private fun EmptyStationsState(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
         modifier = modifier,
     ) {
-        Text(
-            text = "No stations yet. Press + to add one.",
-            color = RadioTextMuted,
-            fontSize = 16.sp,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = "No stations here yet. Tap",
+                color = RadioTextMuted,
+                fontSize = 16.sp,
+            )
+            Icon(
+                imageVector = Icons.Filled.AddCircleOutline,
+                contentDescription = "Add station",
+                tint = RadioTextMuted,
+                modifier = Modifier
+                    .padding(horizontal = 6.dp)
+                    .size(18.dp),
+            )
+            Text(
+                text = "to add some",
+                color = RadioTextMuted,
+                fontSize = 16.sp,
+            )
+        }
     }
 }
 
