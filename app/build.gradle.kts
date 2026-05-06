@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "allradio.app"
+    namespace = "omnibeat.app"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "allradio.app"
+        applicationId = "omnibeat.app"
         minSdk = 34
         targetSdk = 36
         versionCode = providers.gradleProperty("app.versionCode").get().toInt()

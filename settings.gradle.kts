@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AllRadio"
+rootProject.name = "OmniBeat"
 include(":app")
  
