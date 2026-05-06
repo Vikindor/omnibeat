@@ -72,7 +72,7 @@ fun PlayerPanel(
             .fillMaxWidth()
             .background(RadioSurface)
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 16.dp),
     ) {
         Box(
             modifier = Modifier
@@ -82,7 +82,7 @@ fun PlayerPanel(
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 14.dp),
+            modifier = Modifier.padding(top = 8.dp),
         ) {
             Text(
                 text = station?.name ?: "Choose a station",

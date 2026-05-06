@@ -2,11 +2,19 @@ package omnibeat.app
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
@@ -18,8 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -31,10 +37,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
@@ -68,6 +78,7 @@ fun OmniBeatApp() {
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var isPlaying by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
+        var selectedTab by remember { mutableStateOf(MainTab.Stations) }
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -195,25 +206,23 @@ fun OmniBeatApp() {
 
         ModalNavigationDrawer(
             drawerState = drawerState,
-            gesturesEnabled = true,
+            gesturesEnabled = false,
             drawerContent = { DrawerContent() },
         ) {
             Scaffold(
                 containerColor = RadioBackground,
                 topBar = {
-                    TopAppBar(
-                        title = { Text("OmniBeat", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Filled.Menu, contentDescription = "Open drawer")
-                            }
+                    MainTopBar(
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it },
+                        onOpenDrawer = { scope.launch { drawerState.open() } },
+                        onAddStation = {
+                            editorState = StationEditorState(
+                                stationIndex = null,
+                                name = "",
+                                sourceUrl = "",
+                            )
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = RadioBackground,
-                            titleContentColor = RadioText,
-                            navigationIconContentColor = RadioText,
-                        ),
-                        modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
                     )
                 },
                 bottomBar = {
@@ -249,36 +258,57 @@ fun OmniBeatApp() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding),
-                ) {
-                    StationHeader(
-                        onAddStation = {
-                            editorState = StationEditorState(
-                                stationIndex = null,
-                                name = "",
-                                sourceUrl = "",
+                        .padding(padding)
+                        .pointerInput(selectedTab) {
+                            var totalDragX = 0f
+                            detectHorizontalDragGestures(
+                                onDragStart = { totalDragX = 0f },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    totalDragX += dragAmount
+                                    change.consume()
+                                },
+                                onDragEnd = {
+                                    val threshold = 80.dp.toPx()
+                                    selectedTab = when {
+                                        totalDragX < -threshold -> MainTab.Favorites
+                                        totalDragX > threshold -> MainTab.Stations
+                                        else -> selectedTab
+                                    }
+                                },
                             )
                         },
-                    )
-                    if (stations.isEmpty()) {
-                        EmptyStationsState(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 32.dp),
-                        )
-                    } else {
-                        StationList(
-                            stations = stations,
-                            selectedIndex = selectedIndex,
-                            onStationEdit = { index, station ->
-                                editorState = StationEditorState(
-                                    stationIndex = index,
-                                    name = station.name,
-                                    sourceUrl = station.sourceUrl,
+                ) {
+                    when (selectedTab) {
+                        MainTab.Stations -> {
+                            if (stations.isEmpty()) {
+                                EmptyStationsState(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 32.dp),
                                 )
-                            },
-                            onStationClick = { index, _ -> playStationAt(index) },
-                        )
+                            } else {
+                                StationList(
+                                    stations = stations,
+                                    selectedIndex = selectedIndex,
+                                    onStationEdit = { index, station ->
+                                        editorState = StationEditorState(
+                                            stationIndex = index,
+                                            name = station.name,
+                                            sourceUrl = station.sourceUrl,
+                                        )
+                                    },
+                                    onStationClick = { index, _ -> playStationAt(index) },
+                                )
+                            }
+                        }
+
+                        MainTab.Favorites -> {
+                            EmptyFavoritesState(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 32.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -329,6 +359,73 @@ fun OmniBeatApp() {
                     scope.launch { repository.saveStations(nextStations) }
                     editorState = null
                 },
+            )
+        }
+    }
+}
+
+private enum class MainTab(val title: String) {
+    Stations("Stations"),
+    Favorites("Favorites"),
+}
+
+@Composable
+private fun MainTopBar(
+    selectedTab: MainTab,
+    onTabSelected: (MainTab) -> Unit,
+    onOpenDrawer: () -> Unit,
+    onAddStation: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(RadioBackground)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .height(52.dp)
+            .padding(start = 4.dp, end = 8.dp),
+    ) {
+        IconButton(onClick = onOpenDrawer) {
+            Icon(
+                imageVector = Icons.Filled.Menu,
+                contentDescription = "Open drawer",
+                tint = RadioText,
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f),
+        ) {
+            MainTab.entries.forEach { tab ->
+                Column(
+                    modifier = Modifier
+                        .clickable { onTabSelected(tab) }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        text = tab.title,
+                        color = if (selectedTab == tab) RadioText else RadioTextMuted,
+                        fontSize = 18.sp,
+                        fontWeight = if (selectedTab == tab) FontWeight.SemiBold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 6.dp)
+                            .width(72.dp)
+                            .height(2.dp)
+                            .background(if (selectedTab == tab) RadioPrimary else RadioOutline),
+                    )
+                }
+            }
+        }
+        IconButton(onClick = onAddStation) {
+            Icon(
+                imageVector = Icons.Filled.AddCircleOutline,
+                contentDescription = "Add station",
+                tint = RadioText,
+                modifier = Modifier.height(28.dp),
             )
         }
     }

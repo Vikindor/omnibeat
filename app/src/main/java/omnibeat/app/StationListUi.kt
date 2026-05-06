@@ -1,11 +1,9 @@
 package omnibeat.app
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,56 +18,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
-
-@Composable
-fun StationHeader(onAddStation: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 8.dp),
-    ) {
-        Text(
-            text = "Stations",
-            color = RadioText,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = onAddStation) {
-            Icon(
-                imageVector = Icons.Filled.AddCircleOutline,
-                contentDescription = "Add station",
-                tint = RadioText,
-                modifier = Modifier.size(32.dp),
-            )
-        }
-    }
-}
 
 @Composable
 fun EmptyStationsState(modifier: Modifier = Modifier) {
@@ -90,6 +50,13 @@ fun EmptyStationsState(modifier: Modifier = Modifier) {
             )
             Text("to add some", color = RadioTextMuted, fontSize = 16.sp)
         }
+    }
+}
+
+@Composable
+fun EmptyFavoritesState(modifier: Modifier = Modifier) {
+    Box(contentAlignment = Alignment.Center, modifier = modifier) {
+        Text("No favorites yet", color = RadioTextMuted, fontSize = 16.sp)
     }
 }
 
@@ -114,17 +81,12 @@ fun StationList(
                 items = stations,
                 key = { _, station -> station.id },
             ) { index, station ->
-                SwipeEditStationRow(
+                StationRow(
                     station = station,
-                    onEdit = { onStationEdit(index, station) },
-                ) {
-                    StationRow(
-                        station = station,
-                        selected = selectedIndex == index,
-                        onClick = { onStationClick(index, station) },
-                        onLongClick = { onStationEdit(index, station) },
-                    )
-                }
+                    selected = selectedIndex == index,
+                    onClick = { onStationClick(index, station) },
+                    onLongClick = { onStationEdit(index, station) },
+                )
             }
         }
         StationScrollIndicator(
@@ -134,65 +96,6 @@ fun StationList(
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp),
         )
-    }
-}
-
-@Composable
-private fun SwipeEditStationRow(
-    station: Station,
-    onEdit: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    val offsetX = remember(station.id) { Animatable(0f) }
-    var rowWidthPx by remember(station.id) { mutableFloatStateOf(0f) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(RadioPrimaryDark)
-            .onSizeChanged { rowWidthPx = it.width.toFloat() },
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .matchParentSize()
-                .padding(horizontal = 20.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Edit,
-                contentDescription = "Edit station",
-                tint = RadioText,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
-                .pointerInput(station.id) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            val editThresholdPx = rowWidthPx * 0.15f
-                            val shouldEdit = rowWidthPx > 0f && offsetX.value <= -editThresholdPx
-                            if (shouldEdit) {
-                                onEdit()
-                            }
-                            scope.launch { offsetX.animateTo(0f) }
-                        },
-                        onDragCancel = {
-                            scope.launch { offsetX.animateTo(0f) }
-                        },
-                        onHorizontalDrag = { change, dragAmount ->
-                            val maxRevealPx = rowWidthPx * 0.25f
-                            val nextOffset = (offsetX.value + dragAmount).coerceIn(-maxRevealPx, 0f)
-                            scope.launch { offsetX.snapTo(nextOffset) }
-                            change.consume()
-                        },
-                    )
-                },
-        ) {
-            content()
-        }
     }
 }
 
@@ -259,11 +162,18 @@ private fun StationRow(
         )
         Text(
             text = station.formatLabel,
-            color = RadioTextMuted,
-            fontSize = 13.sp,
+            color = if (selected) RadioText else RadioTextMuted,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 2.dp),
+            modifier = Modifier
+                .padding(top = 6.dp)
+                .background(
+                    color = if (selected) RadioPrimary.copy(alpha = 0.30f) else RadioSurfaceHigh.copy(alpha = 0.72f),
+                    shape = RoundedCornerShape(percent = 50),
+                )
+                .padding(horizontal = 8.dp, vertical = 3.dp),
         )
     }
 }
