@@ -45,6 +45,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,6 +137,62 @@ fun OmniBeatApp() {
             errorText?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
         }
 
+        fun playStationAt(index: Int) {
+            val station = stations.getOrNull(index) ?: return
+            selectedIndex = index
+            selectedStation = station
+            playableUrl = station.sourceUrl
+            trackText = "Resolving stream..."
+            errorText = null
+            resolving = true
+            buffering = false
+            scope.launch { drawerState.close() }
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        StreamResolver.resolvePlayableUrl(station.sourceUrl)
+                    }
+                }.onSuccess { resolvedUrl ->
+                    resolving = false
+                    playableUrl = resolvedUrl
+                    trackText = "Waiting for metadata..."
+                    player.setMediaItem(MediaItem.fromUri(Uri.parse(resolvedUrl)))
+                    player.prepare()
+                    player.play()
+                }.onFailure { error ->
+                    resolving = false
+                    buffering = false
+                    errorText = "Could not resolve stream: ${error.message}"
+                }
+            }
+        }
+
+        fun playAdjacentStation(direction: Int) {
+            if (stations.isEmpty()) return
+            val nextIndex = if (selectedIndex in stations.indices) {
+                (selectedIndex + direction + stations.size) % stations.size
+            } else if (direction > 0) {
+                0
+            } else {
+                stations.lastIndex
+            }
+            playStationAt(nextIndex)
+        }
+
+        fun playRandomStation() {
+            if (stations.isEmpty()) return
+            val nextIndex = if (stations.size == 1) {
+                0
+            } else {
+                var randomIndex: Int
+                do {
+                    randomIndex = Random.nextInt(stations.size)
+                } while (randomIndex == selectedIndex)
+                randomIndex
+            }
+            playStationAt(nextIndex)
+        }
+
         ModalNavigationDrawer(
             drawerState = drawerState,
             gesturesEnabled = true,
@@ -162,20 +219,26 @@ fun OmniBeatApp() {
                 bottomBar = {
                     PlayerPanel(
                         station = selectedStation,
-                        playableUrl = playableUrl,
                         trackText = errorText ?: trackText,
                         loading = resolving || buffering,
                         resolving = resolving,
                         isPlaying = isPlaying,
+                        canNavigateStations = stations.isNotEmpty(),
                         appVolume = appVolume,
+                        canPlay = stations.isNotEmpty(),
                         onPlayPause = {
                             if (player.isPlaying) {
                                 player.pause()
                                 isPlaying = false
+                            } else if (selectedStation == null) {
+                                playStationAt(0)
                             } else {
                                 player.play()
                             }
                         },
+                        onPreviousStation = { playAdjacentStation(-1) },
+                        onNextStation = { playAdjacentStation(1) },
+                        onRandomStation = { playRandomStation() },
                         onVolumeChange = { volume ->
                             appVolume = volume
                             scope.launch { repository.saveAppVolume(volume) }
@@ -214,34 +277,7 @@ fun OmniBeatApp() {
                                     sourceUrl = station.sourceUrl,
                                 )
                             },
-                            onStationClick = { index, station ->
-                                selectedIndex = index
-                                selectedStation = station
-                                playableUrl = station.sourceUrl
-                                trackText = "Resolving stream..."
-                                errorText = null
-                                resolving = true
-                                buffering = false
-                                scope.launch { drawerState.close() }
-                                scope.launch {
-                                    runCatching {
-                                        withContext(Dispatchers.IO) {
-                                            StreamResolver.resolvePlayableUrl(station.sourceUrl)
-                                        }
-                                    }.onSuccess { resolvedUrl ->
-                                        resolving = false
-                                        playableUrl = resolvedUrl
-                                        trackText = "Waiting for metadata..."
-                                        player.setMediaItem(MediaItem.fromUri(Uri.parse(resolvedUrl)))
-                                        player.prepare()
-                                        player.play()
-                                    }.onFailure { error ->
-                                        resolving = false
-                                        buffering = false
-                                        errorText = "Could not resolve stream: ${error.message}"
-                                    }
-                                }
-                            },
+                            onStationClick = { index, _ -> playStationAt(index) },
                         )
                     }
                 }

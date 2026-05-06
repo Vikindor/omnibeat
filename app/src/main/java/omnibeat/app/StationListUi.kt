@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -100,6 +101,12 @@ fun StationList(
     onStationClick: (Int, Station) -> Unit,
 ) {
     val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedIndex, stations.size) {
+        if (selectedIndex in stations.indices) {
+            listState.animateScrollToItem(selectedIndex)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {

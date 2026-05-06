@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -17,15 +16,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -55,13 +54,17 @@ import androidx.compose.ui.window.PopupProperties
 @Composable
 fun PlayerPanel(
     station: Station?,
-    playableUrl: String,
     trackText: String,
     loading: Boolean,
     resolving: Boolean,
     isPlaying: Boolean,
+    canNavigateStations: Boolean,
     appVolume: Float,
+    canPlay: Boolean,
     onPlayPause: () -> Unit,
+    onPreviousStation: () -> Unit,
+    onNextStation: () -> Unit,
+    onRandomStation: () -> Unit,
     onVolumeChange: (Float) -> Unit,
 ) {
     Column(
@@ -77,15 +80,29 @@ fun PlayerPanel(
                 .height(DividerDefaults.Thickness)
                 .background(RadioOutline),
         )
-        Text(
-            text = station?.name ?: "Choose a station",
-            color = RadioText,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 14.dp),
-        )
+        ) {
+            Text(
+                text = station?.name ?: "Choose a station",
+                color = RadioText,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = RadioPrimary,
+                )
+            }
+        }
         Text(
             text = trackText,
             color = RadioTextMuted,
@@ -94,58 +111,92 @@ fun PlayerPanel(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 2.dp),
         )
-        if (playableUrl.isNotBlank()) {
-            Text(
-                text = playableUrl,
-                color = RadioTextMuted,
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(top = 12.dp),
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
         ) {
-            FilledTonalButton(
-                enabled = station != null && !resolving,
-                onClick = onPlayPause,
-                shape = RoundedCornerShape(percent = 50),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = RadioSurfaceHigh,
-                    contentColor = RadioText,
-                    disabledContainerColor = RadioSurfaceHigh,
-                    disabledContentColor = RadioTextMuted,
-                ),
-                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+            PlayerIconButton(
+                enabled = canNavigateStations && !resolving,
+                onClick = onRandomStation,
                 modifier = Modifier
-                    .width(132.dp)
-                    .height(48.dp),
+                    .align(Alignment.CenterStart)
+                    .size(48.dp),
             ) {
                 Icon(
-                    imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = RadioPrimary,
+                    imageVector = Icons.Filled.Shuffle,
+                    contentDescription = "Random station",
                     modifier = Modifier.size(24.dp),
                 )
-                Spacer(Modifier.width(8.dp))
-                Text(if (isPlaying) "Pause" else "Play")
             }
-            Spacer(Modifier.weight(1f))
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.width(28.dp)) {
-                if (loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(28.dp),
-                        strokeWidth = 2.dp,
-                        color = RadioPrimary,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.align(Alignment.Center),
+            ) {
+                PlayerIconButton(
+                    enabled = canNavigateStations && !resolving,
+                    onClick = onPreviousStation,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipPrevious,
+                        contentDescription = "Previous station",
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+                PlayerIconButton(
+                    enabled = canPlay && !resolving,
+                    onClick = onPlayPause,
+                    modifier = Modifier.size(62.dp),
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
+                PlayerIconButton(
+                    enabled = canNavigateStations && !resolving,
+                    onClick = onNextStation,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipNext,
+                        contentDescription = "Next station",
+                        modifier = Modifier.size(24.dp),
                     )
                 }
             }
-            Spacer(Modifier.weight(1f))
-            VolumeButton(volume = appVolume, onVolumeChange = onVolumeChange)
+            VolumeButton(
+                volume = appVolume,
+                onVolumeChange = onVolumeChange,
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
         }
+    }
+}
+
+@Composable
+private fun PlayerIconButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    FilledTonalIconButton(
+        enabled = enabled,
+        onClick = onClick,
+        shape = CircleShape,
+        colors = IconButtonDefaults.filledTonalIconButtonColors(
+            containerColor = RadioSurfaceHigh,
+            contentColor = RadioPrimary,
+            disabledContainerColor = RadioSurfaceHigh,
+            disabledContentColor = RadioTextMuted,
+        ),
+        modifier = modifier,
+    ) {
+        content()
     }
 }
 
@@ -153,16 +204,17 @@ fun PlayerPanel(
 private fun VolumeButton(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val sliderHeight = 320.dp
-    val sliderTrackBottomGap = 10.dp
+    val sliderTrackBottomGap = 14.dp
     val sliderTrackBottomInset = 12.dp
     val popupOffsetY = with(LocalDensity.current) {
         -(sliderHeight + sliderTrackBottomGap - sliderTrackBottomInset).roundToPx()
     }
 
-    Box(contentAlignment = Alignment.Center) {
+    Box(contentAlignment = Alignment.Center, modifier = modifier) {
         FilledTonalIconButton(
             onClick = { expanded = !expanded },
             shape = CircleShape,
