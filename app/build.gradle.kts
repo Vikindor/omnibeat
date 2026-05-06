@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.exoplayer.hls)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit)

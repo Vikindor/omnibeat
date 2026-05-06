@@ -1,14 +1,19 @@
 package allradio.app
 
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,10 +25,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -31,9 +38,14 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
@@ -46,10 +58,12 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.darkColorScheme
@@ -69,11 +83,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
@@ -81,8 +103,11 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -90,19 +115,31 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.Locale
+import java.util.UUID
+import kotlin.math.roundToInt
+
+private val Context.stationDataStore by preferencesDataStore(name = "stations")
+private val stationsJsonKey = stringPreferencesKey("stations_json")
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AllRadioApp(stations = sampleStations())
+            AllRadioApp()
         }
     }
 }
 
 private data class Station(
+    val id: String,
     val name: String,
     val formatLabel: String,
+    val sourceUrl: String,
+)
+
+private data class StationEditorState(
+    val stationIndex: Int?,
+    val name: String,
     val sourceUrl: String,
 )
 
@@ -131,7 +168,7 @@ private val RadioColorScheme = darkColorScheme(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AllRadioApp(stations: List<Station>) {
+private fun AllRadioApp() {
     MaterialTheme(colorScheme = RadioColorScheme) {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
@@ -140,6 +177,7 @@ private fun AllRadioApp(stations: List<Station>) {
             ExoPlayer.Builder(context).build()
         }
 
+        var stations by remember { mutableStateOf(emptyList<Station>()) }
         var selectedIndex by remember { mutableIntStateOf(-1) }
         var selectedStation by remember { mutableStateOf<Station?>(null) }
         var playableUrl by remember { mutableStateOf("") }
@@ -149,6 +187,20 @@ private fun AllRadioApp(stations: List<Station>) {
         var errorText by remember { mutableStateOf<String?>(null) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var isPlaying by remember { mutableStateOf(false) }
+        var editorState by remember { mutableStateOf<StationEditorState?>(null) }
+
+        LaunchedEffect(context) {
+            context.applicationContext.seedTestStationsForPrototype()
+            context.applicationContext.stationDataStore.data
+                .map { preferences -> preferences[stationsJsonKey].orEmpty() }
+                .collect { stationsJson ->
+                    stations = decodeStations(stationsJson)
+                    if (selectedIndex !in stations.indices) {
+                        selectedIndex = -1
+                        selectedStation = null
+                    }
+                }
+        }
 
         LaunchedEffect(player, appVolume) {
             player.volume = appVolume
@@ -254,16 +306,46 @@ private fun AllRadioApp(stations: List<Station>) {
                         .fillMaxSize()
                         .padding(padding),
                 ) {
-                    Text(
-                        text = "Stations",
-                        color = RadioText,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 8.dp),
+                    ) {
+                        Text(
+                            text = "Stations",
+                            color = RadioText,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(
+                            onClick = {
+                                editorState = StationEditorState(
+                                    stationIndex = null,
+                                    name = "",
+                                    sourceUrl = "",
+                                )
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AddCircleOutline,
+                                contentDescription = "Add station",
+                                tint = RadioText,
+                                modifier = Modifier.size(32.dp),
+                            )
+                        }
+                    }
                     StationList(
                         stations = stations,
                         selectedIndex = selectedIndex,
+                        onStationEdit = { index, station ->
+                            editorState = StationEditorState(
+                                stationIndex = index,
+                                name = station.name,
+                                sourceUrl = station.sourceUrl,
+                            )
+                        },
                         onStationClick = { index, station ->
                             selectedIndex = index
                             selectedStation = station
@@ -293,9 +375,78 @@ private fun AllRadioApp(stations: List<Station>) {
                             }
                         },
                     )
+                    if (stations.isEmpty()) {
+                        EmptyStationsState(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 32.dp),
+                        )
+                    }
                 }
             }
         }
+        editorState?.let { state ->
+            StationEditorDialog(
+                state = state,
+                showDelete = state.stationIndex != null,
+                onDismiss = { editorState = null },
+                onDelete = {
+                    val index = state.stationIndex ?: return@StationEditorDialog
+                    val nextStations = stations.toMutableList().also { it.removeAt(index) }
+                    stations = nextStations
+                    if (selectedIndex == index) {
+                        player.stop()
+                        selectedIndex = -1
+                        selectedStation = null
+                        playableUrl = ""
+                        trackText = "No stream is playing"
+                        isPlaying = false
+                    } else if (selectedIndex > index) {
+                        selectedIndex -= 1
+                    }
+                    scope.launch { context.applicationContext.saveStations(nextStations) }
+                    editorState = null
+                },
+                onSave = { name, sourceUrl ->
+                    val updatedStation = Station(
+                        id = state.stationIndex?.let { stations[it].id } ?: UUID.randomUUID().toString(),
+                        name = name.trim(),
+                        formatLabel = state.stationIndex?.let { stations[it].formatLabel } ?: "Custom stream",
+                        sourceUrl = sourceUrl.trim(),
+                    )
+                    val nextStations = stations.toMutableList().also { list ->
+                        val index = state.stationIndex
+                        if (index == null) {
+                            list.add(updatedStation)
+                        } else {
+                            list[index] = updatedStation
+                        }
+                    }
+                    stations = nextStations
+                    if (state.stationIndex == selectedIndex) {
+                        selectedStation = updatedStation
+                        playableUrl = updatedStation.sourceUrl
+                    }
+                    scope.launch { context.applicationContext.saveStations(nextStations) }
+                    editorState = null
+                },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EmptyStationsState(modifier: Modifier = Modifier) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier,
+    ) {
+        Text(
+            text = "No stations yet. Press + to add one.",
+            color = RadioTextMuted,
+            fontSize = 16.sp,
+        )
     }
 }
 
@@ -303,6 +454,7 @@ private fun AllRadioApp(stations: List<Station>) {
 private fun StationList(
     stations: List<Station>,
     selectedIndex: Int,
+    onStationEdit: (Int, Station) -> Unit,
     onStationClick: (Int, Station) -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -312,12 +464,21 @@ private fun StationList(
             state = listState,
             modifier = Modifier.fillMaxSize(),
         ) {
-            itemsIndexed(stations) { index, station ->
-                StationRow(
+            itemsIndexed(
+                items = stations,
+                key = { _, station -> station.id },
+            ) { index, station ->
+                SwipeEditStationRow(
                     station = station,
-                    selected = selectedIndex == index,
-                    onClick = { onStationClick(index, station) },
-                )
+                    onEdit = { onStationEdit(index, station) },
+                ) {
+                    StationRow(
+                        station = station,
+                        selected = selectedIndex == index,
+                        onClick = { onStationClick(index, station) },
+                        onLongClick = { onStationEdit(index, station) },
+                    )
+                }
             }
         }
         StationScrollIndicator(
@@ -327,6 +488,67 @@ private fun StationList(
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp),
         )
+    }
+}
+
+@Composable
+private fun SwipeEditStationRow(
+    station: Station,
+    onEdit: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val offsetX = remember(station.id) { Animatable(0f) }
+    var rowWidthPx by remember(station.id) { mutableFloatStateOf(0f) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(RadioPrimaryDark)
+            .onSizeChanged { rowWidthPx = it.width.toFloat() },
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .matchParentSize()
+                .padding(horizontal = 20.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Edit,
+                contentDescription = "Edit station",
+                tint = RadioText,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .pointerInput(station.id) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            val editThresholdPx = rowWidthPx * 0.15f
+                            val shouldEdit = rowWidthPx > 0f && offsetX.value <= -editThresholdPx
+                            if (shouldEdit) {
+                                onEdit()
+                            }
+                            scope.launch {
+                                offsetX.animateTo(0f)
+                            }
+                        },
+                        onDragCancel = {
+                            scope.launch { offsetX.animateTo(0f) }
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            val maxRevealPx = rowWidthPx * 0.25f
+                            val nextOffset = (offsetX.value + dragAmount).coerceIn(-maxRevealPx, 0f)
+                            scope.launch { offsetX.snapTo(nextOffset) }
+                            change.consume()
+                        },
+                    )
+                },
+        ) {
+            content()
+        }
     }
 }
 
@@ -416,16 +638,159 @@ private fun DrawerLine(text: String) {
 }
 
 @Composable
+private fun StationEditorDialog(
+    state: StationEditorState,
+    showDelete: Boolean,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onSave: (String, String) -> Unit,
+) {
+    var name by remember(state) { mutableStateOf(state.name) }
+    var sourceUrl by remember(state) { mutableStateOf(state.sourceUrl) }
+    var confirmDelete by remember(state) { mutableStateOf(false) }
+    val trimmedName = name.trim()
+    val trimmedUrl = sourceUrl.trim()
+    val canSave = trimmedName.isNotEmpty() && isValidStreamUrl(trimmedUrl)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .widthIn(max = 560.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = if (state.stationIndex == null) "Add station" else "Edit station",
+                    modifier = Modifier.weight(1f),
+                )
+                if (showDelete) {
+                    IconButton(onClick = { confirmDelete = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.DeleteOutline,
+                            contentDescription = "Delete station",
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    label = { Text("Station name") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = sourceUrl,
+                    onValueChange = { sourceUrl = it },
+                    singleLine = false,
+                    minLines = 1,
+                    maxLines = 3,
+                    label = { Text("Stream URL") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                FilledTonalButton(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = RadioSurfaceHigh,
+                        contentColor = RadioText,
+                    ),
+                ) {
+                    Text("Cancel")
+                }
+                Spacer(Modifier.weight(1f))
+                Button(
+                    enabled = canSave,
+                    onClick = { onSave(trimmedName, trimmedUrl) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RadioPrimary,
+                        contentColor = RadioText,
+                    ),
+                ) {
+                    Text("Save")
+                }
+            }
+        },
+        dismissButton = {},
+        containerColor = RadioSurface,
+        titleContentColor = RadioText,
+        textContentColor = RadioTextMuted,
+    )
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete station?") },
+            text = { Text("This station will be removed from your list") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        confirmDelete = false
+                        onDelete()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                FilledTonalButton(
+                    onClick = { confirmDelete = false },
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = RadioSurfaceHigh,
+                        contentColor = RadioText,
+                    ),
+                ) {
+                    Text("Cancel")
+                }
+            },
+            containerColor = RadioSurface,
+            titleContentColor = RadioText,
+            textContentColor = RadioTextMuted,
+        )
+    }
+}
+
+private fun isValidStreamUrl(sourceUrl: String): Boolean {
+    val uri = Uri.parse(sourceUrl)
+    return uri.scheme in setOf("http", "https") && !uri.host.isNullOrBlank()
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 private fun StationRow(
     station: Station,
     selected: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (selected) RadioPrimaryDark else Color.Transparent)
-            .clickable(onClick = onClick)
+            .background(if (selected) RadioSurfaceHigh else RadioBackground)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
             .padding(horizontal = 20.dp, vertical = 14.dp),
     ) {
         Text(
@@ -657,15 +1022,62 @@ private fun readIcyStreamTitle(metadataText: String): String? {
         .trimEnd('\'', '"')
 }
 
-private fun sampleStations() = listOf(
-    Station("AniSon.FM 320", "PLS-like direct MP3 endpoint", "https://pool.anison.fm/AniSonFM(320)"),
-    Station("Nightride FM", "Direct MP3", "https://stream.nightride.fm/nightride.mp3"),
-    Station("Party Vibe Radio", "PLS playlist with sid", "http://www.partyviberadio.com:8004/listen.pls?sid=1"),
-    Station("Magic Streams", "Icecast/Shoutcast stream", "http://cast.magicstreams.gr:9111/stream"),
-    Station("SomaFM Groove Salad", "PLS playlist", "https://somafm.com/groovesalad.pls"),
-    Station("SomaFM Drone Zone", "M3U playlist", "https://somafm.com/m3u/dronezone130.m3u"),
-    Station("CBC Radio One Montreal", "HLS M3U8", "https://cbcradiolive.akamaized.net/hls/live/2041030/ES_R1EMT/master.m3u8"),
-    Station("BBC World Service", "HLS M3U8", "https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=128000.norewind.m3u8"),
-    Station("Bloomberg Radio", "HLS M3U8", "https://bloomberg-live-prod-us-east-1.s3.amazonaws.com/rad/Channel-RAD-AWS-virginia-1/Source-RadBOS-96-1_live.m3u8"),
-    Station("FIP", "Direct MP3 Icecast", "https://icecast.radiofrance.fr/fip-midfi.mp3"),
-)
+private suspend fun Context.saveStations(stations: List<Station>) {
+    stationDataStore.edit { preferences ->
+        preferences[stationsJsonKey] = encodeStations(stations)
+    }
+}
+
+private suspend fun Context.seedTestStationsForPrototype() {
+    stationDataStore.edit { preferences ->
+        if (preferences[stationsJsonKey].isNullOrBlank()) {
+            val stationsJson = resources
+                .openRawResource(R.raw.test_stations)
+                .bufferedReader(StandardCharsets.UTF_8)
+                .use { it.readText() }
+            preferences[stationsJsonKey] = encodeStations(decodeStations(stationsJson))
+        }
+    }
+}
+
+private fun encodeStations(stations: List<Station>): String {
+    val items = JSONArray()
+    stations.forEach { station ->
+        items.put(
+            JSONObject()
+                .put("id", station.id)
+                .put("name", station.name)
+                .put("formatLabel", station.formatLabel)
+                .put("sourceUrl", station.sourceUrl),
+        )
+    }
+    return items.toString()
+}
+
+private fun decodeStations(stationsJson: String): List<Station> {
+    if (stationsJson.isBlank()) {
+        return emptyList()
+    }
+    return runCatching {
+        val items = JSONArray(stationsJson)
+        buildList {
+            repeat(items.length()) { index ->
+                val item = items.getJSONObject(index)
+                val name = item.optString("name").trim()
+                val sourceUrl = item.optString("sourceUrl").trim()
+                if (name.isNotEmpty() && sourceUrl.isNotEmpty()) {
+                    add(
+                        Station(
+                            id = item.optString("id").takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
+                            name = name,
+                            formatLabel = item.optString("formatLabel", "Custom stream"),
+                            sourceUrl = sourceUrl,
+                        ),
+                    )
+                }
+            }
+        }
+    }.getOrElse {
+        emptyList()
+    }
+}

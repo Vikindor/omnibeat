@@ -1,0 +1,52 @@
+[
+  {
+    "name": "AniSon.FM 320",
+    "formatLabel": "PLS-like direct MP3 endpoint",
+    "sourceUrl": "https://pool.anison.fm/AniSonFM(320)"
+  },
+  {
+    "name": "Nightride FM",
+    "formatLabel": "Direct MP3",
+    "sourceUrl": "https://stream.nightride.fm/nightride.mp3"
+  },
+  {
+    "name": "Party Vibe Radio",
+    "formatLabel": "PLS playlist with sid",
+    "sourceUrl": "http://www.partyviberadio.com:8004/listen.pls?sid=1"
+  },
+  {
+    "name": "Magic Streams",
+    "formatLabel": "Icecast/Shoutcast stream",
+    "sourceUrl": "http://cast.magicstreams.gr:9111/stream"
+  },
+  {
+    "name": "SomaFM Groove Salad",
+    "formatLabel": "PLS playlist",
+    "sourceUrl": "https://somafm.com/groovesalad.pls"
+  },
+  {
+    "name": "SomaFM Drone Zone",
+    "formatLabel": "M3U playlist",
+    "sourceUrl": "https://somafm.com/m3u/dronezone130.m3u"
+  },
+  {
+    "name": "CBC Radio One Montreal",
+    "formatLabel": "HLS M3U8",
+    "sourceUrl": "https://cbcradiolive.akamaized.net/hls/live/2041030/ES_R1EMT/master.m3u8"
+  },
+  {
+    "name": "BBC World Service",
+    "formatLabel": "HLS M3U8",
+    "sourceUrl": "https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=128000.norewind.m3u8"
+  },
+  {
+    "name": "Bloomberg Radio",
+    "formatLabel": "HLS M3U8",
+    "sourceUrl": "https://bloomberg-live-prod-us-east-1.s3.amazonaws.com/rad/Channel-RAD-AWS-virginia-1/Source-RadBOS-96-1_live.m3u8"
+  },
+  {
+    "name": "FIP",
+    "formatLabel": "Direct MP3 Icecast",
+    "sourceUrl": "https://icecast.radiofrance.fr/fip-midfi.mp3"
+  }
+]
