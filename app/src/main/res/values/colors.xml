@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="radio_background">#FF0D0D10</color>
+    <color name="radio_surface">#FF18181D</color>
+    <color name="radio_surface_high">#FF24242B</color>
+    <color name="radio_outline">#FF353540</color>
+    <color name="radio_primary">#FF8F5CFF</color>
+    <color name="radio_primary_dark">#FF3F236E</color>
+    <color name="radio_text">#FFF4F1FA</color>
+    <color name="radio_text_muted">#FFB7B2C3</color>
+</resources>
