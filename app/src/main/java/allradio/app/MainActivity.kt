@@ -30,14 +30,15 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -502,20 +503,20 @@ private fun PlayerPanel(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(top = 12.dp),
         ) {
-            Button(
+            FilledTonalButton(
                 enabled = station != null && !resolving,
                 onClick = onPlayPause,
                 shape = RoundedCornerShape(percent = 50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = RadioOutline,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = RadioSurfaceHigh,
                     contentColor = RadioText,
                     disabledContainerColor = RadioSurfaceHigh,
                     disabledContentColor = RadioTextMuted,
                 ),
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                 modifier = Modifier
-                    .width(122.dp)
-                    .height(44.dp),
+                    .width(132.dp)
+                    .height(48.dp),
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -553,14 +554,21 @@ private fun VolumeSlider(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
 ) {
-    Box(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
-            .width(122.dp)
-            .height(44.dp)
-            .background(RadioOutline, RoundedCornerShape(percent = 50))
-            .padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center,
+            .width(132.dp)
+            .height(48.dp)
+            .background(RadioSurfaceHigh, RoundedCornerShape(percent = 50))
+            .padding(start = 14.dp, end = 10.dp),
     ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+            contentDescription = "Volume",
+            tint = RadioPrimary,
+            modifier = Modifier.size(20.dp),
+        )
         Slider(
             value = volume,
             onValueChange = onVolumeChange,
@@ -571,7 +579,7 @@ private fun VolumeSlider(
                 inactiveTrackColor = RadioOutline,
             ),
             modifier = Modifier
-                .fillMaxWidth()
+                .weight(1f)
                 .height(28.dp),
         )
     }
