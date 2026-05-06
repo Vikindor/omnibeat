@@ -2,6 +2,7 @@ package omnibeat.app
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -204,9 +205,13 @@ fun OmniBeatApp() {
             playStationAt(nextIndex)
         }
 
+        BackHandler(enabled = drawerState.isOpen) {
+            scope.launch { drawerState.close() }
+        }
+
         ModalNavigationDrawer(
             drawerState = drawerState,
-            gesturesEnabled = false,
+            gesturesEnabled = drawerState.isOpen,
             drawerContent = { DrawerContent() },
         ) {
             Scaffold(
