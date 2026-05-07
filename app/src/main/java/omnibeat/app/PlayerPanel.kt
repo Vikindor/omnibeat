@@ -49,6 +49,7 @@ import androidx.compose.ui.window.PopupProperties
 fun PlayerPanel(
     station: Station?,
     trackText: String,
+    bitrateText: String?,
     loading: Boolean,
     resolving: Boolean,
     isPlaying: Boolean,
@@ -97,14 +98,30 @@ fun PlayerPanel(
                 )
             }
         }
-        Text(
-            text = trackText,
-            color = RadioTextMuted,
-            fontSize = 14.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 2.dp),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 2.dp),
+        ) {
+            Text(
+                text = trackText,
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            bitrateText?.let { bitrate ->
+                Text(
+                    text = bitrate,
+                    color = RadioTextMuted,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 12.dp),
+                )
+            }
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()

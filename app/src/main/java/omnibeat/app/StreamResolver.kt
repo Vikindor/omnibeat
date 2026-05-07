@@ -8,26 +8,45 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.Locale
 
+data class ResolvedStream(
+    val playableUrl: String,
+    val bitrateLabel: String?,
+)
+
 object StreamResolver {
     @Throws(IOException::class)
     fun resolvePlayableUrl(streamUrl: String): String {
-        val lower = streamUrl.lowercase(Locale.US)
-        return when {
-            ".pls" in lower -> resolvePls(streamUrl)
-            ".m3u" in lower && ".m3u8" !in lower -> resolveM3u(streamUrl)
-            else -> streamUrl
-        }
+        return resolveStream(streamUrl).playableUrl
     }
 
     @Throws(IOException::class)
-    private fun resolvePls(streamUrl: String): String {
-        readRemoteText(streamUrl).forEach { line ->
+    fun resolveStream(streamUrl: String): ResolvedStream {
+        val lower = streamUrl.lowercase(Locale.US)
+        val playlistResult = when {
+            ".pls" in lower -> resolvePls(streamUrl)
+            ".m3u" in lower && ".m3u8" !in lower -> resolveM3u(streamUrl)
+            ".m3u8" in lower -> ResolvedStream(streamUrl, readHlsBitrate(streamUrl))
+            else -> ResolvedStream(streamUrl, null)
+        }
+        return playlistResult.copy(
+            bitrateLabel = playlistResult.bitrateLabel ?: readIcyBitrate(playlistResult.playableUrl),
+        )
+    }
+
+    @Throws(IOException::class)
+    private fun resolvePls(streamUrl: String): ResolvedStream {
+        val lines = readRemoteText(streamUrl)
+        lines.forEach { line ->
             val trimmed = line.trim()
             val equals = trimmed.indexOf('=')
             if (equals > 0 && trimmed.substring(0, equals).lowercase(Locale.US).startsWith("file")) {
                 val url = trimmed.substring(equals + 1).trim()
                 if (url.startsWith("http")) {
-                    return url
+                    val index = trimmed.substring(4, equals).toIntOrNull()
+                    return ResolvedStream(
+                        playableUrl = url,
+                        bitrateLabel = readPlsBitrate(lines, index),
+                    )
                 }
             }
         }
@@ -35,14 +54,59 @@ object StreamResolver {
     }
 
     @Throws(IOException::class)
-    private fun resolveM3u(streamUrl: String): String {
+    private fun resolveM3u(streamUrl: String): ResolvedStream {
         readRemoteText(streamUrl).forEach { line ->
             val trimmed = line.trim()
             if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
-                return URL(URL(streamUrl), trimmed).toString()
+                return ResolvedStream(URL(URL(streamUrl), trimmed).toString(), null)
             }
         }
         throw IOException("M3U playlist has no stream URL")
+    }
+
+    private fun readPlsBitrate(lines: List<String>, index: Int?): String? {
+        val expectedKey = index?.let { "bitrate$it" }
+        lines.forEach { line ->
+            val trimmed = line.trim()
+            val equals = trimmed.indexOf('=')
+            if (equals <= 0) return@forEach
+
+            val key = trimmed.substring(0, equals).lowercase(Locale.US)
+            if (key == expectedKey || (expectedKey == null && key.startsWith("bitrate"))) {
+                return formatKbps(trimmed.substring(equals + 1).trim().toIntOrNull())
+            }
+        }
+        return null
+    }
+
+    private fun readHlsBitrate(streamUrl: String): String? {
+        return runCatching {
+            readRemoteText(streamUrl)
+                .asSequence()
+                .filter { it.startsWith("#EXT-X-STREAM-INF", ignoreCase = true) }
+                .mapNotNull { line ->
+                    Regex("""BANDWIDTH=(\d+)""").find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
+                }
+                .maxOrNull()
+                ?.let { bitsPerSecond -> formatKbps(bitsPerSecond / 1000) }
+        }.getOrNull()
+    }
+
+    private fun readIcyBitrate(streamUrl: String): String? {
+        return runCatching {
+            val connection = URL(streamUrl).openConnection() as HttpURLConnection
+            connection.connectTimeout = 6_000
+            connection.readTimeout = 6_000
+            connection.instanceFollowRedirects = true
+            connection.setRequestProperty("User-Agent", USER_AGENT)
+            connection.setRequestProperty("Icy-MetaData", "1")
+            try {
+                connection.connect()
+                formatKbps(readFirstNumber(connection.getHeaderField("icy-br")))
+            } finally {
+                connection.disconnect()
+            }
+        }.getOrNull()
     }
 
     @Throws(IOException::class)
@@ -51,7 +115,7 @@ object StreamResolver {
         connection.connectTimeout = 12_000
         connection.readTimeout = 12_000
         connection.instanceFollowRedirects = true
-        connection.setRequestProperty("User-Agent", "OmniBeat/0.2.0")
+        connection.setRequestProperty("User-Agent", USER_AGENT)
         return try {
             BufferedReader(InputStreamReader(connection.inputStream, StandardCharsets.UTF_8)).use { reader ->
                 reader.lineSequence().toList()
@@ -60,6 +124,16 @@ object StreamResolver {
             connection.disconnect()
         }
     }
+
+    private fun formatKbps(kbps: Int?): String? {
+        return kbps?.takeIf { it > 0 }?.let { "$it kbps" }
+    }
+
+    private fun readFirstNumber(value: String?): Int? {
+        return value?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
+    }
+
+    private const val USER_AGENT = "OmniBeat"
 }
 
 object IcyMetadataParser {

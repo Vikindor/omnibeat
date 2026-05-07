@@ -17,6 +17,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
@@ -42,6 +43,7 @@ data class PlaybackState(
     val isPlaying: Boolean = false,
     val errorText: String? = null,
     val volume: Float = 0.75f,
+    val bitrateText: String? = null,
 )
 
 @OptIn(UnstableApi::class)
@@ -167,6 +169,7 @@ class PlaybackService : Service() {
                 resolving = true,
                 buffering = false,
                 errorText = null,
+                bitrateText = null,
             )
         }
         startForeground(NOTIFICATION_ID, buildNotification())
@@ -174,18 +177,19 @@ class PlaybackService : Service() {
         resolveJob = scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    StreamResolver.resolvePlayableUrl(station.streamUrl)
+                    StreamResolver.resolveStream(station.streamUrl)
                 }
-            }.onSuccess { resolvedUrl ->
+            }.onSuccess { resolvedStream ->
                 _state.update {
                     it.copy(
                         trackText = "Waiting for metadata...",
                         resolving = false,
+                        bitrateText = resolvedStream.bitrateLabel,
                     )
                 }
                 player.setMediaItem(
                     MediaItem.Builder()
-                        .setUri(resolvedUrl)
+                        .setUri(resolvedStream.playableUrl)
                         .setLiveConfiguration(MediaItem.LiveConfiguration.Builder().build())
                         .build(),
                 )
@@ -245,6 +249,7 @@ class PlaybackService : Service() {
                     buffering = false,
                     isPlaying = false,
                     errorText = null,
+                    bitrateText = null,
                 )
             }
         }
@@ -265,6 +270,24 @@ class PlaybackService : Service() {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _state.update { it.copy(isPlaying = isPlaying) }
             updateNotification()
+        }
+
+        override fun onTracksChanged(tracks: Tracks) {
+            val bitrate = tracks.groups
+                .asSequence()
+                .flatMap { group ->
+                    (0 until group.length)
+                        .asSequence()
+                        .filter { group.isTrackSelected(it) }
+                        .map { group.getTrackFormat(it).bitrate }
+                }
+                .firstOrNull { it > 0 }
+                ?.let { "${it / 1000} kbps" }
+
+            if (bitrate != null && state.value.bitrateText != bitrate) {
+                _state.update { it.copy(bitrateText = bitrate) }
+                updateNotification()
+            }
         }
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {

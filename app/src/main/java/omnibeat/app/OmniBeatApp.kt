@@ -159,6 +159,7 @@ fun OmniBeatApp() {
                     PlayerPanel(
                         station = playbackState.selectedStation,
                         trackText = playbackState.errorText ?: playbackState.trackText,
+                        bitrateText = playbackState.bitrateText,
                         loading = playbackState.resolving || playbackState.buffering,
                         resolving = playbackState.resolving,
                         isPlaying = playbackState.isPlaying,
