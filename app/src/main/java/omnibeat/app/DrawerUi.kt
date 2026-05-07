@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun DrawerContent(
+    selectedPage: MainPage,
     onStationsClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onAboutClick: () -> Unit = {},
@@ -72,17 +73,19 @@ fun DrawerContent(
             DrawerItem(
                 text = "Stations",
                 iconRes = R.drawable.ic_list,
-                selected = true,
+                selected = selectedPage == MainPage.Stations || selectedPage == MainPage.Favorites,
                 onClick = onStationsClick,
             )
             DrawerItem(
                 text = "Settings",
                 iconRes = R.drawable.ic_settings,
+                selected = selectedPage == MainPage.Settings,
                 onClick = onSettingsClick,
             )
             DrawerItem(
                 text = "About",
                 iconRes = R.drawable.ic_info,
+                selected = selectedPage == MainPage.About,
                 onClick = onAboutClick,
             )
         }

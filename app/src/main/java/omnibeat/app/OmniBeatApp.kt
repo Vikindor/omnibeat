@@ -62,7 +62,7 @@ fun OmniBeatApp() {
         var stations by remember { mutableStateOf(emptyList<Station>()) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
-        var selectedTab by remember { mutableStateOf(MainTab.Stations) }
+        var selectedPage by remember { mutableStateOf(MainPage.Stations) }
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -122,12 +122,19 @@ fun OmniBeatApp() {
             gesturesEnabled = drawerState.isOpen,
             drawerContent = {
                 DrawerContent(
+                    selectedPage = selectedPage,
                     onStationsClick = {
-                        selectedTab = MainTab.Stations
+                        selectedPage = MainPage.Stations
                         scope.launch { drawerState.close() }
                     },
-                    onSettingsClick = { scope.launch { drawerState.close() } },
-                    onAboutClick = { scope.launch { drawerState.close() } },
+                    onSettingsClick = {
+                        selectedPage = MainPage.Settings
+                        scope.launch { drawerState.close() }
+                    },
+                    onAboutClick = {
+                        selectedPage = MainPage.About
+                        scope.launch { drawerState.close() }
+                    },
                 )
             },
         ) {
@@ -135,8 +142,8 @@ fun OmniBeatApp() {
                 containerColor = RadioBackground,
                 topBar = {
                     MainTopBar(
-                        selectedTab = selectedTab,
-                        onTabSelected = { selectedTab = it },
+                        selectedPage = selectedPage,
+                        onPageSelected = { selectedPage = it },
                         onOpenDrawer = { scope.launch { drawerState.open() } },
                         onAddStation = {
                             editorState = StationEditorState(
@@ -179,7 +186,7 @@ fun OmniBeatApp() {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .pointerInput(selectedTab) {
+                        .pointerInput(selectedPage) {
                             var totalDragX = 0f
                             detectHorizontalDragGestures(
                                 onDragStart = { totalDragX = 0f },
@@ -189,17 +196,17 @@ fun OmniBeatApp() {
                                 },
                                 onDragEnd = {
                                     val threshold = 80.dp.toPx()
-                                    selectedTab = when {
-                                        totalDragX < -threshold -> MainTab.Favorites
-                                        totalDragX > threshold -> MainTab.Stations
-                                        else -> selectedTab
+                                    selectedPage = when {
+                                        selectedPage in MainPage.tabPages && totalDragX < -threshold -> MainPage.Favorites
+                                        selectedPage in MainPage.tabPages && totalDragX > threshold -> MainPage.Stations
+                                        else -> selectedPage
                                     }
                                 },
                             )
                         },
                 ) {
-                    when (selectedTab) {
-                        MainTab.Stations -> {
+                    when (selectedPage) {
+                        MainPage.Stations -> {
                             if (stations.isEmpty()) {
                                 EmptyStationsState(
                                     modifier = Modifier
@@ -223,12 +230,25 @@ fun OmniBeatApp() {
                             }
                         }
 
-                        MainTab.Favorites -> {
+                        MainPage.Favorites -> {
                             EmptyFavoritesState(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(horizontal = 32.dp),
                             )
+                        }
+
+                        MainPage.Settings -> {
+                            EmptyFuturePage(
+                                title = "Settings",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 32.dp),
+                            )
+                        }
+
+                        MainPage.About -> {
+                            AboutPage(modifier = Modifier.fillMaxSize())
                         }
                     }
                 }
@@ -275,9 +295,15 @@ fun OmniBeatApp() {
     }
 }
 
-private enum class MainTab(val title: String) {
+enum class MainPage(val title: String) {
     Stations("Stations"),
     Favorites("Favorites"),
+    Settings("Settings"),
+    About("About");
+
+    companion object {
+        val tabPages = listOf(Stations, Favorites)
+    }
 }
 
 private fun parseTags(tags: String): List<String> {
@@ -289,8 +315,8 @@ private fun parseTags(tags: String): List<String> {
 
 @Composable
 private fun MainTopBar(
-    selectedTab: MainTab,
-    onTabSelected: (MainTab) -> Unit,
+    selectedPage: MainPage,
+    onPageSelected: (MainPage) -> Unit,
     onOpenDrawer: () -> Unit,
     onAddStation: () -> Unit,
 ) {
@@ -316,7 +342,8 @@ private fun MainTopBar(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f),
         ) {
-            MainTab.entries.forEach { tab ->
+            if (selectedPage in MainPage.tabPages) {
+                MainPage.tabPages.forEach { tab ->
                 var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
                 val interactionSource = remember(tab) { MutableInteractionSource() }
                 Column(
@@ -324,14 +351,14 @@ private fun MainTopBar(
                         .clickable(
                             interactionSource = interactionSource,
                             indication = null,
-                        ) { onTabSelected(tab) }
+                        ) { onPageSelected(tab) }
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                 ) {
                     Text(
                         text = tab.title,
-                        color = if (selectedTab == tab) RadioText else RadioTextMuted,
+                        color = if (selectedPage == tab) RadioText else RadioTextMuted,
                         fontSize = 18.sp,
-                        fontWeight = if (selectedTab == tab) FontWeight.SemiBold else FontWeight.Medium,
+                        fontWeight = if (selectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.onSizeChanged { size ->
@@ -343,18 +370,31 @@ private fun MainTopBar(
                             .padding(top = 6.dp)
                             .width(tabTextWidth)
                             .height(2.dp)
-                            .background(if (selectedTab == tab) RadioPrimary else RadioOutline),
+                            .background(if (selectedPage == tab) RadioPrimary else RadioOutline),
                     )
                 }
+                }
+            } else {
+                Text(
+                    text = selectedPage.title,
+                    color = RadioText,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 12.dp),
+                )
             }
         }
-        IconButton(onClick = onAddStation) {
-            Icon(
-                painter = painterResource(R.drawable.ic_add_circle_outline),
-                contentDescription = "Add station",
-                tint = RadioText,
-                modifier = Modifier.height(28.dp),
-            )
+        if (selectedPage in MainPage.tabPages) {
+            IconButton(onClick = onAddStation) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_add_circle_outline),
+                    contentDescription = "Add station",
+                    tint = RadioText,
+                    modifier = Modifier.height(28.dp),
+                )
+            }
         }
     }
 }
