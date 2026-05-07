@@ -120,7 +120,16 @@ fun OmniBeatApp() {
         ModalNavigationDrawer(
             drawerState = drawerState,
             gesturesEnabled = drawerState.isOpen,
-            drawerContent = { DrawerContent() },
+            drawerContent = {
+                DrawerContent(
+                    onStationsClick = {
+                        selectedTab = MainTab.Stations
+                        scope.launch { drawerState.close() }
+                    },
+                    onSettingsClick = { scope.launch { drawerState.close() } },
+                    onAboutClick = { scope.launch { drawerState.close() } },
+                )
+            },
         ) {
             Scaffold(
                 containerColor = RadioBackground,
