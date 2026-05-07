@@ -16,13 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.FilledTonalIconButton
@@ -42,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -124,7 +118,7 @@ fun PlayerPanel(
                     .size(48.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Shuffle,
+                    painter = painterResource(R.drawable.ic_shuffle),
                     contentDescription = "Random station",
                     modifier = Modifier.size(24.dp),
                 )
@@ -140,7 +134,7 @@ fun PlayerPanel(
                     modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.SkipPrevious,
+                        painter = painterResource(R.drawable.ic_skip_previous),
                         contentDescription = "Previous station",
                         modifier = Modifier.size(24.dp),
                     )
@@ -151,7 +145,7 @@ fun PlayerPanel(
                     modifier = Modifier.size(62.dp),
                 ) {
                     Icon(
-                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play_arrow),
                         contentDescription = if (isPlaying) "Pause" else "Play",
                         modifier = Modifier.size(32.dp),
                     )
@@ -162,7 +156,7 @@ fun PlayerPanel(
                     modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.SkipNext,
+                        painter = painterResource(R.drawable.ic_skip_next),
                         contentDescription = "Next station",
                         modifier = Modifier.size(24.dp),
                     )
@@ -225,7 +219,7 @@ private fun VolumeButton(
             modifier = Modifier.size(48.dp),
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                painter = painterResource(R.drawable.ic_volume_up),
                 contentDescription = "Volume",
                 modifier = Modifier.size(24.dp),
             )

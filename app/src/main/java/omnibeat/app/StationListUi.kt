@@ -19,14 +19,13 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,7 +40,7 @@ fun EmptyStationsState(modifier: Modifier = Modifier) {
         ) {
             Text("No stations here yet. Tap", color = RadioTextMuted, fontSize = 16.sp)
             Icon(
-                imageVector = Icons.Filled.AddCircleOutline,
+                painter = painterResource(R.drawable.ic_add_circle_outline),
                 contentDescription = "Add station",
                 tint = RadioTextMuted,
                 modifier = Modifier
