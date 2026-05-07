@@ -342,10 +342,11 @@ fun OmniBeatApp() {
                     editorState = null
                 },
                 onSave = { title, streamUrl, tags ->
+                    val trimmedStreamUrl = streamUrl.trim()
                     val updatedStation = Station(
                         id = state.stationIndex?.let { stations[it].id } ?: UUID.randomUUID().toString(),
-                        title = title.trim(),
-                        streamUrl = streamUrl.trim(),
+                        title = title.trim().ifBlank { trimmedStreamUrl.take(STATION_TITLE_MAX_LENGTH) },
+                        streamUrl = trimmedStreamUrl,
                         tags = parseTags(tags),
                     )
                     val nextStations = stations.toMutableList().also { list ->
@@ -378,7 +379,7 @@ private fun parseTags(tags: String): List<String> {
     return tags.split(",")
         .map { it.trim() }
         .filter { it.isNotEmpty() }
-        .distinct()
+        .distinctBy { it.lowercase() }
 }
 
 @Composable

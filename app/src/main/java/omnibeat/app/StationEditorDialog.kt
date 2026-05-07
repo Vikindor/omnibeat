@@ -1,6 +1,7 @@
 package omnibeat.app
 
 import android.net.Uri
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -17,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,9 +45,15 @@ fun StationEditorDialog(
     var streamUrl by remember(state) { mutableStateOf(state.streamUrl) }
     var tags by remember(state) { mutableStateOf(state.tags) }
     var confirmDelete by remember(state) { mutableStateOf(false) }
+    var showUrlError by remember(state) { mutableStateOf(false) }
     val trimmedTitle = title.trim()
     val trimmedStreamUrl = streamUrl.trim()
-    val canSave = trimmedTitle.isNotEmpty() && isValidStreamUrl(trimmedStreamUrl)
+    val hasValidStreamUrl = isValidStreamUrl(trimmedStreamUrl)
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
+        unfocusedPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
+        errorPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -74,32 +83,50 @@ fun StationEditorDialog(
             }
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
-                    singleLine = true,
+                    onValueChange = { title = it.take(STATION_TITLE_MAX_LENGTH) },
+                    singleLine = false,
+                    minLines = 1,
+                    maxLines = 3,
                     label = { Text("Title") },
+                    colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = streamUrl,
-                    onValueChange = { streamUrl = it },
+                    onValueChange = {
+                        streamUrl = it.take(STATION_STREAM_URL_MAX_LENGTH)
+                        showUrlError = false
+                    },
                     singleLine = false,
                     minLines = 1,
-                    maxLines = 3,
+                    maxLines = 5,
                     label = { Text("Stream URL") },
+                    placeholder = { Text("https://...") },
+                    isError = showUrlError && !hasValidStreamUrl,
+                    supportingText = if (showUrlError && !hasValidStreamUrl) {
+                        { Text("A valid http or https URL is required") }
+                    } else {
+                        null
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = tags,
-                    onValueChange = { tags = it },
+                    onValueChange = { tags = it.take(STATION_TAGS_INPUT_MAX_LENGTH) },
                     singleLine = false,
                     minLines = 1,
-                    maxLines = 3,
+                    maxLines = 5,
                     label = { Text("Tags") },
                     placeholder = { Text("Comma separated") },
+                    colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -120,8 +147,13 @@ fun StationEditorDialog(
                 }
                 Spacer(Modifier.weight(1f))
                 Button(
-                    enabled = canSave,
-                    onClick = { onSave(trimmedTitle, trimmedStreamUrl, tags) },
+                    onClick = {
+                        if (hasValidStreamUrl) {
+                            onSave(trimmedTitle, trimmedStreamUrl, tags)
+                        } else {
+                            showUrlError = true
+                        }
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = RadioPrimary,
                         contentColor = RadioText,

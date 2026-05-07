@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -70,7 +71,10 @@ fun StationList(
 
     LaunchedEffect(selectedIndex, stations.size) {
         if (selectedIndex in stations.indices) {
-            listState.animateScrollToItem(selectedIndex)
+            val visibleIndexes = listState.layoutInfo.visibleItemsInfo.map { it.index }
+            if (selectedIndex !in visibleIndexes) {
+                listState.animateScrollToItem(selectedIndex)
+            }
         }
     }
 
@@ -160,21 +164,34 @@ private fun StationRow(
             overflow = TextOverflow.Ellipsis,
         )
         if (station.tags.isNotEmpty()) {
-            Text(
-                text = station.tags.joinToString(", "),
-                color = if (selected) RadioText else RadioTextMuted,
-                fontSize = 12.sp,
-                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
-                    .padding(top = 6.dp)
-                    .background(
-                        color = if (selected) RadioPrimary.copy(alpha = 0.30f) else RadioSurfaceHigh.copy(alpha = 0.72f),
-                        shape = RoundedCornerShape(percent = 50),
+                    .fillMaxWidth()
+                    .padding(top = 5.dp),
+            ) {
+                station.tags.forEach { tag ->
+                    Text(
+                        text = tag,
+                        color = if (selected) RadioText else RadioTextMuted,
+                        fontSize = 11.sp,
+                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .background(
+                                color = if (selected) {
+                                    RadioPrimary.copy(alpha = 0.30f)
+                                } else {
+                                    RadioSurfaceHigh.copy(alpha = 0.72f)
+                                },
+                                shape = RoundedCornerShape(percent = 50),
+                            )
+                            .padding(horizontal = 6.dp, vertical = 1.dp),
                     )
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-            )
+                }
+            }
         }
     }
 }

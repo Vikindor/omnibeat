@@ -1,5 +1,9 @@
 package omnibeat.app
 
+const val STATION_TITLE_MAX_LENGTH = 100
+const val STATION_STREAM_URL_MAX_LENGTH = 2048
+const val STATION_TAGS_INPUT_MAX_LENGTH = 200
+
 data class Station(
     val id: String,
     val title: String,
