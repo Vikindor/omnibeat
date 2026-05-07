@@ -38,7 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -389,6 +391,8 @@ private fun MainTopBar(
     onOpenDrawer: () -> Unit,
     onAddStation: () -> Unit,
 ) {
+    val density = LocalDensity.current
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -410,6 +414,7 @@ private fun MainTopBar(
             modifier = Modifier.weight(1f),
         ) {
             MainTab.entries.forEach { tab ->
+                var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
                 Column(
                     modifier = Modifier
                         .clickable { onTabSelected(tab) }
@@ -422,11 +427,14 @@ private fun MainTopBar(
                         fontWeight = if (selectedTab == tab) FontWeight.SemiBold else FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.onSizeChanged { size ->
+                            tabTextWidth = with(density) { size.width.toDp() }
+                        },
                     )
                     Box(
                         modifier = Modifier
                             .padding(top = 6.dp)
-                            .width(72.dp)
+                            .width(tabTextWidth)
                             .height(2.dp)
                             .background(if (selectedTab == tab) RadioPrimary else RadioOutline),
                     )
