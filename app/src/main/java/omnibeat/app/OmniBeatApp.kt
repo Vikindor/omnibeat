@@ -1,6 +1,5 @@
 package omnibeat.app
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -26,11 +25,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,15 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.Metadata
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlin.random.Random
 
@@ -66,18 +56,10 @@ fun OmniBeatApp() {
         val repository = remember(context) { StationRepository(context.applicationContext) }
         val scope = rememberCoroutineScope()
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-        val player = remember { ExoPlayer.Builder(context).build() }
+        val playbackState by PlaybackService.state.collectAsState()
 
         var stations by remember { mutableStateOf(emptyList<Station>()) }
-        var selectedIndex by remember { mutableIntStateOf(-1) }
-        var selectedStation by remember { mutableStateOf<Station?>(null) }
-        var playableUrl by remember { mutableStateOf("") }
-        var trackText by remember { mutableStateOf("No stream is playing") }
-        var resolving by remember { mutableStateOf(false) }
-        var buffering by remember { mutableStateOf(false) }
-        var errorText by remember { mutableStateOf<String?>(null) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
-        var isPlaying by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedTab by remember { mutableStateOf(MainTab.Stations) }
 
@@ -85,10 +67,6 @@ fun OmniBeatApp() {
             repository.seedTestStationsForPrototype()
             repository.stations.collect { savedStations ->
                 stations = savedStations
-                if (selectedIndex !in savedStations.indices) {
-                    selectedIndex = -1
-                    selectedStation = null
-                }
             }
         }
 
@@ -98,91 +76,20 @@ fun OmniBeatApp() {
             }
         }
 
-        LaunchedEffect(player, appVolume) {
-            player.volume = appVolume
-        }
-
-        DisposableEffect(player) {
-            val listener = object : Player.Listener {
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    buffering = playbackState == Player.STATE_BUFFERING
-                    isPlaying = player.isPlaying
-                }
-
-                override fun onIsPlayingChanged(isPlayingNow: Boolean) {
-                    isPlaying = isPlayingNow
-                }
-
-                override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-                    val title = mediaMetadata.title?.toString().orEmpty()
-                    val artist = mediaMetadata.artist?.toString().orEmpty()
-                    if (title.isNotBlank()) {
-                        trackText = if (artist.isNotBlank()) "$artist - $title" else title
-                    }
-                }
-
-                override fun onMetadata(metadata: Metadata) {
-                    repeat(metadata.length()) { index ->
-                        val streamTitle = IcyMetadataParser.readStreamTitle(metadata[index].toString())
-                        if (!streamTitle.isNullOrBlank()) {
-                            trackText = streamTitle
-                            return
-                        }
-                    }
-                }
-
-                override fun onPlayerError(error: PlaybackException) {
-                    errorText = error.message ?: "Playback error"
-                    resolving = false
-                    buffering = false
-                }
-            }
-
-            player.addListener(listener)
-            onDispose {
-                player.removeListener(listener)
-                player.release()
-            }
-        }
-
-        LaunchedEffect(errorText) {
-            errorText?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+        LaunchedEffect(playbackState.errorText) {
+            playbackState.errorText?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
         }
 
         fun playStationAt(index: Int) {
-            val station = stations.getOrNull(index) ?: return
-            selectedIndex = index
-            selectedStation = station
-            playableUrl = station.streamUrl
-            trackText = "Resolving stream..."
-            errorText = null
-            resolving = true
-            buffering = false
             scope.launch { drawerState.close() }
-            scope.launch {
-                runCatching {
-                    withContext(Dispatchers.IO) {
-                        StreamResolver.resolvePlayableUrl(station.streamUrl)
-                    }
-                }.onSuccess { resolvedUrl ->
-                    resolving = false
-                    playableUrl = resolvedUrl
-                    trackText = "Waiting for metadata..."
-                    player.setMediaItem(MediaItem.fromUri(Uri.parse(resolvedUrl)))
-                    player.prepare()
-                    player.play()
-                }.onFailure { error ->
-                    resolving = false
-                    buffering = false
-                    errorText = "Could not resolve stream: ${error.message}"
-                }
-            }
+            PlaybackService.playStation(context, index)
         }
 
         fun playAdjacentStation(direction: Int) {
             if (stations.isEmpty()) return
-            val nextIndex = if (selectedIndex in stations.indices) {
-                (selectedIndex + direction + stations.size) % stations.size
+            val currentIndex = playbackState.selectedIndex
+            val nextIndex = if (currentIndex in stations.indices) {
+                (currentIndex + direction + stations.size) % stations.size
             } else if (direction > 0) {
                 0
             } else {
@@ -199,7 +106,7 @@ fun OmniBeatApp() {
                 var randomIndex: Int
                 do {
                     randomIndex = Random.nextInt(stations.size)
-                } while (randomIndex == selectedIndex)
+                } while (randomIndex == playbackState.selectedIndex)
                 randomIndex
             }
             playStationAt(nextIndex)
@@ -233,22 +140,19 @@ fun OmniBeatApp() {
                 },
                 bottomBar = {
                     PlayerPanel(
-                        station = selectedStation,
-                        trackText = errorText ?: trackText,
-                        loading = resolving || buffering,
-                        resolving = resolving,
-                        isPlaying = isPlaying,
+                        station = playbackState.selectedStation,
+                        trackText = playbackState.errorText ?: playbackState.trackText,
+                        loading = playbackState.resolving || playbackState.buffering,
+                        resolving = playbackState.resolving,
+                        isPlaying = playbackState.isPlaying,
                         canNavigateStations = stations.isNotEmpty(),
                         appVolume = appVolume,
                         canPlay = stations.isNotEmpty(),
                         onPlayPause = {
-                            if (player.isPlaying) {
-                                player.pause()
-                                isPlaying = false
-                            } else if (selectedStation == null) {
+                            if (playbackState.selectedStation == null) {
                                 playStationAt(0)
                             } else {
-                                player.play()
+                                PlaybackService.playOrPause(context)
                             }
                         },
                         onPreviousStation = { playAdjacentStation(-1) },
@@ -295,7 +199,7 @@ fun OmniBeatApp() {
                             } else {
                                 StationList(
                                     stations = stations,
-                                    selectedIndex = selectedIndex,
+                                    selectedIndex = playbackState.selectedIndex,
                                     onStationEdit = { index, station ->
                                         editorState = StationEditorState(
                                             stationIndex = index,
@@ -330,15 +234,8 @@ fun OmniBeatApp() {
                     val index = state.stationIndex ?: return@StationEditorDialog
                     val nextStations = stations.toMutableList().also { it.removeAt(index) }
                     stations = nextStations
-                    if (selectedIndex == index) {
-                        player.stop()
-                        selectedIndex = -1
-                        selectedStation = null
-                        playableUrl = ""
-                        trackText = "No stream is playing"
-                        isPlaying = false
-                    } else if (selectedIndex > index) {
-                        selectedIndex -= 1
+                    if (playbackState.selectedIndex == index) {
+                        PlaybackService.stop(context)
                     }
                     scope.launch { repository.saveStations(nextStations) }
                     editorState = null
@@ -360,10 +257,6 @@ fun OmniBeatApp() {
                         }
                     }
                     stations = nextStations
-                    if (state.stationIndex == selectedIndex) {
-                        selectedStation = updatedStation
-                        playableUrl = updatedStation.streamUrl
-                    }
                     scope.launch { repository.saveStations(nextStations) }
                     editorState = null
                 },

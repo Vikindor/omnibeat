@@ -1,52 +1,97 @@
 [
   {
-    "title": "AniSon.FM 320",
-    "streamUrl": "https://pool.anison.fm/AniSonFM(320)",
-    "tags": ["anime", "mp3", "pls-like"]
-  },
-  {
-    "title": "Nightride FM",
-    "streamUrl": "https://stream.nightride.fm/nightride.mp3",
-    "tags": ["synthwave", "mp3"]
-  },
-  {
-    "title": "Party Vibe Radio",
-    "streamUrl": "http://www.partyviberadio.com:8004/listen.pls?sid=1",
-    "tags": ["party", "pls"]
-  },
-  {
-    "title": "Magic Streams",
+    "title": "Psyndora Psytrance",
     "streamUrl": "http://cast.magicstreams.gr:9111/stream",
-    "tags": ["icecast", "shoutcast"]
+    "tags": [
+      "128 kbps"
+    ]
   },
   {
-    "title": "SomaFM Groove Salad",
-    "streamUrl": "https://somafm.com/groovesalad.pls",
-    "tags": ["ambient", "pls"]
+    "title": "Party Vibe Radio - Drum and Bass",
+    "streamUrl": "http://www.partyviberadio.com:8004/listen.pls?sid=1",
+    "tags": [
+      "DnB",
+      "320 kbps"
+    ]
   },
   {
-    "title": "SomaFM Drone Zone",
-    "streamUrl": "https://somafm.com/m3u/dronezone130.m3u",
-    "tags": ["ambient", "drone", "m3u"]
+    "title": "Party Vibe Radio - Rap",
+    "streamUrl": "https://www.partyvibe.com:8063/;listen.pls?sid=1",
+    "tags": [
+      "320 kbps",
+      "Rap"
+    ]
   },
   {
-    "title": "CBC Radio One Montreal",
-    "streamUrl": "https://cbcradiolive.akamaized.net/hls/live/2041030/ES_R1EMT/master.m3u8",
-    "tags": ["news", "hls"]
+    "title": "Party Vibe Radio - Rock",
+    "streamUrl": "https://partyviberadio.com:8066/;listen.pls?sid=1",
+    "tags": [
+      "320 kbps",
+      "Rock"
+    ]
   },
   {
-    "title": "BBC World Service",
-    "streamUrl": "https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=128000.norewind.m3u8",
-    "tags": ["news", "world", "hls"]
+    "title": "Party Vibe Radio - Reggae",
+    "streamUrl": "https://partyviberadio.com:8060/;listen.pls?sid=1",
+    "tags": [
+      "Reggae",
+      "320 kbps"
+    ]
   },
   {
-    "title": "Bloomberg Radio",
-    "streamUrl": "https://bloomberg-live-prod-us-east-1.s3.amazonaws.com/rad/Channel-RAD-AWS-virginia-1/Source-RadBOS-96-1_live.m3u8",
-    "tags": ["business", "hls"]
+    "title": "Nightride FM - Main",
+    "streamUrl": "https://stream.nightride.fm/nightride.mp3",
+    "tags": [
+      "320 kbps"
+    ]
   },
   {
-    "title": "FIP",
-    "streamUrl": "https://icecast.radiofrance.fr/fip-midfi.mp3",
-    "tags": ["eclectic", "mp3", "icecast"]
+    "title": "Nightride FM - Chillsynth",
+    "streamUrl": "https://stream.nightride.fm/chillsynth.mp3",
+    "tags": [
+      "320 kbps"
+    ]
+  },
+  {
+    "title": "Nightride FM - Datawave",
+    "streamUrl": "https://stream.nightride.fm/datawave.mp3",
+    "tags": [
+      "320 kbps"
+    ]
+  },
+  {
+    "title": "Nightride FM - Spacesynth",
+    "streamUrl": "https://stream.nightride.fm/spacesynth.mp3",
+    "tags": [
+      "320 kbps"
+    ]
+  },
+  {
+    "title": "Nightride FM - Darksynth",
+    "streamUrl": "https://stream.nightride.fm/darksynth.mp3",
+    "tags": [
+      "320 kbps"
+    ]
+  },
+  {
+    "title": "Nightride FM - Horrorsynth",
+    "streamUrl": "https://stream.nightride.fm/horrorsynth.mp3",
+    "tags": [
+      "320 kbps"
+    ]
+  },
+  {
+    "title": "Nightride FM - EBSM",
+    "streamUrl": "https://stream.nightride.fm/ebsm.mp3",
+    "tags": [
+      "320 kbps"
+    ]
+  },
+  {
+    "title": "Anison.FM",
+    "streamUrl": "https://pool.anison.fm/AniSonFM(320)",
+    "tags": [
+      "320 kbps"
+    ]
   }
 ]
