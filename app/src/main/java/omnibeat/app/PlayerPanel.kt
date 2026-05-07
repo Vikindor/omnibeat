@@ -79,7 +79,7 @@ fun PlayerPanel(
             modifier = Modifier.padding(top = 8.dp),
         ) {
             Text(
-                text = station?.name ?: "Choose a station",
+                text = station?.title ?: "Choose a station",
                 color = RadioText,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,

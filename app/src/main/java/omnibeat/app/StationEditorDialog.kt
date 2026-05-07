@@ -36,14 +36,15 @@ fun StationEditorDialog(
     showDelete: Boolean,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
-    onSave: (String, String) -> Unit,
+    onSave: (String, String, String) -> Unit,
 ) {
-    var name by remember(state) { mutableStateOf(state.name) }
-    var sourceUrl by remember(state) { mutableStateOf(state.sourceUrl) }
+    var title by remember(state) { mutableStateOf(state.title) }
+    var streamUrl by remember(state) { mutableStateOf(state.streamUrl) }
+    var tags by remember(state) { mutableStateOf(state.tags) }
     var confirmDelete by remember(state) { mutableStateOf(false) }
-    val trimmedName = name.trim()
-    val trimmedUrl = sourceUrl.trim()
-    val canSave = trimmedName.isNotEmpty() && isValidStreamUrl(trimmedUrl)
+    val trimmedTitle = title.trim()
+    val trimmedStreamUrl = streamUrl.trim()
+    val canSave = trimmedTitle.isNotEmpty() && isValidStreamUrl(trimmedStreamUrl)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -75,20 +76,30 @@ fun StationEditorDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = title,
+                    onValueChange = { title = it },
                     singleLine = true,
-                    label = { Text("Station name") },
+                    label = { Text("Title") },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
-                    value = sourceUrl,
-                    onValueChange = { sourceUrl = it },
+                    value = streamUrl,
+                    onValueChange = { streamUrl = it },
                     singleLine = false,
                     minLines = 1,
                     maxLines = 3,
                     label = { Text("Stream URL") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = tags,
+                    onValueChange = { tags = it },
+                    singleLine = false,
+                    minLines = 1,
+                    maxLines = 3,
+                    label = { Text("Tags") },
+                    placeholder = { Text("Comma separated") },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -110,7 +121,7 @@ fun StationEditorDialog(
                 Spacer(Modifier.weight(1f))
                 Button(
                     enabled = canSave,
-                    onClick = { onSave(trimmedName, trimmedUrl) },
+                    onClick = { onSave(trimmedTitle, trimmedStreamUrl, tags) },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = RadioPrimary,
                         contentColor = RadioText,
@@ -163,7 +174,7 @@ fun StationEditorDialog(
     }
 }
 
-private fun isValidStreamUrl(sourceUrl: String): Boolean {
-    val uri = Uri.parse(sourceUrl)
+private fun isValidStreamUrl(streamUrl: String): Boolean {
+    val uri = Uri.parse(streamUrl)
     return uri.scheme in setOf("http", "https") && !uri.host.isNullOrBlank()
 }

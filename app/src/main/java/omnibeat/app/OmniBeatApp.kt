@@ -151,7 +151,7 @@ fun OmniBeatApp() {
             val station = stations.getOrNull(index) ?: return
             selectedIndex = index
             selectedStation = station
-            playableUrl = station.sourceUrl
+            playableUrl = station.streamUrl
             trackText = "Resolving stream..."
             errorText = null
             resolving = true
@@ -160,7 +160,7 @@ fun OmniBeatApp() {
             scope.launch {
                 runCatching {
                     withContext(Dispatchers.IO) {
-                        StreamResolver.resolvePlayableUrl(station.sourceUrl)
+                        StreamResolver.resolvePlayableUrl(station.streamUrl)
                     }
                 }.onSuccess { resolvedUrl ->
                     resolving = false
@@ -222,8 +222,9 @@ fun OmniBeatApp() {
                         onAddStation = {
                             editorState = StationEditorState(
                                 stationIndex = null,
-                                name = "",
-                                sourceUrl = "",
+                                title = "",
+                                streamUrl = "",
+                                tags = "",
                             )
                         },
                     )
@@ -296,8 +297,9 @@ fun OmniBeatApp() {
                                     onStationEdit = { index, station ->
                                         editorState = StationEditorState(
                                             stationIndex = index,
-                                            name = station.name,
-                                            sourceUrl = station.sourceUrl,
+                                            title = station.title,
+                                            streamUrl = station.streamUrl,
+                                            tags = station.tags.joinToString(", "),
                                         )
                                     },
                                     onStationClick = { index, _ -> playStationAt(index) },
@@ -339,12 +341,12 @@ fun OmniBeatApp() {
                     scope.launch { repository.saveStations(nextStations) }
                     editorState = null
                 },
-                onSave = { name, sourceUrl ->
+                onSave = { title, streamUrl, tags ->
                     val updatedStation = Station(
                         id = state.stationIndex?.let { stations[it].id } ?: UUID.randomUUID().toString(),
-                        name = name.trim(),
-                        formatLabel = state.stationIndex?.let { stations[it].formatLabel } ?: "Custom stream",
-                        sourceUrl = sourceUrl.trim(),
+                        title = title.trim(),
+                        streamUrl = streamUrl.trim(),
+                        tags = parseTags(tags),
                     )
                     val nextStations = stations.toMutableList().also { list ->
                         val index = state.stationIndex
@@ -357,7 +359,7 @@ fun OmniBeatApp() {
                     stations = nextStations
                     if (state.stationIndex == selectedIndex) {
                         selectedStation = updatedStation
-                        playableUrl = updatedStation.sourceUrl
+                        playableUrl = updatedStation.streamUrl
                     }
                     scope.launch { repository.saveStations(nextStations) }
                     editorState = null
@@ -370,6 +372,13 @@ fun OmniBeatApp() {
 private enum class MainTab(val title: String) {
     Stations("Stations"),
     Favorites("Favorites"),
+}
+
+private fun parseTags(tags: String): List<String> {
+    return tags.split(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
 }
 
 @Composable

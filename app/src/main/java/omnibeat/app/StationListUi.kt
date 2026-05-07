@@ -153,26 +153,28 @@ private fun StationRow(
             .padding(horizontal = 20.dp, vertical = 14.dp),
     ) {
         Text(
-            text = station.name,
+            text = station.title,
             color = RadioText,
             fontSize = 17.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Text(
-            text = station.formatLabel,
-            color = if (selected) RadioText else RadioTextMuted,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .padding(top = 6.dp)
-                .background(
-                    color = if (selected) RadioPrimary.copy(alpha = 0.30f) else RadioSurfaceHigh.copy(alpha = 0.72f),
-                    shape = RoundedCornerShape(percent = 50),
-                )
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-        )
+        if (station.tags.isNotEmpty()) {
+            Text(
+                text = station.tags.joinToString(", "),
+                color = if (selected) RadioText else RadioTextMuted,
+                fontSize = 12.sp,
+                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .padding(top = 6.dp)
+                    .background(
+                        color = if (selected) RadioPrimary.copy(alpha = 0.30f) else RadioSurfaceHigh.copy(alpha = 0.72f),
+                        shape = RoundedCornerShape(percent = 50),
+                    )
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        }
     }
 }

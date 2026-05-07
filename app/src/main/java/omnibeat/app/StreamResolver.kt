@@ -10,18 +10,18 @@ import java.util.Locale
 
 object StreamResolver {
     @Throws(IOException::class)
-    fun resolvePlayableUrl(sourceUrl: String): String {
-        val lower = sourceUrl.lowercase(Locale.US)
+    fun resolvePlayableUrl(streamUrl: String): String {
+        val lower = streamUrl.lowercase(Locale.US)
         return when {
-            ".pls" in lower -> resolvePls(sourceUrl)
-            ".m3u" in lower && ".m3u8" !in lower -> resolveM3u(sourceUrl)
-            else -> sourceUrl
+            ".pls" in lower -> resolvePls(streamUrl)
+            ".m3u" in lower && ".m3u8" !in lower -> resolveM3u(streamUrl)
+            else -> streamUrl
         }
     }
 
     @Throws(IOException::class)
-    private fun resolvePls(sourceUrl: String): String {
-        readRemoteText(sourceUrl).forEach { line ->
+    private fun resolvePls(streamUrl: String): String {
+        readRemoteText(streamUrl).forEach { line ->
             val trimmed = line.trim()
             val equals = trimmed.indexOf('=')
             if (equals > 0 && trimmed.substring(0, equals).lowercase(Locale.US).startsWith("file")) {
@@ -35,19 +35,19 @@ object StreamResolver {
     }
 
     @Throws(IOException::class)
-    private fun resolveM3u(sourceUrl: String): String {
-        readRemoteText(sourceUrl).forEach { line ->
+    private fun resolveM3u(streamUrl: String): String {
+        readRemoteText(streamUrl).forEach { line ->
             val trimmed = line.trim()
             if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
-                return URL(URL(sourceUrl), trimmed).toString()
+                return URL(URL(streamUrl), trimmed).toString()
             }
         }
         throw IOException("M3U playlist has no stream URL")
     }
 
     @Throws(IOException::class)
-    private fun readRemoteText(sourceUrl: String): List<String> {
-        val connection = URL(sourceUrl).openConnection() as HttpURLConnection
+    private fun readRemoteText(streamUrl: String): List<String> {
+        val connection = URL(streamUrl).openConnection() as HttpURLConnection
         connection.connectTimeout = 12_000
         connection.readTimeout = 12_000
         connection.instanceFollowRedirects = true

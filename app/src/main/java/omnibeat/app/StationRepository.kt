@@ -54,9 +54,9 @@ class StationRepository(private val context: Context) {
             items.put(
                 JSONObject()
                     .put("id", station.id)
-                    .put("name", station.name)
-                    .put("formatLabel", station.formatLabel)
-                    .put("sourceUrl", station.sourceUrl),
+                    .put("title", station.title)
+                    .put("streamUrl", station.streamUrl)
+                    .put("tags", JSONArray(station.tags)),
             )
         }
         return items.toString()
@@ -71,15 +71,15 @@ class StationRepository(private val context: Context) {
             buildList {
                 repeat(items.length()) { index ->
                     val item = items.getJSONObject(index)
-                    val name = item.optString("name").trim()
-                    val sourceUrl = item.optString("sourceUrl").trim()
-                    if (name.isNotEmpty() && sourceUrl.isNotEmpty()) {
+                    val title = item.optString("title").trim()
+                    val streamUrl = item.optString("streamUrl").trim()
+                    if (title.isNotEmpty() && streamUrl.isNotEmpty()) {
                         add(
                             Station(
                                 id = item.optString("id").takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
-                                name = name,
-                                formatLabel = item.optString("formatLabel", "Custom stream"),
-                                sourceUrl = sourceUrl,
+                                title = title,
+                                streamUrl = streamUrl,
+                                tags = decodeTags(item.optJSONArray("tags")),
                             ),
                         )
                     }
@@ -87,6 +87,17 @@ class StationRepository(private val context: Context) {
             }
         }.getOrElse {
             emptyList()
+        }
+    }
+
+    private fun decodeTags(tagsJson: JSONArray?): List<String> {
+        if (tagsJson == null) {
+            return emptyList()
+        }
+        return buildList {
+            repeat(tagsJson.length()) { index ->
+                tagsJson.optString(index).trim().takeIf { it.isNotEmpty() }?.let(::add)
+            }
         }
     }
 }

@@ -1,52 +1,52 @@
 [
   {
-    "name": "AniSon.FM 320",
-    "formatLabel": "PLS-like direct MP3 endpoint",
-    "sourceUrl": "https://pool.anison.fm/AniSonFM(320)"
+    "title": "AniSon.FM 320",
+    "streamUrl": "https://pool.anison.fm/AniSonFM(320)",
+    "tags": ["anime", "mp3", "pls-like"]
   },
   {
-    "name": "Nightride FM",
-    "formatLabel": "Direct MP3",
-    "sourceUrl": "https://stream.nightride.fm/nightride.mp3"
+    "title": "Nightride FM",
+    "streamUrl": "https://stream.nightride.fm/nightride.mp3",
+    "tags": ["synthwave", "mp3"]
   },
   {
-    "name": "Party Vibe Radio",
-    "formatLabel": "PLS playlist with sid",
-    "sourceUrl": "http://www.partyviberadio.com:8004/listen.pls?sid=1"
+    "title": "Party Vibe Radio",
+    "streamUrl": "http://www.partyviberadio.com:8004/listen.pls?sid=1",
+    "tags": ["party", "pls"]
   },
   {
-    "name": "Magic Streams",
-    "formatLabel": "Icecast/Shoutcast stream",
-    "sourceUrl": "http://cast.magicstreams.gr:9111/stream"
+    "title": "Magic Streams",
+    "streamUrl": "http://cast.magicstreams.gr:9111/stream",
+    "tags": ["icecast", "shoutcast"]
   },
   {
-    "name": "SomaFM Groove Salad",
-    "formatLabel": "PLS playlist",
-    "sourceUrl": "https://somafm.com/groovesalad.pls"
+    "title": "SomaFM Groove Salad",
+    "streamUrl": "https://somafm.com/groovesalad.pls",
+    "tags": ["ambient", "pls"]
   },
   {
-    "name": "SomaFM Drone Zone",
-    "formatLabel": "M3U playlist",
-    "sourceUrl": "https://somafm.com/m3u/dronezone130.m3u"
+    "title": "SomaFM Drone Zone",
+    "streamUrl": "https://somafm.com/m3u/dronezone130.m3u",
+    "tags": ["ambient", "drone", "m3u"]
   },
   {
-    "name": "CBC Radio One Montreal",
-    "formatLabel": "HLS M3U8",
-    "sourceUrl": "https://cbcradiolive.akamaized.net/hls/live/2041030/ES_R1EMT/master.m3u8"
+    "title": "CBC Radio One Montreal",
+    "streamUrl": "https://cbcradiolive.akamaized.net/hls/live/2041030/ES_R1EMT/master.m3u8",
+    "tags": ["news", "hls"]
   },
   {
-    "name": "BBC World Service",
-    "formatLabel": "HLS M3U8",
-    "sourceUrl": "https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=128000.norewind.m3u8"
+    "title": "BBC World Service",
+    "streamUrl": "https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=128000.norewind.m3u8",
+    "tags": ["news", "world", "hls"]
   },
   {
-    "name": "Bloomberg Radio",
-    "formatLabel": "HLS M3U8",
-    "sourceUrl": "https://bloomberg-live-prod-us-east-1.s3.amazonaws.com/rad/Channel-RAD-AWS-virginia-1/Source-RadBOS-96-1_live.m3u8"
+    "title": "Bloomberg Radio",
+    "streamUrl": "https://bloomberg-live-prod-us-east-1.s3.amazonaws.com/rad/Channel-RAD-AWS-virginia-1/Source-RadBOS-96-1_live.m3u8",
+    "tags": ["business", "hls"]
   },
   {
-    "name": "FIP",
-    "formatLabel": "Direct MP3 Icecast",
-    "sourceUrl": "https://icecast.radiofrance.fr/fip-midfi.mp3"
+    "title": "FIP",
+    "streamUrl": "https://icecast.radiofrance.fr/fip-midfi.mp3",
+    "tags": ["eclectic", "mp3", "icecast"]
   }
 ]
