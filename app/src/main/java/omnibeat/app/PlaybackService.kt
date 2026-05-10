@@ -11,6 +11,7 @@ import android.graphics.drawable.Icon
 import android.os.IBinder
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -20,6 +21,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.source.MediaLoadData
 import androidx.media3.session.MediaSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +62,7 @@ class PlaybackService : Service() {
     private var resolveJob: Job? = null
     private var notificationUpdateJob: Job? = null
     private var lastSessionMetadata: Pair<String, String?>? = null
+    private var currentStreamIsHls = false
 
     override fun onCreate() {
         super.onCreate()
@@ -68,6 +72,7 @@ class PlaybackService : Service() {
         mediaSession = MediaSession.Builder(this, sessionPlayer).build()
         createNotificationChannel()
         player.addListener(playerListener)
+        player.addAnalyticsListener(analyticsListener)
 
         scope.launch {
             repository.stations.collect { savedStations ->
@@ -110,10 +115,6 @@ class PlaybackService : Service() {
                 stopPlayback(clearSelection = true)
                 stopSelf()
             }
-            ACTION_SET_VOLUME -> {
-                val volume = intent.getFloatExtra(EXTRA_VOLUME, state.value.volume)
-                scope.launch { repository.saveAppVolume(volume) }
-            }
         }
         return START_STICKY
     }
@@ -123,6 +124,7 @@ class PlaybackService : Service() {
     override fun onDestroy() {
         resolveJob?.cancel()
         notificationUpdateJob?.cancel()
+        player.removeAnalyticsListener(analyticsListener)
         player.removeListener(playerListener)
         mediaSession?.release()
         player.release()
@@ -166,6 +168,7 @@ class PlaybackService : Service() {
         }
         resolveJob?.cancel()
         lastSessionMetadata = null
+        currentStreamIsHls = false
         _state.update {
             it.copy(
                 selectedIndex = index,
@@ -185,6 +188,7 @@ class PlaybackService : Service() {
                     StreamResolver.resolveStream(station.streamUrl)
                 }
             }.onSuccess { resolvedStream ->
+                currentStreamIsHls = resolvedStream.playableUrl.lowercase().contains(".m3u8")
                 _state.update {
                     it.copy(
                         trackText = "Waiting for metadata...",
@@ -245,6 +249,7 @@ class PlaybackService : Service() {
         resolveJob?.cancel()
         notificationUpdateJob?.cancel()
         lastSessionMetadata = null
+        currentStreamIsHls = false
         player.stop()
         if (clearSelection) {
             _state.update {
@@ -280,7 +285,11 @@ class PlaybackService : Service() {
         }
 
         override fun onTracksChanged(tracks: Tracks) {
-            val bitrate = tracks.groups
+            if (currentStreamIsHls) {
+                return
+            }
+
+            val selectedBitrates = tracks.groups
                 .asSequence()
                 .flatMap { group ->
                     (0 until group.length)
@@ -288,12 +297,12 @@ class PlaybackService : Service() {
                         .filter { group.isTrackSelected(it) }
                         .map { group.getTrackFormat(it).bitrate }
                 }
-                .firstOrNull { it > 0 }
-                ?.let { "${it / 1000} kbps" }
+                .filter { it > 0 }
+                .distinct()
+                .toList()
 
-            if (bitrate != null && state.value.bitrateText != bitrate) {
-                _state.update { it.copy(bitrateText = bitrate) }
-                updateNotification()
+            if (selectedBitrates.size == 1) {
+                formatBitrateLabel(selectedBitrates.first())?.let(::updateBitrateText)
             }
         }
 
@@ -333,6 +342,51 @@ class PlaybackService : Service() {
                 )
             }
             updateNotification(immediate = true)
+        }
+    }
+
+    private val analyticsListener = object : AnalyticsListener {
+        override fun onDownstreamFormatChanged(eventTime: AnalyticsListener.EventTime, mediaLoadData: MediaLoadData) {
+            mediaLoadData.trackFormat?.let { format ->
+                val codecLabel = format.sampleMimeType?.audioCodecLabel()
+                if (currentStreamIsHls && format.sampleRate <= 0 && codecLabel == null) {
+                    return
+                }
+                formatPlaybackFormatLabel(format, codecLabel)?.let(::updateBitrateText)
+            }
+        }
+    }
+
+    private fun updateBitrateText(bitrateText: String) {
+        if (state.value.bitrateText != bitrateText) {
+            _state.update { it.copy(bitrateText = bitrateText) }
+            updateNotification()
+        }
+    }
+
+    private fun formatPlaybackFormatLabel(format: Format, codecLabel: String? = format.sampleMimeType?.audioCodecLabel()): String? {
+        val parts = buildList {
+            formatBitrateLabel(format.bitrate)?.let(::add)
+            if (format.sampleRate > 0) {
+                add("${format.sampleRate / 1000} kHz")
+            }
+            codecLabel?.let(::add)
+        }
+        return parts.takeIf { it.isNotEmpty() }?.joinToString(" / ")
+    }
+
+    private fun formatBitrateLabel(bitrate: Int): String? {
+        return bitrate.takeIf { it > 0 }?.let { "${it / 1000} kbps" }
+    }
+
+    private fun String.audioCodecLabel(): String? {
+        return when {
+            contains("aac", ignoreCase = true) || contains("mp4a", ignoreCase = true) -> "AAC"
+            contains("mpeg", ignoreCase = true) -> "MP3"
+            contains("opus", ignoreCase = true) -> "Opus"
+            contains("vorbis", ignoreCase = true) -> "Vorbis"
+            contains("flac", ignoreCase = true) -> "FLAC"
+            else -> null
         }
     }
 
@@ -497,7 +551,6 @@ class PlaybackService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_UPDATE_DELAY_MS = 500L
         private const val EXTRA_INDEX = "index"
-        private const val EXTRA_VOLUME = "volume"
 
         private const val ACTION_PLAY_STATION = "omnibeat.app.action.PLAY_STATION"
         private const val ACTION_PLAY_PAUSE = "omnibeat.app.action.PLAY_PAUSE"
@@ -505,7 +558,6 @@ class PlaybackService : Service() {
         private const val ACTION_NEXT = "omnibeat.app.action.NEXT"
         private const val ACTION_RANDOM = "omnibeat.app.action.RANDOM"
         private const val ACTION_STOP = "omnibeat.app.action.STOP"
-        private const val ACTION_SET_VOLUME = "omnibeat.app.action.SET_VOLUME"
 
         private val _state = MutableStateFlow(PlaybackState())
         val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -522,28 +574,8 @@ class PlaybackService : Service() {
             context.startService(Intent(context, PlaybackService::class.java).setAction(ACTION_PLAY_PAUSE))
         }
 
-        fun previous(context: Context) {
-            context.startForegroundService(Intent(context, PlaybackService::class.java).setAction(ACTION_PREVIOUS))
-        }
-
-        fun next(context: Context) {
-            context.startForegroundService(Intent(context, PlaybackService::class.java).setAction(ACTION_NEXT))
-        }
-
-        fun random(context: Context) {
-            context.startForegroundService(Intent(context, PlaybackService::class.java).setAction(ACTION_RANDOM))
-        }
-
         fun stop(context: Context) {
             context.startService(Intent(context, PlaybackService::class.java).setAction(ACTION_STOP))
-        }
-
-        fun setVolume(context: Context, volume: Float) {
-            context.startService(
-                Intent(context, PlaybackService::class.java)
-                    .setAction(ACTION_SET_VOLUME)
-                    .putExtra(EXTRA_VOLUME, volume),
-            )
         }
     }
 }

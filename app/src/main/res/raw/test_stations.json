@@ -1,97 +1,47 @@
 [
   {
-    "title": "Psyndora Psytrance",
-    "streamUrl": "http://cast.magicstreams.gr:9111/stream",
-    "tags": [
-      "128 kbps"
-    ]
-  },
-  {
-    "title": "Party Vibe Radio - Drum and Bass",
-    "streamUrl": "http://www.partyviberadio.com:8004/listen.pls?sid=1",
-    "tags": [
-      "320 kbps",
-      "DnB"
-    ]
-  },
-  {
-    "title": "Party Vibe Radio - Rap",
-    "streamUrl": "https://www.partyvibe.com:8063/;listen.pls?sid=1",
-    "tags": [
-      "320 kbps",
-      "Rap"
-    ]
-  },
-  {
-    "title": "Party Vibe Radio - Rock",
-    "streamUrl": "https://partyviberadio.com:8066/;listen.pls?sid=1",
-    "tags": [
-      "320 kbps",
-      "Rock"
-    ]
-  },
-  {
-    "title": "Party Vibe Radio - Reggae",
-    "streamUrl": "https://partyviberadio.com:8060/;listen.pls?sid=1",
-    "tags": [
-      "320 kbps",
-      "Reggae"
-    ]
-  },
-  {
-    "title": "Nightride FM - Main",
+    "title": "Nightride FM - Direct MP3",
     "streamUrl": "https://stream.nightride.fm/nightride.mp3",
-    "tags": [
-      "320 kbps"
-    ]
+    "tags": ["direct", "mp3", "icecast", "320 kbps"]
   },
   {
-    "title": "Nightride FM - Chillsynth",
-    "streamUrl": "https://stream.nightride.fm/chillsynth.mp3",
-    "tags": [
-      "320 kbps"
-    ]
+    "title": "SomaFM Groove Salad - Direct AAC",
+    "streamUrl": "https://ice1.somafm.com/groovesalad-128-aac",
+    "tags": ["direct", "aac", "128 kbps"]
   },
   {
-    "title": "Nightride FM - Datawave",
-    "streamUrl": "https://stream.nightride.fm/datawave.mp3",
-    "tags": [
-      "320 kbps"
-    ]
+    "title": "Party Vibe Radio - Direct Shoutcast Endpoint",
+    "streamUrl": "https://partyviberadio.com:8060/;listen.pls?sid=1",
+    "tags": ["direct", "shoutcast", "misleading-pls", "320 kbps"]
   },
   {
-    "title": "Nightride FM - Spacesynth",
-    "streamUrl": "https://stream.nightride.fm/spacesynth.mp3",
-    "tags": [
-      "320 kbps"
-    ]
-  },
-  {
-    "title": "Nightride FM - Darksynth",
-    "streamUrl": "https://stream.nightride.fm/darksynth.mp3",
-    "tags": [
-      "320 kbps"
-    ]
-  },
-  {
-    "title": "Nightride FM - Horrorsynth",
-    "streamUrl": "https://stream.nightride.fm/horrorsynth.mp3",
-    "tags": [
-      "320 kbps"
-    ]
-  },
-  {
-    "title": "Nightride FM - EBSM",
-    "streamUrl": "https://stream.nightride.fm/ebsm.mp3",
-    "tags": [
-      "320 kbps"
-    ]
-  },
-  {
-    "title": "Anison.FM",
+    "title": "Anison.FM - Direct MP3 Without Extension",
     "streamUrl": "https://pool.anison.fm/AniSonFM(320)",
-    "tags": [
-      "320 kbps"
-    ]
+    "tags": ["direct", "mp3", "no-extension", "320 kbps"]
+  },
+  {
+    "title": "SomaFM Groove Salad - PLS",
+    "streamUrl": "https://somafm.com/groovesalad.pls",
+    "tags": ["playlist", "pls"]
+  },
+  {
+    "title": "SomaFM Drone Zone - M3U",
+    "streamUrl": "https://somafm.com/m3u/dronezone130.m3u",
+    "tags": ["playlist", "m3u"]
+  },
+  {
+    "title": "Nightride FM - XSPF",
+    "streamUrl": "https://de1.api.radio-browser.info/xspf/stations/byname/nightride?limit=1&hidebroken=true",
+    "tags": ["playlist", "xspf", "xml"]
+  },
+  {
+    "title": "RauteMusik Lounge - ASX",
+    "streamUrl": "http://lounge-high.rautemusik.fm/listen.asx",
+    "tags": ["playlist", "asx", "xml"]
+  },
+  {
+    "title": "CBC Radio One Montreal - HLS",
+    "streamUrl": "https://cbcradiolive.akamaized.net/hls/live/2041030/ES_R1EMT/master.m3u8",
+    "tags": ["playlist", "hls", "m3u8"]
   }
 ]
