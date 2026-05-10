@@ -26,7 +26,7 @@ object StreamResolver {
     @Throws(IOException::class)
     fun resolveStream(streamUrl: String): ResolvedStream {
         val lower = streamUrl.lowercase(Locale.US)
-        val playlistResult = when {
+        return when {
             ".pls" in lower -> resolvePls(streamUrl)
             ".xspf" in lower || "/xspf/" in lower -> resolveXspf(streamUrl)
             ".asx" in lower || ".wax" in lower || ".wmx" in lower -> resolveAsx(streamUrl)
@@ -34,9 +34,6 @@ object StreamResolver {
             ".m3u8" in lower -> ResolvedStream(streamUrl, null)
             else -> ResolvedStream(streamUrl, null)
         }
-        return playlistResult.copy(
-            bitrateLabel = playlistResult.bitrateLabel ?: readIcyBitrate(playlistResult.playableUrl),
-        )
     }
 
     @Throws(IOException::class)
@@ -116,23 +113,6 @@ object StreamResolver {
         return null
     }
 
-    private fun readIcyBitrate(streamUrl: String): String? {
-        return runCatching {
-            val connection = URL(streamUrl).openConnection() as HttpURLConnection
-            connection.connectTimeout = 6_000
-            connection.readTimeout = 6_000
-            connection.instanceFollowRedirects = true
-            connection.setRequestProperty("User-Agent", USER_AGENT)
-            connection.setRequestProperty("Icy-MetaData", "1")
-            try {
-                connection.connect()
-                formatKbps(readFirstNumber(connection.getHeaderField("icy-br")))
-            } finally {
-                connection.disconnect()
-            }
-        }.getOrNull()
-    }
-
     @Throws(IOException::class)
     private fun readPlaylistResponse(streamUrl: String): PlaylistResponse {
         val connection = URL(streamUrl).openConnection() as HttpURLConnection
@@ -155,22 +135,6 @@ object StreamResolver {
                 reader.lineSequence().toList()
             }
             PlaylistResponse(lines = lines, bitrateLabel = bitrateLabel)
-        } finally {
-            connection.disconnect()
-        }
-    }
-
-    @Throws(IOException::class)
-    private fun readRemoteText(streamUrl: String): List<String> {
-        val connection = URL(streamUrl).openConnection() as HttpURLConnection
-        connection.connectTimeout = 12_000
-        connection.readTimeout = 12_000
-        connection.instanceFollowRedirects = true
-        connection.setRequestProperty("User-Agent", USER_AGENT)
-        return try {
-            BufferedReader(InputStreamReader(connection.inputStream, StandardCharsets.UTF_8)).use { reader ->
-                reader.lineSequence().toList()
-            }
         } finally {
             connection.disconnect()
         }
