@@ -15,6 +15,7 @@ import java.util.UUID
 private val Context.stationDataStore by preferencesDataStore(name = "stations")
 private const val DEFAULT_APP_VOLUME = 0.75f
 private val appVolumeKey = floatPreferencesKey("app_volume")
+private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 
 class StationRepository(private val context: Context) {
@@ -24,9 +25,18 @@ class StationRepository(private val context: Context) {
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
 
+    val lastPlayedStationId: Flow<String?> = context.stationDataStore.data
+        .map { preferences -> preferences[lastPlayedStationIdKey]?.takeIf { it.isNotBlank() } }
+
     suspend fun saveAppVolume(volume: Float) {
         context.stationDataStore.edit { preferences ->
             preferences[appVolumeKey] = volume.coerceIn(0f, 1f)
+        }
+    }
+
+    suspend fun saveLastPlayedStationId(stationId: String) {
+        context.stationDataStore.edit { preferences ->
+            preferences[lastPlayedStationIdKey] = stationId
         }
     }
 

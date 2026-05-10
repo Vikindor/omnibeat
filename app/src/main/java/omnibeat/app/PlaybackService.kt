@@ -28,12 +28,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
@@ -63,6 +63,7 @@ class PlaybackService : Service() {
     private var notificationUpdateJob: Job? = null
     private var lastSessionMetadata: Pair<String, String?>? = null
     private var currentStreamIsHls = false
+    private var lastPlayedStationId: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -102,12 +103,17 @@ class PlaybackService : Service() {
                 _state.update { it.copy(volume = savedVolume) }
             }
         }
+        scope.launch {
+            repository.lastPlayedStationId.collect { stationId ->
+                lastPlayedStationId = stationId
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_PLAY_STATION -> playStationAt(intent.getIntExtra(EXTRA_INDEX, -1))
-            ACTION_PLAY_PAUSE -> playOrPause()
+            ACTION_PLAY_STOP -> playOrStop()
             ACTION_PREVIOUS -> playAdjacentStation(-1)
             ACTION_NEXT -> playAdjacentStation(1)
             ACTION_RANDOM -> playRandomStation()
@@ -132,13 +138,29 @@ class PlaybackService : Service() {
         super.onDestroy()
     }
 
-    private fun playOrPause() {
+    private fun playOrStop() {
         when {
-            player.isPlaying -> player.pause()
-            state.value.selectedStation == null -> playStationAt(0)
+            player.isPlaying -> {
+                stopPlayback(clearSelection = true)
+                stopSelf()
+            }
+            state.value.selectedStation == null -> playLastOrFirstStation()
             else -> player.play()
         }
         updateNotification(immediate = true)
+    }
+
+    private fun playLastOrFirstStation() {
+        scope.launch {
+            if (stations.isEmpty()) {
+                stations = repository.stations.first()
+            }
+            val nextIndex = lastPlayedStationId
+                ?.let { stationId -> stations.indexOfFirst { it.id == stationId } }
+                ?.takeIf { it >= 0 }
+                ?: 0
+            playStationAt(nextIndex)
+        }
     }
 
     private fun playStationAt(index: Int) {
@@ -168,6 +190,8 @@ class PlaybackService : Service() {
         }
         resolveJob?.cancel()
         player.stop()
+        lastPlayedStationId = station.id
+        scope.launch { repository.saveLastPlayedStationId(station.id) }
         lastSessionMetadata = null
         currentStreamIsHls = false
         _state.update {
@@ -433,10 +457,10 @@ class PlaybackService : Service() {
 
     private fun buildNotification(): Notification {
         val current = state.value
-        val playPauseAction = if (current.isPlaying) {
-            notificationAction(R.drawable.ic_pause, "Pause", ACTION_PLAY_PAUSE)
+        val playStopAction = if (current.isPlaying) {
+            notificationAction(R.drawable.ic_stop, "Stop", ACTION_PLAY_STOP)
         } else {
-            notificationAction(R.drawable.ic_play_arrow, "Play", ACTION_PLAY_PAUSE)
+            notificationAction(R.drawable.ic_play_arrow, "Play", ACTION_PLAY_STOP)
         }
 
         return Notification.Builder(this, CHANNEL_ID)
@@ -449,7 +473,7 @@ class PlaybackService : Service() {
             .setShowWhen(false)
             .setColor(0xFF8F5CFF.toInt())
             .addAction(notificationAction(R.drawable.ic_skip_previous, "Previous", ACTION_PREVIOUS))
-            .addAction(playPauseAction)
+            .addAction(playStopAction)
             .addAction(notificationAction(R.drawable.ic_skip_next, "Next", ACTION_NEXT))
             .setStyle(
                 Notification.MediaStyle()
@@ -536,6 +560,19 @@ class PlaybackService : Service() {
             playAdjacentStation(1)
         }
 
+        override fun play() {
+            if (state.value.selectedStation == null) {
+                playLastOrFirstStation()
+            } else {
+                super.play()
+            }
+        }
+
+        override fun pause() {
+            stopPlayback(clearSelection = true)
+            stopSelf()
+        }
+
         override fun getMediaMetadata(): MediaMetadata {
             val current = state.value
             val station = current.selectedStation ?: return super.getMediaMetadata()
@@ -554,7 +591,7 @@ class PlaybackService : Service() {
         private const val EXTRA_INDEX = "index"
 
         private const val ACTION_PLAY_STATION = "omnibeat.app.action.PLAY_STATION"
-        private const val ACTION_PLAY_PAUSE = "omnibeat.app.action.PLAY_PAUSE"
+        private const val ACTION_PLAY_STOP = "omnibeat.app.action.PLAY_STOP"
         private const val ACTION_PREVIOUS = "omnibeat.app.action.PREVIOUS"
         private const val ACTION_NEXT = "omnibeat.app.action.NEXT"
         private const val ACTION_RANDOM = "omnibeat.app.action.RANDOM"
@@ -571,8 +608,8 @@ class PlaybackService : Service() {
             )
         }
 
-        fun playOrPause(context: Context) {
-            context.startService(Intent(context, PlaybackService::class.java).setAction(ACTION_PLAY_PAUSE))
+        fun playOrStop(context: Context) {
+            context.startService(Intent(context, PlaybackService::class.java).setAction(ACTION_PLAY_STOP))
         }
 
         fun stop(context: Context) {

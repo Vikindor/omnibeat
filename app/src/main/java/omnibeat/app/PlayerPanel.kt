@@ -56,7 +56,7 @@ fun PlayerPanel(
     canNavigateStations: Boolean,
     appVolume: Float,
     canPlay: Boolean,
-    onPlayPause: () -> Unit,
+    onPlayStop: () -> Unit,
     onPreviousStation: () -> Unit,
     onNextStation: () -> Unit,
     onRandomStation: () -> Unit,
@@ -158,12 +158,12 @@ fun PlayerPanel(
                 }
                 PlayerIconButton(
                     enabled = canPlay && !resolving,
-                    onClick = onPlayPause,
+                    onClick = onPlayStop,
                     modifier = Modifier.size(62.dp),
                 ) {
                     Icon(
-                        painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play_arrow),
-                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        painter = painterResource(if (isPlaying) R.drawable.ic_stop else R.drawable.ic_play_arrow),
+                        contentDescription = if (isPlaying) "Stop" else "Play",
                         modifier = Modifier.size(32.dp),
                     )
                 }

@@ -166,13 +166,7 @@ fun OmniBeatApp() {
                         canNavigateStations = stations.isNotEmpty(),
                         appVolume = appVolume,
                         canPlay = stations.isNotEmpty(),
-                        onPlayPause = {
-                            if (playbackState.selectedStation == null) {
-                                playStationAt(0)
-                            } else {
-                                PlaybackService.playOrPause(context)
-                            }
-                        },
+                        onPlayStop = { PlaybackService.playOrStop(context) },
                         onPreviousStation = { playAdjacentStation(-1) },
                         onNextStation = { playAdjacentStation(1) },
                         onRandomStation = { playRandomStation() },
