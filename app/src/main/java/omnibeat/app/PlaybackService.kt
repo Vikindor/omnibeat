@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
@@ -56,6 +57,8 @@ class PlaybackService : Service() {
     private var mediaSession: MediaSession? = null
     private var stations: List<Station> = emptyList()
     private var resolveJob: Job? = null
+    private var notificationUpdateJob: Job? = null
+    private var lastSessionMetadata: Pair<String, String?>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -119,6 +122,7 @@ class PlaybackService : Service() {
 
     override fun onDestroy() {
         resolveJob?.cancel()
+        notificationUpdateJob?.cancel()
         player.removeListener(playerListener)
         mediaSession?.release()
         player.release()
@@ -132,7 +136,7 @@ class PlaybackService : Service() {
             state.value.selectedStation == null -> playStationAt(0)
             else -> player.play()
         }
-        updateNotification()
+        updateNotification(immediate = true)
     }
 
     private fun playStationAt(index: Int) {
@@ -161,6 +165,7 @@ class PlaybackService : Service() {
             return
         }
         resolveJob?.cancel()
+        lastSessionMetadata = null
         _state.update {
             it.copy(
                 selectedIndex = index,
@@ -238,6 +243,8 @@ class PlaybackService : Service() {
 
     private fun stopPlayback(clearSelection: Boolean) {
         resolveJob?.cancel()
+        notificationUpdateJob?.cancel()
+        lastSessionMetadata = null
         player.stop()
         if (clearSelection) {
             _state.update {
@@ -269,7 +276,7 @@ class PlaybackService : Service() {
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _state.update { it.copy(isPlaying = isPlaying) }
-            updateNotification()
+            updateNotification(immediate = true)
         }
 
         override fun onTracksChanged(tracks: Tracks) {
@@ -325,19 +332,40 @@ class PlaybackService : Service() {
                     buffering = false,
                 )
             }
-            updateNotification()
+            updateNotification(immediate = true)
         }
     }
 
-    private fun updateNotification() {
+    private fun updateNotification(immediate: Boolean = false) {
         if (state.value.selectedStation != null) {
-            startForeground(NOTIFICATION_ID, buildNotification())
+            if (immediate) {
+                notificationUpdateJob?.cancel()
+                notificationUpdateJob = null
+                startForeground(NOTIFICATION_ID, buildNotification())
+                return
+            }
+
+            if (notificationUpdateJob?.isActive == true) {
+                return
+            }
+            notificationUpdateJob = scope.launch {
+                delay(NOTIFICATION_UPDATE_DELAY_MS)
+                if (state.value.selectedStation != null) {
+                    startForeground(NOTIFICATION_ID, buildNotification())
+                }
+                notificationUpdateJob = null
+            }
         }
     }
 
     private fun refreshCurrentMediaMetadata() {
         val current = state.value
         val station = current.selectedStation ?: return
+        val metadataKey = station.title to current.trackText
+        if (lastSessionMetadata == metadataKey) {
+            return
+        }
+        lastSessionMetadata = metadataKey
         player.setPlaylistMetadata(buildSessionMetadata(station, current.trackText))
     }
 
@@ -467,6 +495,7 @@ class PlaybackService : Service() {
     companion object {
         private const val CHANNEL_ID = "playback"
         private const val NOTIFICATION_ID = 1001
+        private const val NOTIFICATION_UPDATE_DELAY_MS = 500L
         private const val EXTRA_INDEX = "index"
         private const val EXTRA_VOLUME = "volume"
 
