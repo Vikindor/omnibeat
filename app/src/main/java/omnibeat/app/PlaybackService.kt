@@ -167,6 +167,7 @@ class PlaybackService : Service() {
             return
         }
         resolveJob?.cancel()
+        player.stop()
         lastSessionMetadata = null
         currentStreamIsHls = false
         _state.update {
