@@ -13,6 +13,11 @@ data class ResolvedStream(
     val bitrateLabel: String?,
 )
 
+private data class PlaylistResponse(
+    val lines: List<String>?,
+    val bitrateLabel: String?,
+)
+
 object StreamResolver {
     @Throws(IOException::class)
     fun resolvePlayableUrl(streamUrl: String): String {
@@ -35,7 +40,8 @@ object StreamResolver {
 
     @Throws(IOException::class)
     private fun resolvePls(streamUrl: String): ResolvedStream {
-        val lines = readRemoteText(streamUrl)
+        val response = readPlaylistResponse(streamUrl)
+        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateLabel)
         lines.forEach { line ->
             val trimmed = line.trim()
             val equals = trimmed.indexOf('=')
@@ -55,7 +61,9 @@ object StreamResolver {
 
     @Throws(IOException::class)
     private fun resolveM3u(streamUrl: String): ResolvedStream {
-        readRemoteText(streamUrl).forEach { line ->
+        val response = readPlaylistResponse(streamUrl)
+        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateLabel)
+        lines.forEach { line ->
             val trimmed = line.trim()
             if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
                 return ResolvedStream(URL(URL(streamUrl), trimmed).toString(), null)
@@ -110,6 +118,33 @@ object StreamResolver {
     }
 
     @Throws(IOException::class)
+    private fun readPlaylistResponse(streamUrl: String): PlaylistResponse {
+        val connection = URL(streamUrl).openConnection() as HttpURLConnection
+        connection.connectTimeout = 12_000
+        connection.readTimeout = 12_000
+        connection.instanceFollowRedirects = true
+        connection.setRequestProperty("User-Agent", USER_AGENT)
+        connection.setRequestProperty("Icy-MetaData", "1")
+        return try {
+            val contentType = connection.contentType
+                .orEmpty()
+                .lowercase(Locale.US)
+                .substringBefore(";")
+                .trim()
+            val bitrateLabel = formatKbps(readFirstNumber(connection.getHeaderField("icy-br")))
+            if (contentType.isLikelyAudioStream() || (contentType.isBlank() && bitrateLabel != null)) {
+                return PlaylistResponse(lines = null, bitrateLabel = bitrateLabel)
+            }
+            val lines = BufferedReader(InputStreamReader(connection.inputStream, StandardCharsets.UTF_8)).use { reader ->
+                reader.lineSequence().toList()
+            }
+            PlaylistResponse(lines = lines, bitrateLabel = bitrateLabel)
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    @Throws(IOException::class)
     private fun readRemoteText(streamUrl: String): List<String> {
         val connection = URL(streamUrl).openConnection() as HttpURLConnection
         connection.connectTimeout = 12_000
@@ -131,6 +166,17 @@ object StreamResolver {
 
     private fun readFirstNumber(value: String?): Int? {
         return value?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
+    }
+
+    private fun String.isLikelyAudioStream(): Boolean {
+        return startsWith("audio/") &&
+            this !in setOf(
+                "audio/x-scpls",
+                "audio/scpls",
+                "audio/mpegurl",
+                "audio/x-mpegurl",
+                "audio/vnd.apple.mpegurl",
+            )
     }
 
     private const val USER_AGENT = "OmniBeat"
