@@ -6,9 +6,7 @@ import android.content.ContextWrapper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -39,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -355,13 +355,13 @@ private fun MainTopBar(
             if (selectedPage in MainPage.tabPages) {
                 MainPage.tabPages.forEach { tab ->
                 var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
-                val interactionSource = remember(tab) { MutableInteractionSource() }
                 Column(
                     modifier = Modifier
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                        ) { onPageSelected(tab) }
+                        .selectable(
+                            selected = selectedPage == tab,
+                            role = Role.Tab,
+                            onClick = { onPageSelected(tab) },
+                        )
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                 ) {
                     Text(
