@@ -15,6 +15,7 @@ import java.util.UUID
 private val Context.stationDataStore by preferencesDataStore(name = "stations")
 private const val DEFAULT_APP_VOLUME = 0.75f
 private val appVolumeKey = floatPreferencesKey("app_volume")
+private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 
@@ -28,6 +29,9 @@ class StationRepository(private val context: Context) {
     val lastPlayedStationId: Flow<String?> = context.stationDataStore.data
         .map { preferences -> preferences[lastPlayedStationIdKey]?.takeIf { it.isNotBlank() } }
 
+    val lastMainPage: Flow<String?> = context.stationDataStore.data
+        .map { preferences -> preferences[lastMainPageKey]?.takeIf { it.isNotBlank() } }
+
     suspend fun saveAppVolume(volume: Float) {
         context.stationDataStore.edit { preferences ->
             preferences[appVolumeKey] = volume.coerceIn(0f, 1f)
@@ -37,6 +41,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveLastPlayedStationId(stationId: String) {
         context.stationDataStore.edit { preferences ->
             preferences[lastPlayedStationIdKey] = stationId
+        }
+    }
+
+    suspend fun saveLastMainPage(pageName: String) {
+        context.stationDataStore.edit { preferences ->
+            preferences[lastMainPageKey] = pageName
         }
     }
 

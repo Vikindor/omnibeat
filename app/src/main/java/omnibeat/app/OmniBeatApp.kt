@@ -66,6 +66,7 @@ fun OmniBeatApp() {
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
+        var lastMainPage by remember { mutableStateOf(MainPage.Stations) }
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -80,8 +81,24 @@ fun OmniBeatApp() {
             }
         }
 
+        LaunchedEffect(repository) {
+            repository.lastMainPage.collect { savedPage ->
+                val restoredPage = MainPage.tabPages.firstOrNull { it.name == savedPage } ?: MainPage.Stations
+                lastMainPage = restoredPage
+                if (selectedPage in MainPage.tabPages) {
+                    selectedPage = restoredPage
+                }
+            }
+        }
+
         LaunchedEffect(playbackState.errorText) {
             playbackState.errorText?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+        }
+
+        fun selectMainPage(page: MainPage) {
+            selectedPage = page
+            lastMainPage = page
+            scope.launch { repository.saveLastMainPage(page.name) }
         }
 
         fun playStationAt(index: Int) {
@@ -116,8 +133,12 @@ fun OmniBeatApp() {
             playStationAt(nextIndex)
         }
 
-        BackHandler(enabled = drawerState.isOpen) {
-            scope.launch { drawerState.close() }
+        BackHandler(enabled = drawerState.isOpen || selectedPage !in MainPage.tabPages) {
+            if (drawerState.isOpen) {
+                scope.launch { drawerState.close() }
+            } else {
+                selectedPage = lastMainPage
+            }
         }
 
         ModalNavigationDrawer(
@@ -126,7 +147,7 @@ fun OmniBeatApp() {
             drawerContent = {
                 DrawerContent(
                     onStationsClick = {
-                        selectedPage = MainPage.Stations
+                        selectedPage = lastMainPage
                         scope.launch { drawerState.close() }
                     },
                     onSettingsClick = {
@@ -149,7 +170,7 @@ fun OmniBeatApp() {
                 topBar = {
                     MainTopBar(
                         selectedPage = selectedPage,
-                        onPageSelected = { selectedPage = it },
+                        onPageSelected = ::selectMainPage,
                         onOpenDrawer = { scope.launch { drawerState.open() } },
                         onAddStation = {
                             editorState = StationEditorState(
@@ -197,10 +218,14 @@ fun OmniBeatApp() {
                                 },
                                 onDragEnd = {
                                     val threshold = 80.dp.toPx()
-                                    selectedPage = when {
+                                    val nextPage = when {
                                         selectedPage in MainPage.tabPages && totalDragX < -threshold -> MainPage.Favorites
                                         selectedPage in MainPage.tabPages && totalDragX > threshold -> MainPage.Stations
                                         else -> selectedPage
+                                    }
+                                    selectedPage = nextPage
+                                    if (nextPage in MainPage.tabPages) {
+                                        selectMainPage(nextPage)
                                     }
                                 },
                             )
