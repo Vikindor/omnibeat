@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
@@ -22,6 +23,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +39,9 @@ fun DrawerContent(
     onAboutClick: () -> Unit = {},
     onExitClick: () -> Unit = {},
 ) {
+    val aboutFocusRequester = remember { FocusRequester() }
+    val exitFocusRequester = remember { FocusRequester() }
+
     ModalDrawerSheet(
         drawerContainerColor = RadioSurface,
         drawerContentColor = RadioText,
@@ -70,6 +77,7 @@ fun DrawerContent(
                 fontSize = 13.sp,
                 modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 12.dp),
             )
+            DrawerDivider()
             DrawerItem(
                 text = "Stations",
                 iconRes = R.drawable.ic_list,
@@ -84,21 +92,37 @@ fun DrawerContent(
                 text = "About",
                 iconRes = R.drawable.ic_info,
                 onClick = onAboutClick,
+                modifier = Modifier
+                    .focusRequester(aboutFocusRequester)
+                    .focusProperties { down = exitFocusRequester },
             )
             Spacer(modifier = Modifier.weight(1f))
+            DrawerDivider()
             DrawerItem(
                 text = "Close app",
                 iconRes = R.drawable.ic_exit,
                 onClick = onExitClick,
+                modifier = Modifier
+                    .focusRequester(exitFocusRequester)
+                    .focusProperties { up = aboutFocusRequester },
             )
         }
     }
 }
 
 @Composable
+private fun DrawerDivider() {
+    HorizontalDivider(
+        color = RadioOutline.copy(alpha = 0.55f),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+    )
+}
+
+@Composable
 private fun DrawerItem(
     text: String,
     iconRes: Int,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -129,7 +153,7 @@ private fun DrawerItem(
             unselectedTextColor = RadioText,
         ),
         interactionSource = interactionSource,
-        modifier = Modifier
+        modifier = modifier
             .padding(horizontal = 4.dp, vertical = 2.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(if (focused) RadioSurfaceHigh else Color.Transparent),
