@@ -1,22 +1,28 @@
 package omnibeat.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,10 +30,10 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun DrawerContent(
-    selectedPage: MainPage,
     onStationsClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onAboutClick: () -> Unit = {},
+    onExitClick: () -> Unit = {},
 ) {
     ModalDrawerSheet(
         drawerContainerColor = RadioSurface,
@@ -45,7 +51,7 @@ fun DrawerContent(
             Icon(
                 painter = painterResource(R.drawable.ic_launcher_foreground),
                 contentDescription = null,
-                tint = androidx.compose.ui.graphics.Color.Unspecified,
+                tint = Color.Unspecified,
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .size(52.dp)
@@ -64,29 +70,26 @@ fun DrawerContent(
                 fontSize = 13.sp,
                 modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 12.dp),
             )
-            HorizontalDivider(
-                color = RadioOutline.copy(alpha = 0.6f),
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp),
-            )
             DrawerItem(
                 text = "Stations",
                 iconRes = R.drawable.ic_list,
-                selected = selectedPage == MainPage.Stations || selectedPage == MainPage.Favorites,
                 onClick = onStationsClick,
             )
             DrawerItem(
                 text = "Settings",
                 iconRes = R.drawable.ic_settings,
-                selected = selectedPage == MainPage.Settings,
                 onClick = onSettingsClick,
             )
             DrawerItem(
                 text = "About",
                 iconRes = R.drawable.ic_info,
-                selected = selectedPage == MainPage.About,
                 onClick = onAboutClick,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            DrawerItem(
+                text = "Close app",
+                iconRes = R.drawable.ic_exit,
+                onClick = onExitClick,
             )
         }
     }
@@ -96,9 +99,11 @@ fun DrawerContent(
 private fun DrawerItem(
     text: String,
     iconRes: Int,
-    selected: Boolean = false,
     onClick: () -> Unit,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+
     NavigationDrawerItem(
         icon = {
             Icon(
@@ -110,20 +115,23 @@ private fun DrawerItem(
             Text(
                 text = text,
                 fontSize = 15.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                fontWeight = FontWeight.Medium,
             )
         },
-        selected = selected,
+        selected = false,
         onClick = onClick,
         colors = NavigationDrawerItemDefaults.colors(
             selectedContainerColor = RadioSurfaceHigh,
             selectedIconColor = RadioText,
             selectedTextColor = RadioText,
-            unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+            unselectedContainerColor = Color.Transparent,
             unselectedIconColor = RadioTextMuted,
             unselectedTextColor = RadioText,
         ),
+        interactionSource = interactionSource,
         modifier = Modifier
-            .padding(horizontal = 4.dp, vertical = 2.dp),
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(if (focused) RadioSurfaceHigh else Color.Transparent),
     )
 }

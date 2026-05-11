@@ -64,6 +64,7 @@ fun EmptyFavoritesState(modifier: Modifier = Modifier) {
 fun StationList(
     stations: List<Station>,
     selectedIndex: Int,
+    enabled: Boolean = true,
     onStationEdit: (Int, Station) -> Unit,
     onStationClick: (Int, Station) -> Unit,
 ) {
@@ -79,7 +80,11 @@ fun StationList(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            userScrollEnabled = enabled,
+            modifier = Modifier.fillMaxSize(),
+        ) {
             itemsIndexed(
                 items = stations,
                 key = { _, station -> station.id },
@@ -87,6 +92,7 @@ fun StationList(
                 StationRow(
                     station = station,
                     selected = selectedIndex == index,
+                    enabled = enabled,
                     onClick = { onStationClick(index, station) },
                     onLongClick = { onStationEdit(index, station) },
                 )
@@ -143,6 +149,7 @@ private fun StationScrollIndicator(
 private fun StationRow(
     station: Station,
     selected: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -151,6 +158,7 @@ private fun StationRow(
             .fillMaxWidth()
             .background(if (selected) RadioSurfaceHigh else RadioBackground)
             .combinedClickable(
+                enabled = enabled,
                 onClick = onClick,
                 onLongClick = onLongClick,
             )

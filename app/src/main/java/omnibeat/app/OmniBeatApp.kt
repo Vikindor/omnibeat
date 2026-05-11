@@ -1,5 +1,8 @@
 package omnibeat.app
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -122,7 +125,6 @@ fun OmniBeatApp() {
             gesturesEnabled = drawerState.isOpen,
             drawerContent = {
                 DrawerContent(
-                    selectedPage = selectedPage,
                     onStationsClick = {
                         selectedPage = MainPage.Stations
                         scope.launch { drawerState.close() }
@@ -134,6 +136,10 @@ fun OmniBeatApp() {
                     onAboutClick = {
                         selectedPage = MainPage.About
                         scope.launch { drawerState.close() }
+                    },
+                    onExitClick = {
+                        PlaybackService.stop(context)
+                        context.findActivity()?.finishAffinity()
                     },
                 )
             },
@@ -212,6 +218,7 @@ fun OmniBeatApp() {
                                 StationList(
                                     stations = stations,
                                     selectedIndex = playbackState.selectedIndex,
+                                    enabled = drawerState.isClosed,
                                     onStationEdit = { index, station ->
                                         editorState = StationEditorState(
                                             stationIndex = index,
@@ -298,6 +305,14 @@ enum class MainPage(val title: String) {
 
     companion object {
         val tabPages = listOf(Stations, Favorites)
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? {
+    return when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
     }
 }
 
