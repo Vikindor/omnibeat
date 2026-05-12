@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,6 +66,7 @@ fun StationList(
     stations: List<Station>,
     selectedIndex: Int,
     enabled: Boolean = true,
+    onFavoriteClick: (Int, Station) -> Unit,
     onStationEdit: (Int, Station) -> Unit,
     onStationClick: (Int, Station) -> Unit,
 ) {
@@ -93,6 +95,7 @@ fun StationList(
                     station = station,
                     selected = selectedIndex == index,
                     enabled = enabled,
+                    onFavoriteClick = { onFavoriteClick(index, station) },
                     onClick = { onStationClick(index, station) },
                     onLongClick = { onStationEdit(index, station) },
                 )
@@ -150,10 +153,12 @@ private fun StationRow(
     station: Station,
     selected: Boolean,
     enabled: Boolean,
+    onFavoriteClick: () -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
-    Column(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .background(if (selected) RadioSurfaceHigh else RadioBackground)
@@ -164,42 +169,60 @@ private fun StationRow(
             )
             .padding(horizontal = 20.dp, vertical = 14.dp),
     ) {
-        Text(
-            text = station.title,
-            color = RadioText,
-            fontSize = 17.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (station.tags.isNotEmpty()) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp),
-            ) {
-                station.tags.forEach { tag ->
-                    Text(
-                        text = tag,
-                        color = if (selected) RadioText else RadioTextMuted,
-                        fontSize = 11.sp,
-                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .background(
-                                color = if (selected) {
-                                    RadioPrimary.copy(alpha = 0.30f)
-                                } else {
-                                    RadioSurfaceHigh.copy(alpha = 0.72f)
-                                },
-                                shape = RoundedCornerShape(percent = 50),
-                            )
-                            .padding(horizontal = 6.dp, vertical = 1.dp),
-                    )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = station.title,
+                color = RadioText,
+                fontSize = 17.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (station.tags.isNotEmpty()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp),
+                ) {
+                    station.tags.forEach { tag ->
+                        Text(
+                            text = tag,
+                            color = if (selected) RadioText else RadioTextMuted,
+                            fontSize = 11.sp,
+                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .background(
+                                    color = if (selected) {
+                                        RadioPrimary.copy(alpha = 0.30f)
+                                    } else {
+                                        RadioSurfaceHigh.copy(alpha = 0.72f)
+                                    },
+                                    shape = RoundedCornerShape(percent = 50),
+                                )
+                                .padding(horizontal = 6.dp, vertical = 1.dp),
+                        )
+                    }
                 }
             }
+        }
+        IconButton(
+            enabled = enabled,
+            onClick = onFavoriteClick,
+            modifier = Modifier
+                .padding(start = 12.dp)
+                .size(40.dp),
+        ) {
+            Icon(
+                painter = painterResource(
+                    if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
+                ),
+                contentDescription = if (station.isFavorite) "Remove from favorites" else "Add to favorites",
+                tint = if (station.isFavorite) RadioPrimary else RadioText,
+                modifier = Modifier.size(24.dp),
+            )
         }
     }
 }

@@ -101,6 +101,16 @@ fun OmniBeatApp() {
             scope.launch { repository.saveLastMainPage(page.name) }
         }
 
+        fun toggleFavorite(station: Station) {
+            val index = stations.indexOfFirst { it.id == station.id }
+            if (index == -1) return
+            val nextStations = stations.toMutableList().also { list ->
+                list[index] = list[index].copy(isFavorite = !list[index].isFavorite)
+            }
+            stations = nextStations
+            scope.launch { repository.saveStations(nextStations) }
+        }
+
         fun playStationAt(index: Int) {
             scope.launch { drawerState.close() }
             PlaybackService.playStation(context, index)
@@ -245,6 +255,7 @@ fun OmniBeatApp() {
                                     stations = stations,
                                     selectedIndex = playbackState.selectedIndex,
                                     enabled = drawerState.isClosed,
+                                    onFavoriteClick = { _, station -> toggleFavorite(station) },
                                     onStationEdit = { index, station ->
                                         editorState = StationEditorState(
                                             stationIndex = index,
@@ -259,11 +270,38 @@ fun OmniBeatApp() {
                         }
 
                         MainPage.Favorites -> {
-                            EmptyFavoritesState(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 32.dp),
-                            )
+                            val favoriteStations = stations.filter { it.isFavorite }
+                            if (favoriteStations.isEmpty()) {
+                                EmptyFavoritesState(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 32.dp),
+                                )
+                            } else {
+                                StationList(
+                                    stations = favoriteStations,
+                                    selectedIndex = favoriteStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
+                                    enabled = drawerState.isClosed,
+                                    onFavoriteClick = { _, station -> toggleFavorite(station) },
+                                    onStationEdit = { _, station ->
+                                        val index = stations.indexOfFirst { it.id == station.id }
+                                        if (index != -1) {
+                                            editorState = StationEditorState(
+                                                stationIndex = index,
+                                                title = station.title,
+                                                streamUrl = station.streamUrl,
+                                                tags = station.tags.joinToString(", "),
+                                            )
+                                        }
+                                    },
+                                    onStationClick = { _, station ->
+                                        val index = stations.indexOfFirst { it.id == station.id }
+                                        if (index != -1) {
+                                            playStationAt(index)
+                                        }
+                                    },
+                                )
+                            }
                         }
 
                         MainPage.Settings -> {
@@ -305,6 +343,7 @@ fun OmniBeatApp() {
                         title = title.trim().ifBlank { trimmedStreamUrl.take(STATION_TITLE_MAX_LENGTH) },
                         streamUrl = trimmedStreamUrl,
                         tags = parseTags(tags),
+                        isFavorite = state.stationIndex?.let { stations[it].isFavorite } ?: false,
                     )
                     val nextStations = stations.toMutableList().also { list ->
                         val index = state.stationIndex

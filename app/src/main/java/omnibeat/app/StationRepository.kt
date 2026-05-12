@@ -76,7 +76,8 @@ class StationRepository(private val context: Context) {
                     .put("id", station.id)
                     .put("title", station.title)
                     .put("streamUrl", station.streamUrl)
-                    .put("tags", JSONArray(station.tags)),
+                    .put("tags", JSONArray(station.tags))
+                    .put("isFavorite", station.isFavorite),
             )
         }
         return items.toString()
@@ -100,6 +101,7 @@ class StationRepository(private val context: Context) {
                                 title = title,
                                 streamUrl = streamUrl,
                                 tags = decodeTags(item.optJSONArray("tags")),
+                                isFavorite = item.optBoolean("isFavorite", false),
                             ),
                         )
                     }

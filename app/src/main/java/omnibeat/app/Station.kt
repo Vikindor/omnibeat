@@ -9,6 +9,7 @@ data class Station(
     val title: String,
     val streamUrl: String,
     val tags: List<String>,
+    val isFavorite: Boolean = false,
 )
 
 data class StationEditorState(
