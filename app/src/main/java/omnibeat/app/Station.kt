@@ -10,6 +10,18 @@ data class Station(
     val streamUrl: String,
     val tags: List<String>,
     val isFavorite: Boolean = false,
+    val dateAdded: String,
+)
+
+enum class StationSortMode(val label: String) {
+    DateAdded("Date added"),
+    StationTitle("Station title"),
+    FavoritesFirst("Favorites"),
+}
+
+data class StationSortState(
+    val mode: StationSortMode = StationSortMode.DateAdded,
+    val ascending: Boolean = false,
 )
 
 data class StationEditorState(

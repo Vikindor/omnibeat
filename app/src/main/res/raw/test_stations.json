@@ -2,46 +2,55 @@
   {
     "title": "Nightride FM - Direct MP3",
     "streamUrl": "https://stream.nightride.fm/nightride.mp3",
-    "tags": ["direct", "mp3", "icecast", "320 kbps"]
+    "tags": ["direct", "mp3", "icecast", "320 kbps"],
+    "dateAdded": "2024-03-23T23:20:00Z"
   },
   {
     "title": "SomaFM Groove Salad - Direct AAC",
     "streamUrl": "https://ice1.somafm.com/groovesalad-128-aac",
-    "tags": ["direct", "aac", "128 kbps"]
+    "tags": ["direct", "aac", "128 kbps"],
+    "dateAdded": "2024-04-01T20:55:00Z"
   },
   {
     "title": "Party Vibe Radio - Direct Shoutcast Endpoint",
     "streamUrl": "https://partyviberadio.com:8060/;listen.pls?sid=1",
-    "tags": ["direct", "shoutcast", "misleading-pls", "320 kbps"]
+    "tags": ["direct", "shoutcast", "misleading-pls", "320 kbps"],
+    "dateAdded": "2024-04-17T19:55:00Z"
   },
   {
     "title": "Anison.FM - Direct MP3 Without Extension",
     "streamUrl": "https://pool.anison.fm/AniSonFM(320)",
-    "tags": ["direct", "mp3", "no-extension", "320 kbps"]
+    "tags": ["direct", "mp3", "no-extension", "320 kbps"],
+    "dateAdded": "2024-05-05T20:10:00Z"
   },
   {
     "title": "SomaFM Groove Salad - PLS",
     "streamUrl": "https://somafm.com/groovesalad.pls",
-    "tags": ["playlist", "pls"]
+    "tags": ["playlist", "pls"],
+    "dateAdded": "2024-05-13T20:40:00Z"
   },
   {
     "title": "SomaFM Drone Zone - M3U",
     "streamUrl": "https://somafm.com/m3u/dronezone130.m3u",
-    "tags": ["playlist", "m3u"]
+    "tags": ["playlist", "m3u"],
+    "dateAdded": "2024-05-22T20:40:00Z"
   },
   {
     "title": "Nightride FM - XSPF",
     "streamUrl": "https://de1.api.radio-browser.info/xspf/stations/byname/nightride?limit=1&hidebroken=true",
-    "tags": ["playlist", "xspf", "xml"]
+    "tags": ["playlist", "xspf", "xml"],
+    "dateAdded": "2024-06-07T21:15:00Z"
   },
   {
     "title": "RauteMusik Lounge - ASX",
     "streamUrl": "http://lounge-high.rautemusik.fm/listen.asx",
-    "tags": ["playlist", "asx", "xml"]
+    "tags": ["playlist", "asx", "xml"],
+    "dateAdded": "2024-06-21T19:45:00Z"
   },
   {
     "title": "CBC Radio One Montreal - HLS",
     "streamUrl": "https://cbcradiolive.akamaized.net/hls/live/2041030/ES_R1EMT/master.m3u8",
-    "tags": ["playlist", "hls", "m3u8"]
+    "tags": ["playlist", "hls", "m3u8"],
+    "dateAdded": "2024-07-07T16:50:00Z"
   }
 ]

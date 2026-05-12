@@ -17,6 +17,7 @@ private const val DEFAULT_APP_VOLUME = 0.75f
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
+private val stationSortKey = stringPreferencesKey("station_sort")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 
 class StationRepository(private val context: Context) {
@@ -31,6 +32,11 @@ class StationRepository(private val context: Context) {
 
     val lastMainPage: Flow<String?> = context.stationDataStore.data
         .map { preferences -> preferences[lastMainPageKey]?.takeIf { it.isNotBlank() } }
+
+    val stationSortState: Flow<StationSortState> = context.stationDataStore.data
+        .map { preferences ->
+            decodeStationSortState(preferences[stationSortKey])
+        }
 
     suspend fun saveAppVolume(volume: Float) {
         context.stationDataStore.edit { preferences ->
@@ -47,6 +53,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveLastMainPage(pageName: String) {
         context.stationDataStore.edit { preferences ->
             preferences[lastMainPageKey] = pageName
+        }
+    }
+
+    suspend fun saveStationSortState(sortState: StationSortState) {
+        context.stationDataStore.edit { preferences ->
+            preferences[stationSortKey] = "${sortState.mode.name}:${sortState.ascending}"
         }
     }
 
@@ -77,7 +89,8 @@ class StationRepository(private val context: Context) {
                     .put("title", station.title)
                     .put("streamUrl", station.streamUrl)
                     .put("tags", JSONArray(station.tags))
-                    .put("isFavorite", station.isFavorite),
+                    .put("isFavorite", station.isFavorite)
+                    .put("dateAdded", station.dateAdded),
             )
         }
         return items.toString()
@@ -102,6 +115,7 @@ class StationRepository(private val context: Context) {
                                 streamUrl = streamUrl,
                                 tags = decodeTags(item.optJSONArray("tags")),
                                 isFavorite = item.optBoolean("isFavorite", false),
+                                dateAdded = item.getString("dateAdded"),
                             ),
                         )
                     }
@@ -121,5 +135,14 @@ class StationRepository(private val context: Context) {
                 tagsJson.optString(index).trim().takeIf { it.isNotEmpty() }?.let(::add)
             }
         }
+    }
+
+    private fun decodeStationSortState(savedState: String?): StationSortState {
+        val parts = savedState.orEmpty().split(":")
+        val mode = parts.getOrNull(0)
+            ?.let { savedMode -> StationSortMode.entries.firstOrNull { it.name == savedMode } }
+            ?: StationSortMode.DateAdded
+        val ascending = parts.getOrNull(1)?.toBooleanStrictOrNull() ?: false
+        return StationSortState(mode = mode, ascending = ascending)
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,9 +21,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,11 +48,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.util.UUID
 import kotlin.random.Random
 
@@ -67,6 +73,7 @@ fun OmniBeatApp() {
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
         var lastMainPage by remember { mutableStateOf(MainPage.Stations) }
+        var sortState by remember { mutableStateOf(StationSortState()) }
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -91,6 +98,12 @@ fun OmniBeatApp() {
             }
         }
 
+        LaunchedEffect(repository) {
+            repository.stationSortState.collect { savedSortState ->
+                sortState = savedSortState
+            }
+        }
+
         LaunchedEffect(playbackState.errorText) {
             playbackState.errorText?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
         }
@@ -99,6 +112,41 @@ fun OmniBeatApp() {
             selectedPage = page
             lastMainPage = page
             scope.launch { repository.saveLastMainPage(page.name) }
+        }
+
+        fun selectSortMode(nextSortMode: StationSortMode) {
+            val nextSortState = if (sortState.mode == nextSortMode) {
+                sortState.copy(ascending = !sortState.ascending)
+            } else {
+                StationSortState(mode = nextSortMode, ascending = false)
+            }
+            sortState = nextSortState
+            scope.launch { repository.saveStationSortState(nextSortState) }
+        }
+
+        fun sortedStations(source: List<Station>): List<Station> {
+            return when (sortState.mode) {
+                StationSortMode.DateAdded -> if (sortState.ascending) {
+                    source.sortedBy { it.dateAdded }
+                } else {
+                    source.sortedByDescending { it.dateAdded }
+                }
+                StationSortMode.StationTitle -> {
+                    val sorted = source.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+                    if (sortState.ascending) sorted else sorted.asReversed()
+                }
+                StationSortMode.FavoritesFirst -> if (sortState.ascending) {
+                    source.sortedWith(
+                        compareBy<Station> { it.isFavorite }
+                            .thenBy { it.dateAdded },
+                    )
+                } else {
+                    source.sortedWith(
+                        compareByDescending<Station> { it.isFavorite }
+                            .thenByDescending { it.dateAdded },
+                    )
+                }
+            }
         }
 
         fun toggleFavorite(station: Station) {
@@ -125,11 +173,12 @@ fun OmniBeatApp() {
 
         fun navigationStations(): List<Station> {
             val navigationPage = selectedPage.takeIf { it in MainPage.tabPages } ?: lastMainPage
-            return if (navigationPage == MainPage.Favorites) {
+            val pageStations = if (navigationPage == MainPage.Favorites) {
                 stations.filter { it.isFavorite }
             } else {
                 stations
             }
+            return sortedStations(pageStations)
         }
 
         fun playAdjacentStation(direction: Int) {
@@ -208,7 +257,9 @@ fun OmniBeatApp() {
                 topBar = {
                     MainTopBar(
                         selectedPage = selectedPage,
+                        sortState = sortState,
                         onPageSelected = ::selectMainPage,
+                        onSortModeSelected = ::selectSortMode,
                         onOpenDrawer = { scope.launch { drawerState.open() } },
                         onAddStation = {
                             editorState = StationEditorState(
@@ -273,7 +324,8 @@ fun OmniBeatApp() {
                 ) {
                     when (selectedPage) {
                         MainPage.Stations -> {
-                            if (stations.isEmpty()) {
+                            val visibleStations = sortedStations(stations)
+                            if (visibleStations.isEmpty()) {
                                 EmptyStationsState(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -281,25 +333,28 @@ fun OmniBeatApp() {
                                 )
                             } else {
                                 StationList(
-                                    stations = stations,
-                                    selectedIndex = playbackState.selectedIndex,
+                                    stations = visibleStations,
+                                    selectedIndex = visibleStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
                                     enabled = drawerState.isClosed,
                                     onFavoriteClick = { _, station -> toggleFavorite(station) },
-                                    onStationEdit = { index, station ->
-                                        editorState = StationEditorState(
-                                            stationIndex = index,
-                                            title = station.title,
-                                            streamUrl = station.streamUrl,
-                                            tags = station.tags.joinToString(", "),
-                                        )
+                                    onStationEdit = { _, station ->
+                                        val index = stations.indexOfFirst { it.id == station.id }
+                                        if (index != -1) {
+                                            editorState = StationEditorState(
+                                                stationIndex = index,
+                                                title = station.title,
+                                                streamUrl = station.streamUrl,
+                                                tags = station.tags.joinToString(", "),
+                                            )
+                                        }
                                     },
-                                    onStationClick = { index, _ -> playStationAt(index) },
+                                    onStationClick = { _, station -> playStation(station) },
                                 )
                             }
                         }
 
                         MainPage.Favorites -> {
-                            val favoriteStations = stations.filter { it.isFavorite }
+                            val favoriteStations = sortedStations(stations.filter { it.isFavorite })
                             if (favoriteStations.isEmpty()) {
                                 EmptyFavoritesState(
                                     modifier = Modifier
@@ -373,6 +428,7 @@ fun OmniBeatApp() {
                         streamUrl = trimmedStreamUrl,
                         tags = parseTags(tags),
                         isFavorite = state.stationIndex?.let { stations[it].isFavorite } ?: false,
+                        dateAdded = state.stationIndex?.let { stations[it].dateAdded } ?: Instant.now().toString(),
                     )
                     val nextStations = stations.toMutableList().also { list ->
                         val index = state.stationIndex
@@ -420,11 +476,14 @@ private fun parseTags(tags: String): List<String> {
 @Composable
 private fun MainTopBar(
     selectedPage: MainPage,
+    sortState: StationSortState,
     onPageSelected: (MainPage) -> Unit,
+    onSortModeSelected: (StationSortMode) -> Unit,
     onOpenDrawer: () -> Unit,
     onAddStation: () -> Unit,
 ) {
     val density = LocalDensity.current
+    var sortMenuExpanded by remember { mutableStateOf(false) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -491,6 +550,84 @@ private fun MainTopBar(
             }
         }
         if (selectedPage in MainPage.tabPages) {
+            Box {
+                IconButton(onClick = { sortMenuExpanded = true }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_filter_list),
+                        contentDescription = "Sort stations",
+                        tint = RadioText,
+                        modifier = Modifier.height(28.dp),
+                    )
+                }
+                DropdownMenu(
+                    expanded = sortMenuExpanded,
+                    onDismissRequest = { sortMenuExpanded = false },
+                    containerColor = RadioSurface,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    offset = DpOffset(x = 0.dp, y = 4.dp),
+                ) {
+                    StationSortMode.entries.forEach { option ->
+                        val selected = sortState.mode == option
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(
+                                            if (selected) {
+                                                R.drawable.ic_radio_button_checked
+                                            } else {
+                                                R.drawable.ic_radio_button_unchecked
+                                            },
+                                        ),
+                                        contentDescription = null,
+                                        tint = if (selected) RadioPrimary else RadioTextMuted,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Text(
+                                        text = option.label,
+                                        color = RadioText,
+                                        fontSize = 14.sp,
+                                        modifier = Modifier.padding(start = 12.dp),
+                                    )
+                                    if (selected) {
+                                        Icon(
+                                            painter = painterResource(
+                                                if (sortState.ascending) {
+                                                    R.drawable.ic_keyboard_arrow_up
+                                                } else {
+                                                    R.drawable.ic_keyboard_arrow_down
+                                                },
+                                            ),
+                                            contentDescription = if (sortState.ascending) {
+                                                "Ascending"
+                                            } else {
+                                                "Descending"
+                                            },
+                                            tint = RadioText,
+                                            modifier = Modifier
+                                                .padding(start = 8.dp)
+                                                .size(18.dp),
+                                        )
+                                    }
+                                }
+                            },
+                            colors = MenuDefaults.itemColors(
+                                textColor = RadioText,
+                                leadingIconColor = RadioTextMuted,
+                                trailingIconColor = RadioText,
+                            ),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 12.dp,
+                                vertical = 4.dp,
+                            ),
+                            modifier = Modifier.height(40.dp),
+                            onClick = {
+                                onSortModeSelected(option)
+                            },
+                        )
+                    }
+                }
+            }
             IconButton(onClick = onAddStation) {
                 Icon(
                     painter = painterResource(R.drawable.ic_add_circle_outline),
