@@ -1,7 +1,9 @@
 package omnibeat.app
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlayerPanel(
     station: Station?,
@@ -109,8 +112,14 @@ fun PlayerPanel(
                 color = RadioTextMuted,
                 fontSize = 14.sp,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
+                overflow = TextOverflow.Clip,
+                softWrap = false,
+                modifier = Modifier
+                    .weight(1f)
+                    .basicMarquee(
+                        iterations = Int.MAX_VALUE,
+                        repeatDelayMillis = 1_500,
+                    ),
             )
             bitrateText?.let { bitrate ->
                 Text(
