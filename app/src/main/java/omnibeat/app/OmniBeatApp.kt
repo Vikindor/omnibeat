@@ -81,6 +81,7 @@ fun OmniBeatApp() {
         var reorderDraft by remember { mutableStateOf<StationReorderDraft?>(null) }
         var scrollToSelectedRequest by remember { mutableIntStateOf(0) }
         var scrollToStationId by remember { mutableStateOf<String?>(null) }
+        var lastPlayedStationId by remember { mutableStateOf<String?>(null) }
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -120,6 +121,12 @@ fun OmniBeatApp() {
         LaunchedEffect(repository) {
             repository.customFavoriteOrder.collect { savedOrder ->
                 customFavoriteOrder = savedOrder
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.lastPlayedStationId.collect { savedStationId ->
+                lastPlayedStationId = savedStationId
             }
         }
 
@@ -313,7 +320,9 @@ fun OmniBeatApp() {
         fun playOrStop() {
             val pageStations = navigationStations()
             if (!playbackState.isPlaying && playbackState.selectedStation == null && pageStations.isNotEmpty()) {
-                playStation(pageStations.first())
+                val lastPlayedStation = lastPlayedStationId
+                    ?.let { stationId -> stations.firstOrNull { it.id == stationId } }
+                playStation(lastPlayedStation ?: pageStations.first())
             } else {
                 PlaybackService.playOrStop(context)
             }
@@ -381,6 +390,8 @@ fun OmniBeatApp() {
                 },
                 bottomBar = {
                     val pageStations = navigationStations()
+                    val canStartPlayback = pageStations.isNotEmpty() ||
+                        lastPlayedStationId?.let { stationId -> stations.any { it.id == stationId } } == true
                     PlayerPanel(
                         station = playbackState.selectedStation,
                         trackText = playbackState.trackText,
@@ -391,7 +402,7 @@ fun OmniBeatApp() {
                         isPlaying = playbackState.isPlaying,
                         canNavigateStations = pageStations.isNotEmpty(),
                         appVolume = appVolume,
-                        canPlay = pageStations.isNotEmpty(),
+                        canPlay = canStartPlayback,
                         onPlayStop = { playOrStop() },
                         onPreviousStation = { playAdjacentStation(-1) },
                         onNextStation = { playAdjacentStation(1) },
