@@ -18,6 +18,8 @@ private val appVolumeKey = floatPreferencesKey("app_volume")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationSortKey = stringPreferencesKey("station_sort")
+private val customStationOrderKey = stringPreferencesKey("custom_station_order")
+private val customFavoriteOrderKey = stringPreferencesKey("custom_favorite_order")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 
 class StationRepository(private val context: Context) {
@@ -37,6 +39,12 @@ class StationRepository(private val context: Context) {
         .map { preferences ->
             decodeStationSortState(preferences[stationSortKey])
         }
+
+    val customStationOrder: Flow<List<String>> = context.stationDataStore.data
+        .map { preferences -> decodeStringList(preferences[customStationOrderKey]) }
+
+    val customFavoriteOrder: Flow<List<String>> = context.stationDataStore.data
+        .map { preferences -> decodeStringList(preferences[customFavoriteOrderKey]) }
 
     suspend fun saveAppVolume(volume: Float) {
         context.stationDataStore.edit { preferences ->
@@ -59,6 +67,18 @@ class StationRepository(private val context: Context) {
     suspend fun saveStationSortState(sortState: StationSortState) {
         context.stationDataStore.edit { preferences ->
             preferences[stationSortKey] = "${sortState.mode.name}:${sortState.ascending}"
+        }
+    }
+
+    suspend fun saveCustomStationOrder(stationIds: List<String>) {
+        context.stationDataStore.edit { preferences ->
+            preferences[customStationOrderKey] = encodeStringList(stationIds)
+        }
+    }
+
+    suspend fun saveCustomFavoriteOrder(stationIds: List<String>) {
+        context.stationDataStore.edit { preferences ->
+            preferences[customFavoriteOrderKey] = encodeStringList(stationIds)
         }
     }
 
@@ -134,6 +154,28 @@ class StationRepository(private val context: Context) {
             repeat(tagsJson.length()) { index ->
                 tagsJson.optString(index).trim().takeIf { it.isNotEmpty() }?.let(::add)
             }
+        }
+    }
+
+    private fun encodeStringList(items: List<String>): String {
+        val json = JSONArray()
+        items.forEach { item -> json.put(item) }
+        return json.toString()
+    }
+
+    private fun decodeStringList(savedItems: String?): List<String> {
+        if (savedItems.isNullOrBlank()) {
+            return emptyList()
+        }
+        return runCatching {
+            val items = JSONArray(savedItems)
+            buildList {
+                repeat(items.length()) { index ->
+                    items.optString(index).takeIf { it.isNotBlank() }?.let(::add)
+                }
+            }
+        }.getOrElse {
+            emptyList()
         }
     }
 

@@ -17,11 +17,17 @@ enum class StationSortMode(val label: String) {
     DateAdded("Date added"),
     StationTitle("Station title"),
     FavoritesFirst("Favorites"),
+    Custom("Custom"),
 }
 
 data class StationSortState(
     val mode: StationSortMode = StationSortMode.DateAdded,
     val ascending: Boolean = false,
+)
+
+data class StationReorderDraft(
+    val page: MainPage,
+    val stations: List<Station>,
 )
 
 data class StationEditorState(

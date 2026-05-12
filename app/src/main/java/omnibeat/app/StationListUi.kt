@@ -32,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun EmptyStationsState(modifier: Modifier = Modifier) {
@@ -65,18 +67,26 @@ fun EmptyFavoritesState(modifier: Modifier = Modifier) {
 fun StationList(
     stations: List<Station>,
     selectedIndex: Int,
+    scrollToSelectedRequest: Int,
+    scrollToStationId: String?,
     enabled: Boolean = true,
+    reordering: Boolean = false,
+    onMove: (Int, Int) -> Unit = { _, _ -> },
     onFavoriteClick: (Int, Station) -> Unit,
     onStationEdit: (Int, Station) -> Unit,
     onStationClick: (Int, Station) -> Unit,
 ) {
     val listState = rememberLazyListState()
+    val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
+        onMove(from.index, to.index)
+    }
 
-    LaunchedEffect(selectedIndex, stations.size) {
-        if (selectedIndex in stations.indices) {
+    LaunchedEffect(scrollToSelectedRequest) {
+        val targetIndex = stations.indexOfFirst { it.id == scrollToStationId }
+        if (scrollToSelectedRequest > 0 && targetIndex in stations.indices) {
             val visibleIndexes = listState.layoutInfo.visibleItemsInfo.map { it.index }
-            if (selectedIndex !in visibleIndexes) {
-                listState.animateScrollToItem(selectedIndex)
+            if (targetIndex !in visibleIndexes) {
+                listState.animateScrollToItem(targetIndex)
             }
         }
     }
@@ -84,21 +94,35 @@ fun StationList(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            userScrollEnabled = enabled,
+            userScrollEnabled = enabled || reordering,
             modifier = Modifier.fillMaxSize(),
         ) {
             itemsIndexed(
                 items = stations,
                 key = { _, station -> station.id },
             ) { index, station ->
-                StationRow(
-                    station = station,
-                    selected = selectedIndex == index,
-                    enabled = enabled,
-                    onFavoriteClick = { onFavoriteClick(index, station) },
-                    onClick = { onStationClick(index, station) },
-                    onLongClick = { onStationEdit(index, station) },
-                )
+                ReorderableItem(
+                    state = reorderableListState,
+                    key = station.id,
+                    enabled = reordering,
+                ) { isDragging ->
+                    StationRow(
+                        station = station,
+                        selected = selectedIndex == index,
+                        enabled = enabled,
+                        reordering = reordering,
+                        dragging = isDragging,
+                        dragHandleModifier = if (reordering) {
+                            Modifier.draggableHandle()
+                        } else {
+                            Modifier
+                        },
+                        onFavoriteClick = { onFavoriteClick(index, station) },
+                        onClick = { onStationClick(index, station) },
+                        onLongClick = { onStationEdit(index, station) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
             }
         }
         StationScrollIndicator(
@@ -153,13 +177,17 @@ private fun StationRow(
     station: Station,
     selected: Boolean,
     enabled: Boolean,
+    reordering: Boolean,
+    dragging: Boolean,
+    dragHandleModifier: Modifier,
     onFavoriteClick: () -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(if (selected) RadioSurfaceHigh else RadioBackground)
             .combinedClickable(
@@ -167,8 +195,24 @@ private fun StationRow(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(start = if (reordering) 8.dp else 20.dp, end = 20.dp, top = 14.dp, bottom = 14.dp),
     ) {
+        if (reordering) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .size(28.dp)
+                    .then(dragHandleModifier),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_drag_indicator),
+                    contentDescription = "Drag station",
+                    tint = if (dragging) RadioPrimary else RadioTextMuted,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = station.title,
@@ -209,7 +253,7 @@ private fun StationRow(
             }
         }
         IconButton(
-            enabled = enabled,
+            enabled = enabled && !reordering,
             onClick = onFavoriteClick,
             modifier = Modifier
                 .padding(start = 12.dp)

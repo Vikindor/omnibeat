@@ -36,12 +36,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -74,6 +76,11 @@ fun OmniBeatApp() {
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
         var lastMainPage by remember { mutableStateOf(MainPage.Stations) }
         var sortState by remember { mutableStateOf(StationSortState()) }
+        var customStationOrder by remember { mutableStateOf(emptyList<String>()) }
+        var customFavoriteOrder by remember { mutableStateOf(emptyList<String>()) }
+        var reorderDraft by remember { mutableStateOf<StationReorderDraft?>(null) }
+        var scrollToSelectedRequest by remember { mutableIntStateOf(0) }
+        var scrollToStationId by remember { mutableStateOf<String?>(null) }
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -104,6 +111,18 @@ fun OmniBeatApp() {
             }
         }
 
+        LaunchedEffect(repository) {
+            repository.customStationOrder.collect { savedOrder ->
+                customStationOrder = savedOrder
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.customFavoriteOrder.collect { savedOrder ->
+                customFavoriteOrder = savedOrder
+            }
+        }
+
         LaunchedEffect(playbackState.errorText) {
             playbackState.errorText?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
         }
@@ -114,18 +133,22 @@ fun OmniBeatApp() {
             scope.launch { repository.saveLastMainPage(page.name) }
         }
 
-        fun selectSortMode(nextSortMode: StationSortMode) {
-            val nextSortState = if (sortState.mode == nextSortMode) {
-                sortState.copy(ascending = !sortState.ascending)
-            } else {
-                StationSortState(mode = nextSortMode, ascending = false)
+        fun customSortedStations(source: List<Station>, customOrder: List<String>): List<Station> {
+            if (customOrder.isEmpty()) {
+                return source
             }
-            sortState = nextSortState
-            scope.launch { repository.saveStationSortState(nextSortState) }
+            val sourceById = source.associateBy { it.id }
+            val orderedStations = customOrder.mapNotNull(sourceById::get)
+            val orderedIds = orderedStations.map { it.id }.toSet()
+            return orderedStations + source.filterNot { it.id in orderedIds }
         }
 
-        fun sortedStations(source: List<Station>): List<Station> {
+        fun sortedStations(source: List<Station>, page: MainPage): List<Station> {
             return when (sortState.mode) {
+                StationSortMode.Custom -> customSortedStations(
+                    source = source,
+                    customOrder = if (page == MainPage.Favorites) customFavoriteOrder else customStationOrder,
+                )
                 StationSortMode.DateAdded -> if (sortState.ascending) {
                     source.sortedBy { it.dateAdded }
                 } else {
@@ -161,6 +184,8 @@ fun OmniBeatApp() {
 
         fun playStationAt(index: Int) {
             scope.launch { drawerState.close() }
+            scrollToStationId = stations.getOrNull(index)?.id
+            scrollToSelectedRequest += 1
             PlaybackService.playStation(context, index)
         }
 
@@ -178,7 +203,78 @@ fun OmniBeatApp() {
             } else {
                 stations
             }
-            return sortedStations(pageStations)
+            return sortedStations(pageStations, navigationPage)
+        }
+
+        fun selectSortMode(nextSortMode: StationSortMode) {
+            if (nextSortMode == StationSortMode.Custom) {
+                val reorderPage = selectedPage.takeIf { it in MainPage.tabPages } ?: lastMainPage
+                val pageStations = if (reorderPage == MainPage.Favorites) {
+                    stations.filter { it.isFavorite }
+                } else {
+                    stations
+                }
+                val customOrder = if (reorderPage == MainPage.Favorites) {
+                    customFavoriteOrder
+                } else {
+                    customStationOrder
+                }
+                val draftStations = if (customOrder.isEmpty()) {
+                    navigationStations()
+                } else {
+                    customSortedStations(pageStations, customOrder)
+                }
+                reorderDraft = StationReorderDraft(page = reorderPage, stations = draftStations)
+                return
+            }
+            val nextSortState = if (sortState.mode == nextSortMode) {
+                sortState.copy(ascending = !sortState.ascending)
+            } else {
+                StationSortState(mode = nextSortMode, ascending = false)
+            }
+            sortState = nextSortState
+            scope.launch { repository.saveStationSortState(nextSortState) }
+        }
+
+        fun moveReorderDraft(fromIndex: Int, toIndex: Int) {
+            val currentDraft = reorderDraft ?: return
+            if (
+                fromIndex !in currentDraft.stations.indices ||
+                toIndex !in currentDraft.stations.indices ||
+                fromIndex == toIndex
+            ) {
+                return
+            }
+            val nextStations = currentDraft.stations.toMutableList().also { list ->
+                val movedStation = list.removeAt(fromIndex)
+                list.add(toIndex, movedStation)
+            }
+            reorderDraft = currentDraft.copy(stations = nextStations)
+        }
+
+        fun cancelReorder() {
+            reorderDraft = null
+        }
+
+        fun confirmReorder() {
+            val draft = reorderDraft ?: return
+            val nextOrder = draft.stations.map { it.id }
+            val nextSortState = StationSortState(mode = StationSortMode.Custom, ascending = false)
+            if (draft.page == MainPage.Favorites) {
+                customFavoriteOrder = nextOrder
+            } else {
+                customStationOrder = nextOrder
+            }
+            sortState = nextSortState
+            reorderDraft = null
+            scope.launch {
+                if (draft.page == MainPage.Favorites) {
+                    repository.saveCustomFavoriteOrder(nextOrder)
+                } else {
+                    repository.saveCustomStationOrder(nextOrder)
+                }
+                repository.saveStationSortState(nextSortState)
+            }
         }
 
         fun playAdjacentStation(direction: Int) {
@@ -220,9 +316,11 @@ fun OmniBeatApp() {
             }
         }
 
-        BackHandler(enabled = drawerState.isOpen || selectedPage !in MainPage.tabPages) {
+        BackHandler(enabled = drawerState.isOpen || reorderDraft != null || selectedPage !in MainPage.tabPages) {
             if (drawerState.isOpen) {
                 scope.launch { drawerState.close() }
+            } else if (reorderDraft != null) {
+                reorderDraft = null
             } else {
                 selectedPage = lastMainPage
             }
@@ -258,8 +356,15 @@ fun OmniBeatApp() {
                     MainTopBar(
                         selectedPage = selectedPage,
                         sortState = sortState,
-                        onPageSelected = ::selectMainPage,
+                        reordering = reorderDraft != null,
+                        onPageSelected = { page ->
+                            if (reorderDraft == null) {
+                                selectMainPage(page)
+                            }
+                        },
                         onSortModeSelected = ::selectSortMode,
+                        onCancelReorder = ::cancelReorder,
+                        onConfirmReorder = ::confirmReorder,
                         onOpenDrawer = { scope.launch { drawerState.open() } },
                         onAddStation = {
                             editorState = StationEditorState(
@@ -324,7 +429,7 @@ fun OmniBeatApp() {
                 ) {
                     when (selectedPage) {
                         MainPage.Stations -> {
-                            val visibleStations = sortedStations(stations)
+                            val visibleStations = reorderDraft?.stations ?: sortedStations(stations, MainPage.Stations)
                             if (visibleStations.isEmpty()) {
                                 EmptyStationsState(
                                     modifier = Modifier
@@ -335,7 +440,11 @@ fun OmniBeatApp() {
                                 StationList(
                                     stations = visibleStations,
                                     selectedIndex = visibleStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
-                                    enabled = drawerState.isClosed,
+                                    scrollToSelectedRequest = scrollToSelectedRequest,
+                                    scrollToStationId = scrollToStationId,
+                                    enabled = drawerState.isClosed && reorderDraft == null,
+                                    reordering = reorderDraft != null,
+                                    onMove = ::moveReorderDraft,
                                     onFavoriteClick = { _, station -> toggleFavorite(station) },
                                     onStationEdit = { _, station ->
                                         val index = stations.indexOfFirst { it.id == station.id }
@@ -354,7 +463,8 @@ fun OmniBeatApp() {
                         }
 
                         MainPage.Favorites -> {
-                            val favoriteStations = sortedStations(stations.filter { it.isFavorite })
+                            val favoriteStations = reorderDraft?.stations
+                                ?: sortedStations(stations.filter { it.isFavorite }, MainPage.Favorites)
                             if (favoriteStations.isEmpty()) {
                                 EmptyFavoritesState(
                                     modifier = Modifier
@@ -365,7 +475,11 @@ fun OmniBeatApp() {
                                 StationList(
                                     stations = favoriteStations,
                                     selectedIndex = favoriteStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
-                                    enabled = drawerState.isClosed,
+                                    scrollToSelectedRequest = scrollToSelectedRequest,
+                                    scrollToStationId = scrollToStationId,
+                                    enabled = drawerState.isClosed && reorderDraft == null,
+                                    reordering = reorderDraft != null,
+                                    onMove = ::moveReorderDraft,
                                     onFavoriteClick = { _, station -> toggleFavorite(station) },
                                     onStationEdit = { _, station ->
                                         val index = stations.indexOfFirst { it.id == station.id }
@@ -477,8 +591,11 @@ private fun parseTags(tags: String): List<String> {
 private fun MainTopBar(
     selectedPage: MainPage,
     sortState: StationSortState,
+    reordering: Boolean,
     onPageSelected: (MainPage) -> Unit,
     onSortModeSelected: (StationSortMode) -> Unit,
+    onCancelReorder: () -> Unit,
+    onConfirmReorder: () -> Unit,
     onOpenDrawer: () -> Unit,
     onAddStation: () -> Unit,
 ) {
@@ -512,6 +629,7 @@ private fun MainTopBar(
                     modifier = Modifier
                         .selectable(
                             selected = selectedPage == tab,
+                            enabled = !reordering,
                             role = Role.Tab,
                             onClick = { onPageSelected(tab) },
                         )
@@ -550,7 +668,25 @@ private fun MainTopBar(
             }
         }
         if (selectedPage in MainPage.tabPages) {
-            Box {
+            if (reordering) {
+                IconButton(onClick = onCancelReorder) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_close),
+                        contentDescription = "Cancel reorder",
+                        tint = Color(0xFFFF5C6C),
+                        modifier = Modifier.height(28.dp),
+                    )
+                }
+                IconButton(onClick = onConfirmReorder) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_check),
+                        contentDescription = "Save reorder",
+                        tint = Color(0xFF66D17A),
+                        modifier = Modifier.height(28.dp),
+                    )
+                }
+            } else {
+                Box {
                 IconButton(onClick = { sortMenuExpanded = true }) {
                     Icon(
                         painter = painterResource(R.drawable.ic_filter_list),
@@ -589,7 +725,7 @@ private fun MainTopBar(
                                         fontSize = 14.sp,
                                         modifier = Modifier.padding(start = 12.dp),
                                     )
-                                    if (selected) {
+                                    if (selected && option != StationSortMode.Custom) {
                                         Icon(
                                             painter = painterResource(
                                                 if (sortState.ascending) {
@@ -623,18 +759,20 @@ private fun MainTopBar(
                             modifier = Modifier.height(40.dp),
                             onClick = {
                                 onSortModeSelected(option)
+                                sortMenuExpanded = false
                             },
                         )
                     }
                 }
             }
-            IconButton(onClick = onAddStation) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_add_circle_outline),
-                    contentDescription = "Add station",
-                    tint = RadioText,
-                    modifier = Modifier.height(28.dp),
-                )
+                IconButton(onClick = onAddStation) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_add_circle_outline),
+                        contentDescription = "Add station",
+                        tint = RadioText,
+                        modifier = Modifier.height(28.dp),
+                    )
+                }
             }
         }
     }
