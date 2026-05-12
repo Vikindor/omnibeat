@@ -116,31 +116,59 @@ fun OmniBeatApp() {
             PlaybackService.playStation(context, index)
         }
 
+        fun playStation(station: Station) {
+            val index = stations.indexOfFirst { it.id == station.id }
+            if (index != -1) {
+                playStationAt(index)
+            }
+        }
+
+        fun navigationStations(): List<Station> {
+            val navigationPage = selectedPage.takeIf { it in MainPage.tabPages } ?: lastMainPage
+            return if (navigationPage == MainPage.Favorites) {
+                stations.filter { it.isFavorite }
+            } else {
+                stations
+            }
+        }
+
         fun playAdjacentStation(direction: Int) {
-            if (stations.isEmpty()) return
-            val currentIndex = playbackState.selectedIndex
-            val nextIndex = if (currentIndex in stations.indices) {
-                (currentIndex + direction + stations.size) % stations.size
+            val pageStations = navigationStations()
+            if (pageStations.isEmpty()) return
+            val currentIndex = pageStations.indexOfFirst { it.id == playbackState.selectedStation?.id }
+            val nextIndex = if (currentIndex in pageStations.indices) {
+                (currentIndex + direction + pageStations.size) % pageStations.size
             } else if (direction > 0) {
                 0
             } else {
-                stations.lastIndex
+                pageStations.lastIndex
             }
-            playStationAt(nextIndex)
+            playStation(pageStations[nextIndex])
         }
 
         fun playRandomStation() {
-            if (stations.isEmpty()) return
-            val nextIndex = if (stations.size == 1) {
+            val pageStations = navigationStations()
+            if (pageStations.isEmpty()) return
+            val currentIndex = pageStations.indexOfFirst { it.id == playbackState.selectedStation?.id }
+            val nextIndex = if (pageStations.size == 1) {
                 0
             } else {
                 var randomIndex: Int
                 do {
-                    randomIndex = Random.nextInt(stations.size)
-                } while (randomIndex == playbackState.selectedIndex)
+                    randomIndex = Random.nextInt(pageStations.size)
+                } while (randomIndex == currentIndex)
                 randomIndex
             }
-            playStationAt(nextIndex)
+            playStation(pageStations[nextIndex])
+        }
+
+        fun playOrStop() {
+            val pageStations = navigationStations()
+            if (!playbackState.isPlaying && playbackState.selectedStation == null && pageStations.isNotEmpty()) {
+                playStation(pageStations.first())
+            } else {
+                PlaybackService.playOrStop(context)
+            }
         }
 
         BackHandler(enabled = drawerState.isOpen || selectedPage !in MainPage.tabPages) {
@@ -193,6 +221,7 @@ fun OmniBeatApp() {
                     )
                 },
                 bottomBar = {
+                    val pageStations = navigationStations()
                     PlayerPanel(
                         station = playbackState.selectedStation,
                         trackText = playbackState.trackText,
@@ -201,10 +230,10 @@ fun OmniBeatApp() {
                         loading = playbackState.resolving || playbackState.buffering,
                         resolving = playbackState.resolving,
                         isPlaying = playbackState.isPlaying,
-                        canNavigateStations = stations.isNotEmpty(),
+                        canNavigateStations = pageStations.isNotEmpty(),
                         appVolume = appVolume,
-                        canPlay = stations.isNotEmpty(),
-                        onPlayStop = { PlaybackService.playOrStop(context) },
+                        canPlay = pageStations.isNotEmpty(),
+                        onPlayStop = { playOrStop() },
                         onPreviousStation = { playAdjacentStation(-1) },
                         onNextStation = { playAdjacentStation(1) },
                         onRandomStation = { playRandomStation() },
