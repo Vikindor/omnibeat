@@ -14,12 +14,12 @@ import org.xml.sax.InputSource
 
 data class ResolvedStream(
     val playableUrl: String,
-    val bitrateLabel: String?,
+    val bitrateKbps: Int?,
 )
 
 private data class PlaylistResponse(
     val lines: List<String>?,
-    val bitrateLabel: String?,
+    val bitrateKbps: Int?,
 )
 
 object StreamResolver {
@@ -39,7 +39,7 @@ object StreamResolver {
     @Throws(IOException::class)
     private fun resolvePls(streamUrl: String): ResolvedStream {
         val response = readPlaylistResponse(streamUrl)
-        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateLabel)
+        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateKbps)
         lines.forEach { line ->
             val trimmed = line.trim()
             val equals = trimmed.indexOf('=')
@@ -49,7 +49,7 @@ object StreamResolver {
                     val index = trimmed.substring(4, equals).toIntOrNull()
                     return ResolvedStream(
                         playableUrl = url,
-                        bitrateLabel = readPlsBitrate(lines, index),
+                        bitrateKbps = readPlsBitrate(lines, index),
                     )
                 }
             }
@@ -60,7 +60,7 @@ object StreamResolver {
     @Throws(IOException::class)
     private fun resolveM3u(streamUrl: String): ResolvedStream {
         val response = readPlaylistResponse(streamUrl)
-        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateLabel)
+        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateKbps)
         readM3uCandidates(lines, streamUrl).firstOrNull()?.let { candidate ->
             return ResolvedStream(candidate, null)
         }
@@ -70,7 +70,7 @@ object StreamResolver {
     @Throws(IOException::class)
     private fun resolveXspf(streamUrl: String): ResolvedStream {
         val response = readPlaylistResponse(streamUrl)
-        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateLabel)
+        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateKbps)
         val xml = lines.joinToString("\n")
         readFirstElementText(xml, "location")?.let { location ->
             return ResolvedStream(URL(URL(streamUrl), location).toString(), null)
@@ -81,7 +81,7 @@ object StreamResolver {
     @Throws(IOException::class)
     private fun resolveAsx(streamUrl: String): ResolvedStream {
         val response = readPlaylistResponse(streamUrl)
-        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateLabel)
+        val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateKbps)
         val xml = lines.joinToString("\n")
         readAsxRefHref(xml)?.let { href ->
             return ResolvedStream(URL(URL(streamUrl), href).toString(), null)
@@ -98,7 +98,7 @@ object StreamResolver {
             .toList()
     }
 
-    private fun readPlsBitrate(lines: List<String>, index: Int?): String? {
+    private fun readPlsBitrate(lines: List<String>, index: Int?): Int? {
         val expectedKey = index?.let { "bitrate$it" }
         lines.forEach { line ->
             val trimmed = line.trim()
@@ -107,7 +107,7 @@ object StreamResolver {
 
             val key = trimmed.substring(0, equals).lowercase(Locale.US)
             if (key == expectedKey || (expectedKey == null && key.startsWith("bitrate"))) {
-                return formatKbps(trimmed.substring(equals + 1).trim().toIntOrNull())
+                return trimmed.substring(equals + 1).trim().toIntOrNull()?.takeIf { it > 0 }
             }
         }
         return null
@@ -127,21 +127,17 @@ object StreamResolver {
                 .lowercase(Locale.US)
                 .substringBefore(";")
                 .trim()
-            val bitrateLabel = formatKbps(readFirstNumber(connection.getHeaderField("icy-br")))
-            if (contentType.isLikelyAudioStream() || (contentType.isBlank() && bitrateLabel != null)) {
-                return PlaylistResponse(lines = null, bitrateLabel = bitrateLabel)
+            val bitrateKbps = readFirstNumber(connection.getHeaderField("icy-br"))
+            if (contentType.isLikelyAudioStream() || (contentType.isBlank() && bitrateKbps != null)) {
+                return PlaylistResponse(lines = null, bitrateKbps = bitrateKbps)
             }
             val lines = BufferedReader(InputStreamReader(connection.inputStream, StandardCharsets.UTF_8)).use { reader ->
                 reader.lineSequence().toList()
             }
-            PlaylistResponse(lines = lines, bitrateLabel = bitrateLabel)
+            PlaylistResponse(lines = lines, bitrateKbps = bitrateKbps)
         } finally {
             connection.disconnect()
         }
-    }
-
-    private fun formatKbps(kbps: Int?): String? {
-        return kbps?.takeIf { it > 0 }?.let { "$it kbps" }
     }
 
     private fun readFirstNumber(value: String?): Int? {

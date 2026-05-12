@@ -38,17 +38,35 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
+const val TRACK_TEXT_STOPPED = "No stream is playing"
+const val TRACK_TEXT_LOADING_STATIONS = "Loading stations..."
+const val TRACK_TEXT_RESOLVING = "Resolving stream..."
+const val TRACK_TEXT_WAITING_METADATA = "Waiting for metadata..."
+const val TRACK_TEXT_NO_METADATA = "No metadata"
+
 data class PlaybackState(
     val selectedIndex: Int = -1,
     val selectedStation: Station? = null,
-    val trackText: String = "No stream is playing",
+    val trackText: String = TRACK_TEXT_STOPPED,
     val resolving: Boolean = false,
     val buffering: Boolean = false,
     val isPlaying: Boolean = false,
     val errorText: String? = null,
     val volume: Float = 0.75f,
-    val bitrateText: String? = null,
+    val streamInfo: PlaybackStreamInfo = PlaybackStreamInfo(),
 )
+
+data class PlaybackStreamInfo(
+    val bitrateKbps: Int? = null,
+    val sampleRateHz: Int? = null,
+    val formatLabel: String? = null,
+) {
+    val bitrateText: String?
+        get() = bitrateKbps?.let { "$it kbps" }
+
+    val sampleRateText: String?
+        get() = sampleRateHz?.takeIf { it > 0 }?.let { "${it / 1000} kHz" }
+}
 
 @OptIn(UnstableApi::class)
 class PlaybackService : Service() {
@@ -170,7 +188,7 @@ class PlaybackService : Service() {
                 it.copy(
                     selectedIndex = index,
                     selectedStation = null,
-                    trackText = "Loading stations...",
+                    trackText = TRACK_TEXT_LOADING_STATIONS,
                     resolving = true,
                     buffering = false,
                     errorText = null,
@@ -198,11 +216,11 @@ class PlaybackService : Service() {
             it.copy(
                 selectedIndex = index,
                 selectedStation = station,
-                trackText = "Resolving stream...",
+                trackText = TRACK_TEXT_RESOLVING,
                 resolving = true,
                 buffering = false,
                 errorText = null,
-                bitrateText = null,
+                streamInfo = PlaybackStreamInfo(),
             )
         }
         startForeground(NOTIFICATION_ID, buildNotification())
@@ -216,9 +234,11 @@ class PlaybackService : Service() {
                 currentStreamIsHls = resolvedStream.playableUrl.lowercase().contains(".m3u8")
                 _state.update {
                     it.copy(
-                        trackText = "Waiting for metadata...",
+                        trackText = TRACK_TEXT_WAITING_METADATA,
                         resolving = false,
-                        bitrateText = resolvedStream.bitrateLabel,
+                        streamInfo = PlaybackStreamInfo(
+                            bitrateKbps = resolvedStream.bitrateKbps,
+                        ),
                     )
                 }
                 player.setMediaItem(
@@ -281,12 +301,12 @@ class PlaybackService : Service() {
                 it.copy(
                     selectedIndex = -1,
                     selectedStation = null,
-                    trackText = "No stream is playing",
+                    trackText = TRACK_TEXT_STOPPED,
                     resolving = false,
                     buffering = false,
                     isPlaying = false,
                     errorText = null,
-                    bitrateText = null,
+                    streamInfo = PlaybackStreamInfo(),
                 )
             }
         }
@@ -301,11 +321,13 @@ class PlaybackService : Service() {
                     isPlaying = player.isPlaying,
                 )
             }
+            showNoMetadataIfPlaybackStarted()
             updateNotification()
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _state.update { it.copy(isPlaying = isPlaying) }
+            showNoMetadataIfPlaybackStarted()
             updateNotification(immediate = true)
         }
 
@@ -327,7 +349,7 @@ class PlaybackService : Service() {
                 .toList()
 
             if (selectedBitrates.size == 1) {
-                formatBitrateLabel(selectedBitrates.first())?.let(::updateBitrateText)
+                updateStreamInfo(bitrate = selectedBitrates.first())
             }
         }
 
@@ -377,31 +399,46 @@ class PlaybackService : Service() {
                 if (currentStreamIsHls && format.sampleRate <= 0 && codecLabel == null) {
                     return
                 }
-                formatPlaybackFormatLabel(format, codecLabel)?.let(::updateBitrateText)
+                updateStreamInfo(format, codecLabel)
             }
         }
     }
 
-    private fun updateBitrateText(bitrateText: String) {
-        if (state.value.bitrateText != bitrateText) {
-            _state.update { it.copy(bitrateText = bitrateText) }
+    private fun updateStreamInfo(bitrate: Int) {
+        val bitrateKbps = bitrateKbps(bitrate) ?: return
+        if (state.value.streamInfo.bitrateKbps != bitrateKbps) {
+            _state.update { it.copy(streamInfo = it.streamInfo.copy(bitrateKbps = bitrateKbps)) }
             updateNotification()
         }
     }
 
-    private fun formatPlaybackFormatLabel(format: Format, codecLabel: String? = format.sampleMimeType?.audioCodecLabel()): String? {
-        val parts = buildList {
-            formatBitrateLabel(format.bitrate)?.let(::add)
-            if (format.sampleRate > 0) {
-                add("${format.sampleRate / 1000} kHz")
-            }
-            codecLabel?.let(::add)
+    private fun updateStreamInfo(format: Format, codecLabel: String? = format.sampleMimeType?.audioCodecLabel()) {
+        val nextInfo = state.value.streamInfo.copy(
+            bitrateKbps = bitrateKbps(format.bitrate) ?: state.value.streamInfo.bitrateKbps,
+            sampleRateHz = format.sampleRate.takeIf { it > 0 } ?: state.value.streamInfo.sampleRateHz,
+            formatLabel = codecLabel ?: state.value.streamInfo.formatLabel,
+        )
+        if (state.value.streamInfo != nextInfo) {
+            _state.update { it.copy(streamInfo = nextInfo) }
+            updateNotification()
         }
-        return parts.takeIf { it.isNotEmpty() }?.joinToString(" / ")
     }
 
-    private fun formatBitrateLabel(bitrate: Int): String? {
-        return bitrate.takeIf { it > 0 }?.let { "${it / 1000} kbps" }
+    private fun bitrateKbps(bitrate: Int): Int? {
+        return bitrate.takeIf { it > 0 }?.let { it / 1000 }
+    }
+
+    private fun showNoMetadataIfPlaybackStarted() {
+        val current = state.value
+        if (
+            player.isPlaying &&
+            !current.resolving &&
+            !current.buffering &&
+            current.trackText == TRACK_TEXT_WAITING_METADATA
+        ) {
+            _state.update { it.copy(trackText = TRACK_TEXT_NO_METADATA) }
+            refreshCurrentMediaMetadata()
+        }
     }
 
     private fun String.audioCodecLabel(): String? {
@@ -451,8 +488,12 @@ class PlaybackService : Service() {
     private fun buildSessionMetadata(station: Station, trackText: String?): MediaMetadata {
         return MediaMetadata.Builder()
             .setTitle(station.title)
-            .setArtist(trackText?.takeIf { it.isNotBlank() && it != "Waiting for metadata..." })
+            .setArtist(trackText?.takeIf { it.isPublicTrackText() })
             .build()
+    }
+
+    private fun String.isPublicTrackText(): Boolean {
+        return isNotBlank() && this !in SERVICE_TRACK_TEXTS
     }
 
     private fun buildNotification(): Notification {
@@ -589,6 +630,13 @@ class PlaybackService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_UPDATE_DELAY_MS = 500L
         private const val EXTRA_INDEX = "index"
+        private val SERVICE_TRACK_TEXTS = setOf(
+            TRACK_TEXT_STOPPED,
+            TRACK_TEXT_LOADING_STATIONS,
+            TRACK_TEXT_RESOLVING,
+            TRACK_TEXT_WAITING_METADATA,
+            TRACK_TEXT_NO_METADATA,
+        )
 
         private const val ACTION_PLAY_STATION = "omnibeat.app.action.PLAY_STATION"
         private const val ACTION_PLAY_STOP = "omnibeat.app.action.PLAY_STOP"

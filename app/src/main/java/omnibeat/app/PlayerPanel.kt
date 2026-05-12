@@ -1,28 +1,42 @@
 package omnibeat.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +50,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +59,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
@@ -52,7 +68,8 @@ import androidx.compose.ui.window.PopupProperties
 fun PlayerPanel(
     station: Station?,
     trackText: String,
-    bitrateText: String?,
+    errorText: String?,
+    streamInfo: PlaybackStreamInfo,
     loading: Boolean,
     resolving: Boolean,
     isPlaying: Boolean,
@@ -65,6 +82,11 @@ fun PlayerPanel(
     onRandomStation: () -> Unit,
     onVolumeChange: (Float) -> Unit,
 ) {
+    var showStreamInfo by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val displayTrackText = errorText ?: trackText
+    val bitrateText = streamInfo.bitrateText
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -78,57 +100,68 @@ fun PlayerPanel(
                 .height(DividerDefaults.Thickness)
                 .background(RadioOutline),
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 8.dp),
-        ) {
-            Text(
-                text = station?.title ?: "Choose a station",
-                color = RadioText,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            if (loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .padding(start = 12.dp)
-                        .size(24.dp),
-                    strokeWidth = 2.dp,
-                    color = RadioPrimary,
-                )
-            }
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 2.dp),
-        ) {
-            Text(
-                text = trackText,
-                color = RadioTextMuted,
-                fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Clip,
-                softWrap = false,
-                modifier = Modifier
-                    .weight(1f)
-                    .basicMarquee(
-                        iterations = Int.MAX_VALUE,
-                        repeatDelayMillis = 1_500,
-                    ),
-            )
-            bitrateText?.let { bitrate ->
-                Text(
-                    text = bitrate,
-                    color = RadioTextMuted,
-                    fontSize = 13.sp,
-                    maxLines = 1,
-                    modifier = Modifier.padding(start = 12.dp),
+                .combinedClickable(
+                    enabled = station != null,
+                    onClick = {
+                        copyTextToClipboard(context, label = "Track", text = trackText)
+                        android.widget.Toast.makeText(context, "Track name copied", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    onLongClick = { showStreamInfo = true },
                 )
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = station?.title ?: "Choose a station",
+                    color = RadioText,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .size(24.dp),
+                        strokeWidth = 2.dp,
+                        color = RadioPrimary,
+                    )
+                }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+            ) {
+                Text(
+                    text = displayTrackText,
+                    color = RadioTextMuted,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+                    softWrap = false,
+                    modifier = Modifier
+                        .weight(1f)
+                        .basicMarquee(
+                            iterations = Int.MAX_VALUE,
+                            repeatDelayMillis = 1_500,
+                        ),
+                )
+                bitrateText?.let { bitrate ->
+                    Text(
+                        text = bitrate,
+                        color = RadioTextMuted,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
+                }
             }
         }
         Box(
@@ -195,6 +228,136 @@ fun PlayerPanel(
             )
         }
     }
+
+    if (showStreamInfo) {
+        StreamInfoDialog(
+            stationTitle = station?.title.orEmpty(),
+            trackText = trackText,
+            streamInfo = streamInfo,
+            onDismiss = { showStreamInfo = false },
+            onCopyInfo = { info ->
+                copyTextToClipboard(context, label = "Stream info", text = info)
+                android.widget.Toast.makeText(context, "Stream info copied", android.widget.Toast.LENGTH_SHORT).show()
+            },
+        )
+    }
+}
+
+@Composable
+private fun StreamInfoDialog(
+    stationTitle: String,
+    trackText: String,
+    streamInfo: PlaybackStreamInfo,
+    onDismiss: () -> Unit,
+    onCopyInfo: (String) -> Unit,
+) {
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
+        unfocusedPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
+        errorPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
+        disabledTextColor = RadioText,
+        disabledLabelColor = RadioTextMuted,
+        disabledBorderColor = RadioOutline,
+    )
+    val bitrate = streamInfo.bitrateText ?: "Not available"
+    val sampleRate = streamInfo.sampleRateText ?: "Not available"
+    val format = streamInfo.formatLabel ?: "Not available"
+    val copyText = listOf(
+        "Station: ${stationTitle.ifBlank { "Not available" }}",
+        "Track: ${trackText.ifBlank { "Not available" }}",
+        "Bitrate: $bitrate",
+        "Sample rate: $sampleRate",
+        "Format: $format",
+    ).joinToString(" | ")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .widthIn(max = 560.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        title = { Text("Stream info") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
+                OutlinedTextField(
+                    value = stationTitle,
+                    onValueChange = {},
+                    enabled = false,
+                    singleLine = false,
+                    minLines = 1,
+                    maxLines = 3,
+                    label = { Text("Station") },
+                    colors = textFieldColors,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = trackText,
+                    onValueChange = {},
+                    enabled = false,
+                    singleLine = false,
+                    minLines = 1,
+                    maxLines = 5,
+                    label = { Text("Track") },
+                    colors = textFieldColors,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                StreamInfoRow(label = "Bitrate", value = bitrate)
+                StreamInfoRow(label = "Sample rate", value = sampleRate)
+                StreamInfoRow(label = "Format", value = format)
+            }
+        },
+        confirmButton = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                FilledTonalButton(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = RadioSurfaceHigh,
+                        contentColor = RadioText,
+                    ),
+                ) {
+                    Text("Close")
+                }
+                Spacer(Modifier.weight(1f))
+                Button(
+                    onClick = { onCopyInfo(copyText) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RadioPrimary,
+                        contentColor = RadioText,
+                    ),
+                ) {
+                    Text("Copy info")
+                }
+            }
+        },
+        dismissButton = {},
+        containerColor = RadioSurface,
+        titleContentColor = RadioText,
+        textContentColor = RadioTextMuted,
+    )
+}
+
+@Composable
+private fun StreamInfoRow(label: String, value: String) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(text = label, color = RadioTextMuted, fontSize = 14.sp)
+        Text(text = value, color = RadioText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+private fun copyTextToClipboard(context: Context, label: String, text: String) {
+    val clipboardManager = context.getSystemService(ClipboardManager::class.java)
+    clipboardManager.setPrimaryClip(ClipData.newPlainText(label, text))
 }
 
 @Composable

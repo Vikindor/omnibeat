@@ -185,8 +185,9 @@ fun OmniBeatApp() {
                 bottomBar = {
                     PlayerPanel(
                         station = playbackState.selectedStation,
-                        trackText = playbackState.errorText ?: playbackState.trackText,
-                        bitrateText = playbackState.bitrateText,
+                        trackText = playbackState.trackText,
+                        errorText = playbackState.errorText,
+                        streamInfo = playbackState.streamInfo,
                         loading = playbackState.resolving || playbackState.buffering,
                         resolving = playbackState.resolving,
                         isPlaying = playbackState.isPlaying,
