@@ -5,11 +5,14 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DrawerValue
@@ -26,10 +30,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -55,8 +61,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.random.Random
 
@@ -82,6 +93,8 @@ fun OmniBeatApp() {
         var scrollToSelectedRequest by remember { mutableIntStateOf(0) }
         var scrollToStationId by remember { mutableStateOf<String?>(null) }
         var lastPlayedStationId by remember { mutableStateOf<String?>(null) }
+        var pendingExportJson by remember { mutableStateOf<String?>(null) }
+        var pendingImportData by remember { mutableStateOf<StationExportData?>(null) }
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -130,6 +143,51 @@ fun OmniBeatApp() {
             }
         }
 
+        val exportLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/json"),
+        ) { uri ->
+            val exportJson = pendingExportJson ?: return@rememberLauncherForActivityResult
+            pendingExportJson = null
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                            outputStream.write(exportJson.toByteArray(Charsets.UTF_8))
+                        } ?: error("Could not open export file")
+                    }
+                }.onSuccess {
+                    Toast.makeText(context, "Stations exported", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(context, "Export failed: ${error.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        val importLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
+            scope.launch {
+                runCatching {
+                    val json = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            inputStream.readBytes().toString(Charsets.UTF_8)
+                        } ?: error("Could not open import file")
+                    }
+                    StationExportCodec.decode(json)
+                }.onSuccess { importData ->
+                    pendingImportData = importData
+                }.onFailure { error ->
+                    Toast.makeText(context, "Import failed: ${error.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
         LaunchedEffect(playbackState.errorText) {
             playbackState.errorText?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
         }
@@ -138,6 +196,47 @@ fun OmniBeatApp() {
             selectedPage = page
             lastMainPage = page
             scope.launch { repository.saveLastMainPage(page.name) }
+        }
+
+        fun exportStations() {
+            pendingExportJson = StationExportCodec.encode(
+                StationExportData(
+                    stations = stations,
+                    sortState = sortState,
+                    customStationOrder = customStationOrder,
+                    customFavoriteOrder = customFavoriteOrder,
+                ),
+            )
+            val exportDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd"))
+            exportLauncher.launch("omnibeat_stations_$exportDate.json")
+        }
+
+        fun importStations(mode: StationImportMode) {
+            val importData = pendingImportData ?: return
+            val importResult = StationExportCodec.buildImportResult(
+                importedData = importData,
+                currentStations = stations,
+                currentSortState = sortState,
+                currentCustomStationOrder = customStationOrder,
+                currentCustomFavoriteOrder = customFavoriteOrder,
+                mode = mode,
+            )
+            pendingImportData = null
+            stations = importResult.stations
+            sortState = importResult.sortState
+            customStationOrder = importResult.customStationOrder
+            customFavoriteOrder = importResult.customFavoriteOrder
+            reorderDraft = null
+            if (
+                playbackState.selectedStation != null &&
+                importResult.stations.none { it.id == playbackState.selectedStation?.id }
+            ) {
+                PlaybackService.stop(context)
+            }
+            scope.launch {
+                repository.saveImportedLibrary(importResult)
+                Toast.makeText(context, "Stations imported", Toast.LENGTH_SHORT).show()
+            }
         }
 
         fun customSortedStations(source: List<Station>, customOrder: List<String>): List<Station> {
@@ -517,11 +616,14 @@ fun OmniBeatApp() {
                         }
 
                         MainPage.Settings -> {
-                            EmptyFuturePage(
-                                title = "Settings",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 32.dp),
+                            SettingsPage(
+                                stationCount = stations.size,
+                                favoriteCount = stations.count { it.isFavorite },
+                                onExportStations = { exportStations() },
+                                onImportStations = {
+                                    importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
+                                },
+                                modifier = Modifier.fillMaxSize(),
                             )
                         }
 
@@ -531,6 +633,51 @@ fun OmniBeatApp() {
                     }
                 }
             }
+        }
+
+        pendingImportData?.let { importData ->
+            AlertDialog(
+                onDismissRequest = { pendingImportData = null },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .widthIn(max = 560.dp),
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+                containerColor = RadioSurface,
+                title = {
+                    Text(
+                        text = "Import stations",
+                        color = RadioText,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Import ${importData.stations.size} stations?\nMerge keeps your current library and updates matching stream URLs.\nReplace clears the current library first.",
+                        color = RadioTextMuted,
+                        lineHeight = 20.sp,
+                    )
+                },
+                confirmButton = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        TextButton(onClick = { pendingImportData = null }) {
+                            Text("Cancel")
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        TextButton(onClick = { importStations(StationImportMode.Replace) }) {
+                            Text("Replace")
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        TextButton(onClick = { importStations(StationImportMode.Merge) }) {
+                            Text("Merge")
+                        }
+                    }
+                },
+                dismissButton = {},
+            )
         }
 
         editorState?.let { state ->

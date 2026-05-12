@@ -82,6 +82,15 @@ class StationRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveImportedLibrary(importResult: StationImportResult) {
+        context.stationDataStore.edit { preferences ->
+            preferences[stationsJsonKey] = encodeStations(importResult.stations)
+            preferences[stationSortKey] = "${importResult.sortState.mode.name}:${importResult.sortState.ascending}"
+            preferences[customStationOrderKey] = encodeStringList(importResult.customStationOrder)
+            preferences[customFavoriteOrderKey] = encodeStringList(importResult.customFavoriteOrder)
+        }
+    }
+
     suspend fun saveStations(stations: List<Station>) {
         context.stationDataStore.edit { preferences ->
             preferences[stationsJsonKey] = encodeStations(stations)
