@@ -25,6 +25,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -79,6 +82,22 @@ fun StationList(
     val listState = rememberLazyListState()
     val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
         onMove(from.index, to.index)
+    }
+    val stationOrderSignature = stations.joinToString(separator = "|") { it.id }
+    val previousStationOrderSignature = remember { mutableStateOf(stationOrderSignature) }
+    val wasReordering = remember { mutableStateOf(reordering) }
+
+    val enteringReorder = reordering && !wasReordering.value
+    if ((!reordering || enteringReorder) && previousStationOrderSignature.value != stationOrderSignature) {
+        listState.requestScrollToItem(
+            index = listState.firstVisibleItemIndex.coerceIn(0, stations.lastIndex.coerceAtLeast(0)),
+            scrollOffset = listState.firstVisibleItemScrollOffset,
+        )
+    }
+
+    SideEffect {
+        previousStationOrderSignature.value = stationOrderSignature
+        wasReordering.value = reordering
     }
 
     LaunchedEffect(scrollToSelectedRequest) {

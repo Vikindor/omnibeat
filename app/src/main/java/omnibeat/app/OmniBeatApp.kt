@@ -224,7 +224,10 @@ fun OmniBeatApp() {
                 } else {
                     customSortedStations(pageStations, customOrder)
                 }
+                val nextSortState = StationSortState(mode = StationSortMode.Custom, ascending = false)
+                sortState = nextSortState
                 reorderDraft = StationReorderDraft(page = reorderPage, stations = draftStations)
+                scope.launch { repository.saveStationSortState(nextSortState) }
                 return
             }
             val nextSortState = if (sortState.mode == nextSortMode) {
