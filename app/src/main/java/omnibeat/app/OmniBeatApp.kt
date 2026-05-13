@@ -7,15 +7,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +22,8 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
@@ -54,11 +48,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -102,6 +96,7 @@ fun OmniBeatApp() {
         var lastPlayedStationId by remember { mutableStateOf<String?>(null) }
         var pendingExportJson by remember { mutableStateOf<String?>(null) }
         var pendingImportData by remember { mutableStateOf<StationExportData?>(null) }
+        val pagerState = rememberPagerState(pageCount = { MainPage.tabPages.size })
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -203,6 +198,22 @@ fun OmniBeatApp() {
             selectedPage = page
             lastMainPage = page
             scope.launch { repository.saveLastMainPage(page.name) }
+        }
+
+        LaunchedEffect(selectedPage) {
+            val tabIndex = MainPage.tabPages.indexOf(selectedPage)
+            if (tabIndex >= 0 && pagerState.currentPage != tabIndex) {
+                pagerState.animateScrollToPage(tabIndex)
+            }
+        }
+
+        LaunchedEffect(pagerState) {
+            snapshotFlow { pagerState.settledPage }.collect { pageIndex ->
+                val page = MainPage.tabPages.getOrNull(pageIndex) ?: return@collect
+                if (selectedPage in MainPage.tabPages && selectedPage != page) {
+                    selectMainPage(page)
+                }
+            }
         }
 
         fun exportStations() {
@@ -527,49 +538,17 @@ fun OmniBeatApp() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding)
-                        .pointerInput(selectedPage) {
-                            var totalDragX = 0f
-                            detectHorizontalDragGestures(
-                                onDragStart = { totalDragX = 0f },
-                                onHorizontalDrag = { change, dragAmount ->
-                                    totalDragX += dragAmount
-                                    change.consume()
-                                },
-                                onDragEnd = {
-                                    val threshold = 80.dp.toPx()
-                                    val nextPage = when {
-                                        selectedPage in MainPage.tabPages && totalDragX < -threshold -> MainPage.Favorites
-                                        selectedPage in MainPage.tabPages && totalDragX > threshold -> MainPage.Stations
-                                        else -> selectedPage
-                                    }
-                                    selectedPage = nextPage
-                                    if (nextPage in MainPage.tabPages) {
-                                        selectMainPage(nextPage)
-                                    }
-                                },
-                            )
-                        },
+                        .padding(padding),
                 ) {
                     when (selectedPage) {
                         MainPage.Stations,
                         MainPage.Favorites -> {
-                            AnimatedContent(
-                                targetState = selectedPage,
-                                label = "Station tabs",
-                                transitionSpec = {
-                                    val forward = targetState.ordinal > initialState.ordinal
-                                    if (forward) {
-                                        slideInHorizontally { width -> width } + fadeIn() togetherWith
-                                            slideOutHorizontally { width -> -width } + fadeOut()
-                                    } else {
-                                        slideInHorizontally { width -> -width } + fadeIn() togetherWith
-                                            slideOutHorizontally { width -> width } + fadeOut()
-                                    }.using(SizeTransform(clip = false))
-                                },
+                            HorizontalPager(
+                                state = pagerState,
+                                userScrollEnabled = reorderDraft == null,
                                 modifier = Modifier.fillMaxSize(),
-                            ) { tabPage ->
-                                when (tabPage) {
+                            ) { pageIndex ->
+                                when (MainPage.tabPages[pageIndex]) {
                                     MainPage.Stations -> {
                                         val visibleStations = reorderDraft?.stations ?: sortedStations(stations, MainPage.Stations)
                                         if (visibleStations.isEmpty()) {
