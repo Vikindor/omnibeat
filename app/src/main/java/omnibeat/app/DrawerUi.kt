@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun DrawerContent(
     onStationsClick: () -> Unit = {},
+    onExportImportClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onAboutClick: () -> Unit = {},
     onExitClick: () -> Unit = {},
@@ -82,6 +83,11 @@ fun DrawerContent(
                 text = "Stations",
                 iconRes = R.drawable.ic_list,
                 onClick = onStationsClick,
+            )
+            DrawerItem(
+                text = "Export / Import",
+                iconRes = R.drawable.ic_file_download,
+                onClick = onExportImportClick,
             )
             DrawerItem(
                 text = "Settings",

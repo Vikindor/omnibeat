@@ -446,6 +446,10 @@ fun OmniBeatApp() {
                         selectedPage = lastMainPage
                         scope.launch { drawerState.close() }
                     },
+                    onExportImportClick = {
+                        selectedPage = MainPage.ExportImport
+                        scope.launch { drawerState.close() }
+                    },
                     onSettingsClick = {
                         selectedPage = MainPage.Settings
                         scope.launch { drawerState.close() }
@@ -615,8 +619,8 @@ fun OmniBeatApp() {
                             }
                         }
 
-                        MainPage.Settings -> {
-                            SettingsPage(
+                        MainPage.ExportImport -> {
+                            ExportImportPage(
                                 stationCount = stations.size,
                                 favoriteCount = stations.count { it.isFavorite },
                                 onExportStations = { exportStations() },
@@ -624,6 +628,15 @@ fun OmniBeatApp() {
                                     importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
                                 },
                                 modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+
+                        MainPage.Settings -> {
+                            EmptyFuturePage(
+                                title = "Settings",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 32.dp),
                             )
                         }
 
@@ -725,6 +738,7 @@ fun OmniBeatApp() {
 enum class MainPage(val title: String) {
     Stations("Stations"),
     Favorites("Favorites"),
+    ExportImport("Export / Import"),
     Settings("Settings"),
     About("About");
 

@@ -131,26 +131,6 @@ private fun AboutLinkRow(
 }
 
 @Composable
-fun EmptyFuturePage(
-    title: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier,
-    ) {
-        Text(title, color = RadioText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-        Text(
-            text = "Coming later",
-            color = RadioTextMuted,
-            fontSize = 15.sp,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-    }
-}
-
-@Composable
 private fun AboutInfoRow(
     label: String,
     value: String,

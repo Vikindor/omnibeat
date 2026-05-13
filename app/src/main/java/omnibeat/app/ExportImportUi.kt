@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SettingsPage(
+fun ExportImportPage(
     stationCount: Int,
     favoriteCount: Int,
     onExportStations: () -> Unit,
@@ -51,13 +51,13 @@ fun SettingsPage(
             modifier = Modifier.padding(top = 22.dp, bottom = 8.dp),
         )
 
-        SettingsActionRow(
+        ExportImportActionRow(
             icon = R.drawable.ic_file_download,
             title = "Export stations",
             subtitle = "Save an OmniBeat JSON backup",
             onClick = onExportStations,
         )
-        SettingsActionRow(
+        ExportImportActionRow(
             icon = R.drawable.ic_file_upload,
             title = "Import stations",
             subtitle = "Merge or replace from an OmniBeat JSON backup",
@@ -67,7 +67,7 @@ fun SettingsPage(
 }
 
 @Composable
-private fun SettingsActionRow(
+private fun ExportImportActionRow(
     icon: Int,
     title: String,
     subtitle: String,
