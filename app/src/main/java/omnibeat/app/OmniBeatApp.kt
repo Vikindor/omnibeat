@@ -52,6 +52,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -70,6 +71,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -548,82 +550,95 @@ fun OmniBeatApp() {
                                 userScrollEnabled = reorderDraft == null,
                                 modifier = Modifier.fillMaxSize(),
                             ) { pageIndex ->
-                                when (MainPage.tabPages[pageIndex]) {
-                                    MainPage.Stations -> {
-                                        val visibleStations = reorderDraft?.stations ?: sortedStations(stations, MainPage.Stations)
-                                        if (visibleStations.isEmpty()) {
-                                            EmptyStationsState(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .padding(horizontal = 32.dp),
-                                            )
-                                        } else {
-                                            StationList(
-                                                stations = visibleStations,
-                                                selectedIndex = visibleStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
-                                                scrollToSelectedRequest = scrollToSelectedRequest,
-                                                scrollToStationId = scrollToStationId,
-                                                enabled = drawerState.isClosed && reorderDraft == null,
-                                                reordering = reorderDraft != null,
-                                                onMove = ::moveReorderDraft,
-                                                onFavoriteClick = { _, station -> toggleFavorite(station) },
-                                                onStationEdit = { _, station ->
-                                                    val index = stations.indexOfFirst { it.id == station.id }
-                                                    if (index != -1) {
-                                                        editorState = StationEditorState(
-                                                            stationIndex = index,
-                                                            title = station.title,
-                                                            streamUrl = station.streamUrl,
-                                                            tags = station.tags.joinToString(", "),
-                                                        )
-                                                    }
-                                                },
-                                                onStationClick = { _, station -> playStation(station) },
-                                            )
+                                val pageOffset = (
+                                    (pagerState.currentPage - pageIndex) + pagerState.currentPageOffsetFraction
+                                ).absoluteValue.coerceIn(0f, 1f)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer {
+                                            val minPageAlpha = 0.35f
+                                            val fadeProgress = (pageOffset * 2.2f).coerceIn(0f, 1f)
+                                            alpha = 1f - fadeProgress * (1f - minPageAlpha)
+                                        },
+                                ) {
+                                    when (MainPage.tabPages[pageIndex]) {
+                                        MainPage.Stations -> {
+                                            val visibleStations = reorderDraft?.stations ?: sortedStations(stations, MainPage.Stations)
+                                            if (visibleStations.isEmpty()) {
+                                                EmptyStationsState(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .padding(horizontal = 32.dp),
+                                                )
+                                            } else {
+                                                StationList(
+                                                    stations = visibleStations,
+                                                    selectedIndex = visibleStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
+                                                    scrollToSelectedRequest = scrollToSelectedRequest,
+                                                    scrollToStationId = scrollToStationId,
+                                                    enabled = drawerState.isClosed && reorderDraft == null,
+                                                    reordering = reorderDraft != null,
+                                                    onMove = ::moveReorderDraft,
+                                                    onFavoriteClick = { _, station -> toggleFavorite(station) },
+                                                    onStationEdit = { _, station ->
+                                                        val index = stations.indexOfFirst { it.id == station.id }
+                                                        if (index != -1) {
+                                                            editorState = StationEditorState(
+                                                                stationIndex = index,
+                                                                title = station.title,
+                                                                streamUrl = station.streamUrl,
+                                                                tags = station.tags.joinToString(", "),
+                                                            )
+                                                        }
+                                                    },
+                                                    onStationClick = { _, station -> playStation(station) },
+                                                )
+                                            }
                                         }
-                                    }
 
-                                    MainPage.Favorites -> {
-                                        val favoriteStations = reorderDraft?.stations
-                                            ?: sortedStations(stations.filter { it.isFavorite }, MainPage.Favorites)
-                                        if (favoriteStations.isEmpty()) {
-                                            EmptyFavoritesState(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .padding(horizontal = 32.dp),
-                                            )
-                                        } else {
-                                            StationList(
-                                                stations = favoriteStations,
-                                                selectedIndex = favoriteStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
-                                                scrollToSelectedRequest = scrollToSelectedRequest,
-                                                scrollToStationId = scrollToStationId,
-                                                enabled = drawerState.isClosed && reorderDraft == null,
-                                                reordering = reorderDraft != null,
-                                                onMove = ::moveReorderDraft,
-                                                onFavoriteClick = { _, station -> toggleFavorite(station) },
-                                                onStationEdit = { _, station ->
-                                                    val index = stations.indexOfFirst { it.id == station.id }
-                                                    if (index != -1) {
-                                                        editorState = StationEditorState(
-                                                            stationIndex = index,
-                                                            title = station.title,
-                                                            streamUrl = station.streamUrl,
-                                                            tags = station.tags.joinToString(", "),
-                                                        )
-                                                    }
-                                                },
-                                                onStationClick = { _, station ->
-                                                    val index = stations.indexOfFirst { it.id == station.id }
-                                                    if (index != -1) {
-                                                        playStationAt(index)
-                                                    }
-                                                },
-                                            )
+                                        MainPage.Favorites -> {
+                                            val favoriteStations = reorderDraft?.stations
+                                                ?: sortedStations(stations.filter { it.isFavorite }, MainPage.Favorites)
+                                            if (favoriteStations.isEmpty()) {
+                                                EmptyFavoritesState(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .padding(horizontal = 32.dp),
+                                                )
+                                            } else {
+                                                StationList(
+                                                    stations = favoriteStations,
+                                                    selectedIndex = favoriteStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
+                                                    scrollToSelectedRequest = scrollToSelectedRequest,
+                                                    scrollToStationId = scrollToStationId,
+                                                    enabled = drawerState.isClosed && reorderDraft == null,
+                                                    reordering = reorderDraft != null,
+                                                    onMove = ::moveReorderDraft,
+                                                    onFavoriteClick = { _, station -> toggleFavorite(station) },
+                                                    onStationEdit = { _, station ->
+                                                        val index = stations.indexOfFirst { it.id == station.id }
+                                                        if (index != -1) {
+                                                            editorState = StationEditorState(
+                                                                stationIndex = index,
+                                                                title = station.title,
+                                                                streamUrl = station.streamUrl,
+                                                                tags = station.tags.joinToString(", "),
+                                                            )
+                                                        }
+                                                    },
+                                                    onStationClick = { _, station ->
+                                                        val index = stations.indexOfFirst { it.id == station.id }
+                                                        if (index != -1) {
+                                                            playStationAt(index)
+                                                        }
+                                                    },
+                                                )
+                                            }
                                         }
-                                    }
 
-                                    else -> Unit
+                                        else -> Unit
+                                    }
                                 }
                             }
                         }
