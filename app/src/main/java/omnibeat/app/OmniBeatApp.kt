@@ -512,29 +512,31 @@ fun OmniBeatApp() {
                     )
                 },
                 bottomBar = {
-                    val pageStations = navigationStations()
-                    val canStartPlayback = pageStations.isNotEmpty() ||
-                        lastPlayedStationId?.let { stationId -> stations.any { it.id == stationId } } == true
-                    PlayerPanel(
-                        station = playbackState.selectedStation,
-                        trackText = playbackState.trackText,
-                        errorText = playbackState.errorText,
-                        streamInfo = playbackState.streamInfo,
-                        loading = playbackState.resolving || playbackState.buffering,
-                        resolving = playbackState.resolving,
-                        isPlaying = playbackState.isPlaying,
-                        canNavigateStations = pageStations.isNotEmpty(),
-                        appVolume = appVolume,
-                        canPlay = canStartPlayback,
-                        onPlayStop = { playOrStop() },
-                        onPreviousStation = { playAdjacentStation(-1) },
-                        onNextStation = { playAdjacentStation(1) },
-                        onRandomStation = { playRandomStation() },
-                        onVolumeChange = { volume ->
-                            appVolume = volume
-                            scope.launch { repository.saveAppVolume(volume) }
-                        },
-                    )
+                    if (selectedPage in MainPage.tabPages) {
+                        val pageStations = navigationStations()
+                        val canStartPlayback = pageStations.isNotEmpty() ||
+                            lastPlayedStationId?.let { stationId -> stations.any { it.id == stationId } } == true
+                        PlayerPanel(
+                            station = playbackState.selectedStation,
+                            trackText = playbackState.trackText,
+                            errorText = playbackState.errorText,
+                            streamInfo = playbackState.streamInfo,
+                            loading = playbackState.resolving || playbackState.buffering,
+                            resolving = playbackState.resolving,
+                            isPlaying = playbackState.isPlaying,
+                            canNavigateStations = pageStations.isNotEmpty(),
+                            appVolume = appVolume,
+                            canPlay = canStartPlayback,
+                            onPlayStop = { playOrStop() },
+                            onPreviousStation = { playAdjacentStation(-1) },
+                            onNextStation = { playAdjacentStation(1) },
+                            onRandomStation = { playRandomStation() },
+                            onVolumeChange = { volume ->
+                                appVolume = volume
+                                scope.launch { repository.saveAppVolume(volume) }
+                            },
+                        )
+                    }
                 },
             ) { padding ->
                 Column(
