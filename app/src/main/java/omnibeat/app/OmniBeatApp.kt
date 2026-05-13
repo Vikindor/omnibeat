@@ -7,6 +7,13 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -545,77 +552,100 @@ fun OmniBeatApp() {
                         },
                 ) {
                     when (selectedPage) {
-                        MainPage.Stations -> {
-                            val visibleStations = reorderDraft?.stations ?: sortedStations(stations, MainPage.Stations)
-                            if (visibleStations.isEmpty()) {
-                                EmptyStationsState(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 32.dp),
-                                )
-                            } else {
-                                StationList(
-                                    stations = visibleStations,
-                                    selectedIndex = visibleStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
-                                    scrollToSelectedRequest = scrollToSelectedRequest,
-                                    scrollToStationId = scrollToStationId,
-                                    enabled = drawerState.isClosed && reorderDraft == null,
-                                    reordering = reorderDraft != null,
-                                    onMove = ::moveReorderDraft,
-                                    onFavoriteClick = { _, station -> toggleFavorite(station) },
-                                    onStationEdit = { _, station ->
-                                        val index = stations.indexOfFirst { it.id == station.id }
-                                        if (index != -1) {
-                                            editorState = StationEditorState(
-                                                stationIndex = index,
-                                                title = station.title,
-                                                streamUrl = station.streamUrl,
-                                                tags = station.tags.joinToString(", "),
-                                            )
-                                        }
-                                    },
-                                    onStationClick = { _, station -> playStation(station) },
-                                )
-                            }
-                        }
-
+                        MainPage.Stations,
                         MainPage.Favorites -> {
-                            val favoriteStations = reorderDraft?.stations
-                                ?: sortedStations(stations.filter { it.isFavorite }, MainPage.Favorites)
-                            if (favoriteStations.isEmpty()) {
-                                EmptyFavoritesState(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 32.dp),
-                                )
-                            } else {
-                                StationList(
-                                    stations = favoriteStations,
-                                    selectedIndex = favoriteStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
-                                    scrollToSelectedRequest = scrollToSelectedRequest,
-                                    scrollToStationId = scrollToStationId,
-                                    enabled = drawerState.isClosed && reorderDraft == null,
-                                    reordering = reorderDraft != null,
-                                    onMove = ::moveReorderDraft,
-                                    onFavoriteClick = { _, station -> toggleFavorite(station) },
-                                    onStationEdit = { _, station ->
-                                        val index = stations.indexOfFirst { it.id == station.id }
-                                        if (index != -1) {
-                                            editorState = StationEditorState(
-                                                stationIndex = index,
-                                                title = station.title,
-                                                streamUrl = station.streamUrl,
-                                                tags = station.tags.joinToString(", "),
+                            AnimatedContent(
+                                targetState = selectedPage,
+                                label = "Station tabs",
+                                transitionSpec = {
+                                    val forward = targetState.ordinal > initialState.ordinal
+                                    if (forward) {
+                                        slideInHorizontally { width -> width } + fadeIn() togetherWith
+                                            slideOutHorizontally { width -> -width } + fadeOut()
+                                    } else {
+                                        slideInHorizontally { width -> -width } + fadeIn() togetherWith
+                                            slideOutHorizontally { width -> width } + fadeOut()
+                                    }.using(SizeTransform(clip = false))
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            ) { tabPage ->
+                                when (tabPage) {
+                                    MainPage.Stations -> {
+                                        val visibleStations = reorderDraft?.stations ?: sortedStations(stations, MainPage.Stations)
+                                        if (visibleStations.isEmpty()) {
+                                            EmptyStationsState(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .padding(horizontal = 32.dp),
+                                            )
+                                        } else {
+                                            StationList(
+                                                stations = visibleStations,
+                                                selectedIndex = visibleStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
+                                                scrollToSelectedRequest = scrollToSelectedRequest,
+                                                scrollToStationId = scrollToStationId,
+                                                enabled = drawerState.isClosed && reorderDraft == null,
+                                                reordering = reorderDraft != null,
+                                                onMove = ::moveReorderDraft,
+                                                onFavoriteClick = { _, station -> toggleFavorite(station) },
+                                                onStationEdit = { _, station ->
+                                                    val index = stations.indexOfFirst { it.id == station.id }
+                                                    if (index != -1) {
+                                                        editorState = StationEditorState(
+                                                            stationIndex = index,
+                                                            title = station.title,
+                                                            streamUrl = station.streamUrl,
+                                                            tags = station.tags.joinToString(", "),
+                                                        )
+                                                    }
+                                                },
+                                                onStationClick = { _, station -> playStation(station) },
                                             )
                                         }
-                                    },
-                                    onStationClick = { _, station ->
-                                        val index = stations.indexOfFirst { it.id == station.id }
-                                        if (index != -1) {
-                                            playStationAt(index)
+                                    }
+
+                                    MainPage.Favorites -> {
+                                        val favoriteStations = reorderDraft?.stations
+                                            ?: sortedStations(stations.filter { it.isFavorite }, MainPage.Favorites)
+                                        if (favoriteStations.isEmpty()) {
+                                            EmptyFavoritesState(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .padding(horizontal = 32.dp),
+                                            )
+                                        } else {
+                                            StationList(
+                                                stations = favoriteStations,
+                                                selectedIndex = favoriteStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
+                                                scrollToSelectedRequest = scrollToSelectedRequest,
+                                                scrollToStationId = scrollToStationId,
+                                                enabled = drawerState.isClosed && reorderDraft == null,
+                                                reordering = reorderDraft != null,
+                                                onMove = ::moveReorderDraft,
+                                                onFavoriteClick = { _, station -> toggleFavorite(station) },
+                                                onStationEdit = { _, station ->
+                                                    val index = stations.indexOfFirst { it.id == station.id }
+                                                    if (index != -1) {
+                                                        editorState = StationEditorState(
+                                                            stationIndex = index,
+                                                            title = station.title,
+                                                            streamUrl = station.streamUrl,
+                                                            tags = station.tags.joinToString(", "),
+                                                        )
+                                                    }
+                                                },
+                                                onStationClick = { _, station ->
+                                                    val index = stations.indexOfFirst { it.id == station.id }
+                                                    if (index != -1) {
+                                                        playStationAt(index)
+                                                    }
+                                                },
+                                            )
                                         }
-                                    },
-                                )
+                                    }
+
+                                    else -> Unit
+                                }
                             }
                         }
 
