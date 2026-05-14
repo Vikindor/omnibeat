@@ -211,7 +211,7 @@ fun OmniBeatApp() {
         }
 
         LaunchedEffect(pagerState) {
-            snapshotFlow { pagerState.settledPage }.collect { pageIndex ->
+            snapshotFlow { pagerState.currentPage }.collect { pageIndex ->
                 val page = MainPage.tabPages.getOrNull(pageIndex) ?: return@collect
                 if (selectedPage in MainPage.tabPages && selectedPage != page) {
                     selectMainPage(page)
