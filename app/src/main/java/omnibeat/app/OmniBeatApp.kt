@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DrawerValue
@@ -552,17 +553,10 @@ fun OmniBeatApp() {
                                 userScrollEnabled = reorderDraft == null,
                                 modifier = Modifier.fillMaxSize(),
                             ) { pageIndex ->
-                                val pageOffset = (
-                                    (pagerState.currentPage - pageIndex) + pagerState.currentPageOffsetFraction
-                                ).absoluteValue.coerceIn(0f, 1f)
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .graphicsLayer {
-                                            val minPageAlpha = 0.35f
-                                            val fadeProgress = (pageOffset * 2.2f).coerceIn(0f, 1f)
-                                            alpha = 1f - fadeProgress * (1f - minPageAlpha)
-                                        },
+                                        .pagerFade(pagerState, pageIndex),
                                 ) {
                                     when (MainPage.tabPages[pageIndex]) {
                                         MainPage.Stations -> {
@@ -759,6 +753,19 @@ fun OmniBeatApp() {
             )
         }
     }
+}
+
+@Suppress("FrequentlyChangedStateReadInComposition")
+private fun Modifier.pagerFade(
+    pagerState: PagerState,
+    pageIndex: Int,
+): Modifier = graphicsLayer {
+    val pageOffset = (
+        (pagerState.currentPage - pageIndex) + pagerState.currentPageOffsetFraction
+    ).absoluteValue.coerceIn(0f, 1f)
+    val minPageAlpha = 0.35f
+    val fadeProgress = (pageOffset * 2.2f).coerceIn(0f, 1f)
+    alpha = 1f - fadeProgress * (1f - minPageAlpha)
 }
 
 enum class MainPage(val title: String) {

@@ -11,6 +11,7 @@ val RadioSurfaceHigh = Color(0xFF24242B)
 val RadioOutline = Color(0xFF353540)
 val RadioPrimary = Color(0xFF8F5CFF)
 val RadioPrimaryDark = Color(0xFF3F236E)
+val RadioDanger = Color(0xFFFF4D5E)
 val RadioText = Color(0xFFF4F1FA)
 val RadioTextMuted = Color(0xFFB7B2C3)
 

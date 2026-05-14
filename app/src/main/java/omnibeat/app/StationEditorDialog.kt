@@ -17,7 +17,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -76,7 +75,7 @@ fun StationEditorDialog(
                         Icon(
                             painter = painterResource(R.drawable.ic_delete_outline),
                             contentDescription = "Delete station",
-                            tint = MaterialTheme.colorScheme.error,
+                            tint = RadioDanger,
                         )
                     }
                 }
@@ -181,8 +180,8 @@ fun StationEditorDialog(
                         onDelete()
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError,
+                        containerColor = RadioDanger,
+                        contentColor = RadioText,
                     ),
                 ) {
                     Text("Delete")
