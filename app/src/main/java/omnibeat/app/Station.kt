@@ -35,4 +35,5 @@ data class StationEditorState(
     val title: String,
     val streamUrl: String,
     val tags: String,
+    val dateAdded: String?,
 )

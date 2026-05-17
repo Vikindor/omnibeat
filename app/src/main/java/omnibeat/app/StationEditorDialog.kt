@@ -1,6 +1,11 @@
 package omnibeat.app
 
 import android.net.Uri
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,6 +50,7 @@ fun StationEditorDialog(
     val trimmedStreamUrl = streamUrl.trim()
     val hasValidStreamUrl = isValidStreamUrl(trimmedStreamUrl)
     val textFieldColors = omniTextFieldColors()
+    val formattedDateAdded = remember(state.dateAdded) { formatDateAdded(state.dateAdded) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -120,6 +126,20 @@ fun StationEditorDialog(
                     colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                formattedDateAdded?.let { dateAdded ->
+                    OutlinedTextField(
+                        value = dateAdded,
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = false,
+                        singleLine = false,
+                        minLines = 1,
+                        maxLines = 2,
+                        label = { Text("Date added") },
+                        colors = omniDisabledTextFieldColors(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         },
         confirmButton = {
@@ -174,4 +194,15 @@ fun StationEditorDialog(
 private fun isValidStreamUrl(streamUrl: String): Boolean {
     val uri = Uri.parse(streamUrl)
     return uri.scheme in setOf("http", "https") && !uri.host.isNullOrBlank()
+}
+
+private fun formatDateAdded(dateAdded: String?): String? {
+    val value = dateAdded?.takeIf { it.isNotBlank() } ?: return null
+    return runCatching {
+        DateTimeFormatter
+            .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+            .withLocale(Locale.getDefault())
+            .withZone(ZoneId.systemDefault())
+            .format(Instant.parse(value))
+    }.getOrDefault(value)
 }

@@ -591,6 +591,7 @@ fun OmniBeatApp() {
                                 title = "",
                                 streamUrl = "",
                                 tags = "",
+                                dateAdded = null,
                             )
                         },
                         onFindOnline = {
@@ -683,6 +684,7 @@ fun OmniBeatApp() {
                                                                 title = station.title,
                                                                 streamUrl = station.streamUrl,
                                                                 tags = station.tags.joinToString(", "),
+                                                                dateAdded = station.dateAdded,
                                                             )
                                                         }
                                                     },
@@ -718,6 +720,7 @@ fun OmniBeatApp() {
                                                                 title = station.title,
                                                                 streamUrl = station.streamUrl,
                                                                 tags = station.tags.joinToString(", "),
+                                                                dateAdded = station.dateAdded,
                                                             )
                                                         }
                                                     },
