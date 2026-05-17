@@ -1,13 +1,17 @@
 package omnibeat.app
 
 import android.app.Activity
+import android.content.ClipData
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.ClipboardManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -102,6 +106,7 @@ fun OmniBeatApp() {
         var onlineSearchResults by remember { mutableStateOf(emptyList<RadioBrowserStation>()) }
         var onlineSearchLoading by remember { mutableStateOf(false) }
         var onlineSearchError by remember { mutableStateOf<String?>(null) }
+        var onlineSearchErrorDialog by remember { mutableStateOf<String?>(null) }
         var onlineCountries by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
         var onlineLanguages by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
         var onlineOptionsExpanded by remember { mutableStateOf(false) }
@@ -300,7 +305,8 @@ fun OmniBeatApp() {
                     onlineSearchResults = emptyList()
                     val message = error.message ?: "Could not search stations"
                     onlineSearchError = message
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    onlineSearchErrorDialog = message
+                    Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
                 }
                 onlineSearchLoading = false
             }
@@ -819,6 +825,54 @@ fun OmniBeatApp() {
                         TextButton(onClick = { importStations(StationImportMode.Merge) }) {
                             Text("Merge")
                         }
+                    }
+                },
+                dismissButton = {},
+            )
+        }
+
+        onlineSearchErrorDialog?.let { message ->
+            AlertDialog(
+                onDismissRequest = { onlineSearchErrorDialog = null },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .widthIn(max = 560.dp),
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+                containerColor = RadioSurface,
+                titleContentColor = RadioText,
+                textContentColor = RadioTextMuted,
+                title = {
+                    Text(
+                        text = "Search error",
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                },
+                text = {
+                    Text(
+                        text = message,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                    )
+                },
+                confirmButton = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        OmniSecondaryButton(
+                            text = "Close",
+                            onClick = { onlineSearchErrorDialog = null },
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        OmniPrimaryButton(
+                            text = "Copy",
+                            onClick = {
+                                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Search error", message))
+                                Toast.makeText(context, "Error copied", Toast.LENGTH_SHORT).show()
+                            },
+                        )
                     }
                 },
                 dismissButton = {},

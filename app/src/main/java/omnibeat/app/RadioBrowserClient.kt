@@ -188,6 +188,8 @@ class RadioBrowserClient {
 
     private companion object {
         const val SERVER_INDEX_URL = "https://all.api.radio-browser.info"
+        //const val SERVER_INDEX_URL = "https://wrong.api.radio-browser.info"
         const val FALLBACK_BASE_URL = "https://de1.api.radio-browser.info"
+        //const val FALLBACK_BASE_URL = "https://wrong.api.radio-browser.info"
     }
 }
