@@ -70,36 +70,47 @@ class RadioBrowserClient {
                 "limit" to "40",
             ).filter { it.second.isNotBlank() },
         )
-        decodeStations(readText(URL("${resolveBaseUrl()}/json/stations/search?$query")))
+        decodeStations(readRadioBrowserText("/json/stations/search?$query"))
     }
 
     suspend fun countries(): List<RadioBrowserFilterOption> = withContext(Dispatchers.IO) {
         cachedCountries ?: decodeFilterOptions(
-            responseText = readText(URL("${resolveBaseUrl()}/json/countries?hidebroken=true&order=stationcount&reverse=true")),
+            responseText = readRadioBrowserText("/json/countries?hidebroken=true&order=stationcount&reverse=true"),
             codeKeys = listOf("iso_3166_1", "countrycode"),
         ).also { cachedCountries = it }
     }
 
     suspend fun languages(): List<RadioBrowserFilterOption> = withContext(Dispatchers.IO) {
         cachedLanguages ?: decodeFilterOptions(
-            responseText = readText(URL("${resolveBaseUrl()}/json/languages?hidebroken=true&order=stationcount&reverse=true")),
+            responseText = readRadioBrowserText("/json/languages?hidebroken=true&order=stationcount&reverse=true"),
             codeKeys = emptyList(),
         ).also { cachedLanguages = it }
     }
 
-    private fun resolveBaseUrl(): String {
-        cachedBaseUrl?.let { return it }
-        val resolved = runCatching {
+    private fun readRadioBrowserText(path: String): String {
+        val errors = mutableListOf<String>()
+        for (baseUrl in resolveBaseUrlCandidates()) {
+            val result = runCatching { readText(URL("$baseUrl$path")) }
+            if (result.isSuccess) {
+                cachedBaseUrl = baseUrl
+                return result.getOrThrow()
+            }
+            errors += "$baseUrl: ${result.exceptionOrNull()?.message ?: "request failed"}"
+        }
+        error("Radio Browser request failed: ${errors.joinToString("; ")}")
+    }
+
+    private fun resolveBaseUrlCandidates(): List<String> {
+        cachedBaseUrl?.let { return listOf(it) + FALLBACK_BASE_URLS.filterNot { fallback -> fallback == it } }
+        val indexServer = runCatching {
             val servers = JSONArray(readText(URL("$SERVER_INDEX_URL/json/servers"), connectTimeout = 4_000, readTimeout = 4_000))
             servers.optJSONObject(0)
                 ?.optString("name")
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
                 ?.let { "https://$it" }
-                ?: FALLBACK_BASE_URL
-        }.getOrDefault(FALLBACK_BASE_URL)
-        cachedBaseUrl = resolved
-        return resolved
+        }.getOrNull()
+        return (listOfNotNull(indexServer) + FALLBACK_BASE_URLS).distinct()
     }
 
     private fun readText(
@@ -188,8 +199,14 @@ class RadioBrowserClient {
 
     private companion object {
         const val SERVER_INDEX_URL = "https://all.api.radio-browser.info"
-        //const val SERVER_INDEX_URL = "https://wrong.api.radio-browser.info"
-        const val FALLBACK_BASE_URL = "https://de1.api.radio-browser.info"
-        //const val FALLBACK_BASE_URL = "https://wrong.api.radio-browser.info"
+        //const val SERVER_INDEX_URL = "https://wrongAll.api.radio-browser.info"
+        val FALLBACK_BASE_URLS = listOf(
+            "https://de1.api.radio-browser.info",
+            "https://de2.api.radio-browser.info",
+        )
+//        val FALLBACK_BASE_URLS = listOf(
+//            "https://wrong1.api.radio-browser.info",
+//            "https://wrong2.api.radio-browser.info",
+//        )
     }
 }

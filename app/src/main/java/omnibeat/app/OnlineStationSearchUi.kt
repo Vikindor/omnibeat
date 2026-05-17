@@ -504,7 +504,7 @@ private fun EmptyOnlineSearchState(
         modifier = modifier,
     ) {
         Text(
-            text = if (hasQuery) "No stations found" else "Search Radio Browser",
+            text = if (hasQuery) "No stations found" else "Search Radio-Browser.info",
             color = RadioText,
             fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold,
