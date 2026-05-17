@@ -12,13 +12,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,11 +44,7 @@ fun StationEditorDialog(
     val trimmedTitle = title.trim()
     val trimmedStreamUrl = streamUrl.trim()
     val hasValidStreamUrl = isValidStreamUrl(trimmedStreamUrl)
-    val textFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
-        unfocusedPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
-        errorPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
-    )
+    val textFieldColors = omniTextFieldColors()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -135,17 +127,10 @@ fun StationEditorDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                FilledTonalButton(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = RadioSurfaceHigh,
-                        contentColor = RadioText,
-                    ),
-                ) {
-                    Text("Cancel")
-                }
+                OmniSecondaryButton(text = "Cancel", onClick = onDismiss)
                 Spacer(Modifier.weight(1f))
-                Button(
+                OmniPrimaryButton(
+                    text = "Save",
                     onClick = {
                         if (hasValidStreamUrl) {
                             onSave(trimmedTitle, trimmedStreamUrl, tags)
@@ -153,13 +138,7 @@ fun StationEditorDialog(
                             showUrlError = true
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = RadioPrimary,
-                        contentColor = RadioText,
-                    ),
-                ) {
-                    Text("Save")
-                }
+                )
             }
         },
         dismissButton = {},
@@ -174,29 +153,16 @@ fun StationEditorDialog(
             title = { Text("Delete station?") },
             text = { Text("This station will be removed from your list") },
             confirmButton = {
-                Button(
+                OmniDangerButton(
+                    text = "Delete",
                     onClick = {
                         confirmDelete = false
                         onDelete()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = RadioDanger,
-                        contentColor = RadioText,
-                    ),
-                ) {
-                    Text("Delete")
-                }
+                )
             },
             dismissButton = {
-                FilledTonalButton(
-                    onClick = { confirmDelete = false },
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = RadioSurfaceHigh,
-                        contentColor = RadioText,
-                    ),
-                ) {
-                    Text("Cancel")
-                }
+                OmniSecondaryButton(text = "Cancel", onClick = { confirmDelete = false })
             },
             containerColor = RadioSurface,
             titleContentColor = RadioText,

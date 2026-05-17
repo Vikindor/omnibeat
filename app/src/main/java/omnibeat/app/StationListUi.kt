@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -192,6 +191,86 @@ private fun StationScrollIndicator(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+fun StationListItem(
+    title: String,
+    tags: List<String>,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    leadingContent: (@Composable () -> Unit)? = null,
+    trailingContent: (@Composable () -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    startPadding: androidx.compose.ui.unit.Dp = 20.dp,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .background(if (selected) RadioSurfaceHigh else RadioBackground)
+            .combinedClickable(
+                enabled = enabled,
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
+            .padding(start = startPadding, end = 20.dp, top = 14.dp, bottom = 14.dp),
+    ) {
+        leadingContent?.invoke()
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = RadioText,
+                fontSize = 17.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            StationTagPills(tags = tags, selected = selected)
+        }
+        trailingContent?.invoke()
+    }
+}
+
+@Composable
+fun StationTagPills(
+    tags: List<String>,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    if (tags.isEmpty()) {
+        return
+    }
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 5.dp),
+    ) {
+        tags.forEach { tag ->
+            Text(
+                text = tag,
+                color = if (selected) RadioText else RadioTextMuted,
+                fontSize = 11.sp,
+                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .background(
+                        color = if (selected) {
+                            RadioPrimary.copy(alpha = 0.30f)
+                        } else {
+                            RadioSurfaceHigh.copy(alpha = 0.72f)
+                        },
+                        shape = RoundedCornerShape(percent = 50),
+                    )
+                    .padding(horizontal = 6.dp, vertical = 1.dp),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 private fun StationRow(
     station: Station,
     selected: Boolean,
@@ -204,19 +283,16 @@ private fun StationRow(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .background(if (selected) RadioSurfaceHigh else RadioBackground)
-            .combinedClickable(
-                enabled = enabled,
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-            .padding(start = if (reordering) 8.dp else 20.dp, end = 20.dp, top = 14.dp, bottom = 14.dp),
-    ) {
-        if (reordering) {
+    StationListItem(
+        title = station.title,
+        tags = station.tags,
+        selected = selected,
+        enabled = enabled,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        startPadding = if (reordering) 8.dp else 20.dp,
+        leadingContent = if (reordering) {
+            {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -231,61 +307,22 @@ private fun StationRow(
                     modifier = Modifier.size(18.dp),
                 )
             }
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = station.title,
-                color = RadioText,
-                fontSize = 17.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (station.tags.isNotEmpty()) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 5.dp),
-                ) {
-                    station.tags.forEach { tag ->
-                        Text(
-                            text = tag,
-                            color = if (selected) RadioText else RadioTextMuted,
-                            fontSize = 11.sp,
-                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .background(
-                                    color = if (selected) {
-                                        RadioPrimary.copy(alpha = 0.30f)
-                                    } else {
-                                        RadioSurfaceHigh.copy(alpha = 0.72f)
-                                    },
-                                    shape = RoundedCornerShape(percent = 50),
-                                )
-                                .padding(horizontal = 6.dp, vertical = 1.dp),
-                        )
-                    }
-                }
             }
-        }
-        IconButton(
-            enabled = enabled && !reordering,
-            onClick = onFavoriteClick,
-            modifier = Modifier
-                .padding(start = 12.dp)
-                .size(40.dp),
-        ) {
-            Icon(
+        } else {
+            null
+        },
+        trailingContent = {
+            OmniListActionIconButton(
                 painter = painterResource(
                     if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
                 ),
                 contentDescription = if (station.isFavorite) "Remove from favorites" else "Add to favorites",
+                enabled = enabled && !reordering,
+                onClick = onFavoriteClick,
                 tint = if (station.isFavorite) RadioPrimary else RadioText,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.padding(start = 12.dp),
             )
-        }
-    }
+        },
+        modifier = modifier,
+    )
 }

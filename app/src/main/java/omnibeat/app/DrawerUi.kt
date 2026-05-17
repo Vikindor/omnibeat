@@ -1,8 +1,5 @@
 package omnibeat.app
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -19,7 +16,6 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +30,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun DrawerContent(
+    selectedPage: MainPage,
     onStationsClick: () -> Unit = {},
     onExportImportClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
@@ -63,8 +60,7 @@ fun DrawerContent(
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .size(52.dp)
-                    .clip(CircleShape)
-                    .background(RadioBackground),
+                    .clip(CircleShape),
             )
             Text(
                 text = "OmniBeat",
@@ -82,21 +78,25 @@ fun DrawerContent(
             DrawerItem(
                 text = "Stations",
                 iconRes = R.drawable.ic_list,
+                selected = selectedPage in MainPage.tabPages,
                 onClick = onStationsClick,
             )
             DrawerItem(
                 text = "Export / Import",
                 iconRes = R.drawable.ic_file_download,
+                selected = selectedPage == MainPage.ExportImport,
                 onClick = onExportImportClick,
             )
             DrawerItem(
                 text = "Settings",
                 iconRes = R.drawable.ic_settings,
+                selected = selectedPage == MainPage.Settings,
                 onClick = onSettingsClick,
             )
             DrawerItem(
                 text = "About",
                 iconRes = R.drawable.ic_info,
+                selected = selectedPage == MainPage.About,
                 onClick = onAboutClick,
                 modifier = Modifier
                     .focusRequester(aboutFocusRequester)
@@ -107,6 +107,7 @@ fun DrawerContent(
             DrawerItem(
                 text = "Close app",
                 iconRes = R.drawable.ic_exit,
+                selected = false,
                 onClick = onExitClick,
                 modifier = Modifier
                     .focusRequester(exitFocusRequester)
@@ -128,12 +129,10 @@ private fun DrawerDivider() {
 private fun DrawerItem(
     text: String,
     iconRes: Int,
+    selected: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
-
     NavigationDrawerItem(
         icon = {
             Icon(
@@ -148,7 +147,7 @@ private fun DrawerItem(
                 fontWeight = FontWeight.Medium,
             )
         },
-        selected = false,
+        selected = selected,
         onClick = onClick,
         colors = NavigationDrawerItemDefaults.colors(
             selectedContainerColor = RadioSurfaceHigh,
@@ -158,10 +157,8 @@ private fun DrawerItem(
             unselectedIconColor = RadioTextMuted,
             unselectedTextColor = RadioText,
         ),
-        interactionSource = interactionSource,
         modifier = modifier
             .padding(horizontal = 4.dp, vertical = 2.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(if (focused) RadioSurfaceHigh else Color.Transparent),
+            .clip(RoundedCornerShape(28.dp)),
     )
 }

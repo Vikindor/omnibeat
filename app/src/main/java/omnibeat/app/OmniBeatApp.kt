@@ -28,12 +28,10 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -463,6 +461,7 @@ fun OmniBeatApp() {
             gesturesEnabled = drawerState.isOpen,
             drawerContent = {
                 DrawerContent(
+                    selectedPage = selectedPage,
                     onStationsClick = {
                         selectedPage = lastMainPage
                         scope.launch { drawerState.close() }
@@ -877,32 +876,25 @@ private fun MainTopBar(
         }
         if (selectedPage in MainPage.tabPages) {
             if (reordering) {
-                IconButton(onClick = onCancelReorder) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_close),
-                        contentDescription = "Cancel reorder",
-                        tint = Color(0xFFFF5C6C),
-                        modifier = Modifier.height(28.dp),
-                    )
-                }
-                IconButton(onClick = onConfirmReorder) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_check),
-                        contentDescription = "Save reorder",
-                        tint = Color(0xFF66D17A),
-                        modifier = Modifier.height(28.dp),
-                    )
-                }
+                OmniTopBarIconButton(
+                    painter = painterResource(R.drawable.ic_close),
+                    contentDescription = "Cancel reorder",
+                    onClick = onCancelReorder,
+                    tint = Color(0xFFFF5C6C),
+                )
+                OmniTopBarIconButton(
+                    painter = painterResource(R.drawable.ic_check),
+                    contentDescription = "Save reorder",
+                    onClick = onConfirmReorder,
+                    tint = Color(0xFF66D17A),
+                )
             } else {
                 Box {
-                IconButton(onClick = { sortMenuExpanded = true }) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_filter_list),
-                        contentDescription = "Sort stations",
-                        tint = RadioText,
-                        modifier = Modifier.height(28.dp),
-                    )
-                }
+                OmniTopBarIconButton(
+                    painter = painterResource(R.drawable.ic_filter_list),
+                    contentDescription = "Sort stations",
+                    onClick = { sortMenuExpanded = true },
+                )
                 DropdownMenu(
                     expanded = sortMenuExpanded,
                     onDismissRequest = { sortMenuExpanded = false },
@@ -912,75 +904,59 @@ private fun MainTopBar(
                 ) {
                     StationSortMode.entries.forEach { option ->
                         val selected = sortState.mode == option
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(
-                                            if (selected) {
-                                                R.drawable.ic_radio_button_checked
-                                            } else {
-                                                R.drawable.ic_radio_button_unchecked
-                                            },
-                                        ),
-                                        contentDescription = null,
-                                        tint = if (selected) RadioPrimary else RadioTextMuted,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Text(
-                                        text = option.label,
-                                        color = RadioText,
-                                        fontSize = 14.sp,
-                                        modifier = Modifier.padding(start = 12.dp),
-                                    )
-                                    if (selected && option != StationSortMode.Custom) {
-                                        Icon(
-                                            painter = painterResource(
-                                                if (sortState.ascending) {
-                                                    R.drawable.ic_keyboard_arrow_up
-                                                } else {
-                                                    R.drawable.ic_keyboard_arrow_down
-                                                },
-                                            ),
-                                            contentDescription = if (sortState.ascending) {
-                                                "Ascending"
-                                            } else {
-                                                "Descending"
-                                            },
-                                            tint = RadioText,
-                                            modifier = Modifier
-                                                .padding(start = 8.dp)
-                                                .size(18.dp),
-                                        )
-                                    }
-                                }
-                            },
-                            colors = MenuDefaults.itemColors(
-                                textColor = RadioText,
-                                leadingIconColor = RadioTextMuted,
-                                trailingIconColor = RadioText,
-                            ),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                                horizontal = 12.dp,
-                                vertical = 4.dp,
-                            ),
-                            modifier = Modifier.height(40.dp),
+                        OmniDropdownMenuItem(
+                            text = option.label,
                             onClick = {
                                 onSortModeSelected(option)
                                 sortMenuExpanded = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(
+                                        if (selected) {
+                                            R.drawable.ic_radio_button_checked
+                                        } else {
+                                            R.drawable.ic_radio_button_unchecked
+                                        },
+                                    ),
+                                    contentDescription = null,
+                                    tint = if (selected) RadioPrimary else RadioTextMuted,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                            trailingIcon = if (selected && option != StationSortMode.Custom) {
+                                {
+                                    Icon(
+                                        painter = painterResource(
+                                            if (sortState.ascending) {
+                                                R.drawable.ic_keyboard_arrow_up
+                                            } else {
+                                                R.drawable.ic_keyboard_arrow_down
+                                            },
+                                        ),
+                                        contentDescription = if (sortState.ascending) {
+                                            "Ascending"
+                                        } else {
+                                            "Descending"
+                                        },
+                                        tint = RadioText,
+                                        modifier = Modifier
+                                            .padding(start = 8.dp)
+                                            .size(18.dp),
+                                    )
+                                }
+                            } else {
+                                null
                             },
                         )
                     }
                 }
             }
-                IconButton(onClick = onAddStation) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_add_circle_outline),
-                        contentDescription = "Add station",
-                        tint = RadioText,
-                        modifier = Modifier.height(28.dp),
-                    )
-                }
+                OmniTopBarIconButton(
+                    painter = painterResource(R.drawable.ic_add_circle_outline),
+                    contentDescription = "Add station",
+                    onClick = onAddStation,
+                )
             }
         }
     }

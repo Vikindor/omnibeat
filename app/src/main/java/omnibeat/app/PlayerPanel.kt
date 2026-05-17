@@ -25,18 +25,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -251,14 +244,7 @@ private fun StreamInfoDialog(
     onDismiss: () -> Unit,
     onCopyInfo: (String) -> Unit,
 ) {
-    val textFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
-        unfocusedPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
-        errorPlaceholderColor = RadioTextMuted.copy(alpha = 0.55f),
-        disabledTextColor = RadioText,
-        disabledLabelColor = RadioTextMuted,
-        disabledBorderColor = RadioOutline,
-    )
+    val textFieldColors = omniDisabledTextFieldColors()
     val bitrate = streamInfo.bitrateText ?: "Not available"
     val sampleRate = streamInfo.sampleRateText ?: "Not available"
     val format = streamInfo.formatLabel ?: "Not available"
@@ -315,25 +301,12 @@ private fun StreamInfoDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                FilledTonalButton(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = RadioSurfaceHigh,
-                        contentColor = RadioText,
-                    ),
-                ) {
-                    Text("Close")
-                }
+                OmniSecondaryButton(text = "Close", onClick = onDismiss)
                 Spacer(Modifier.weight(1f))
-                Button(
+                OmniPrimaryButton(
+                    text = "Copy info",
                     onClick = { onCopyInfo(copyText) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = RadioPrimary,
-                        contentColor = RadioText,
-                    ),
-                ) {
-                    Text("Copy info")
-                }
+                )
             }
         },
         dismissButton = {},
@@ -367,16 +340,9 @@ private fun PlayerIconButton(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    FilledTonalIconButton(
+    OmniFilledIconButton(
         enabled = enabled,
         onClick = onClick,
-        shape = CircleShape,
-        colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = RadioSurfaceHigh,
-            contentColor = RadioPrimary,
-            disabledContainerColor = RadioSurfaceHigh,
-            disabledContentColor = RadioTextMuted,
-        ),
         modifier = modifier,
     ) {
         content()
@@ -398,13 +364,9 @@ private fun VolumeButton(
     }
 
     Box(contentAlignment = Alignment.Center, modifier = modifier) {
-        FilledTonalIconButton(
+        OmniFilledIconButton(
+            enabled = true,
             onClick = { expanded = !expanded },
-            shape = CircleShape,
-            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = RadioSurfaceHigh,
-                contentColor = RadioPrimary,
-            ),
             modifier = Modifier.size(48.dp),
         ) {
             Icon(
