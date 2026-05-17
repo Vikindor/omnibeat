@@ -47,6 +47,7 @@ const val TRACK_TEXT_NO_METADATA = "No metadata"
 data class PlaybackState(
     val selectedIndex: Int = -1,
     val selectedStation: Station? = null,
+    val previewing: Boolean = false,
     val trackText: String = TRACK_TEXT_STOPPED,
     val resolving: Boolean = false,
     val buffering: Boolean = false,
@@ -101,6 +102,10 @@ class PlaybackService : Service() {
                     updateNotification()
                     return@collect
                 }
+                if (state.value.previewing) {
+                    updateNotification()
+                    return@collect
+                }
                 val current = savedStations.indexOfFirst { it.id == currentStation.id }
                 if (current == -1) {
                     stopPlayback(clearSelection = true)
@@ -131,6 +136,7 @@ class PlaybackService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_PLAY_STATION -> playStationAt(intent.getIntExtra(EXTRA_INDEX, -1))
+            ACTION_PLAY_PREVIEW -> playPreviewStation(intent.toPreviewStation())
             ACTION_PLAY_STOP -> playOrStop()
             ACTION_PREVIOUS -> playAdjacentStation(-1)
             ACTION_NEXT -> playAdjacentStation(1)
@@ -188,6 +194,7 @@ class PlaybackService : Service() {
                 it.copy(
                     selectedIndex = index,
                     selectedStation = null,
+                    previewing = false,
                     trackText = TRACK_TEXT_LOADING_STATIONS,
                     resolving = true,
                     buffering = false,
@@ -206,16 +213,30 @@ class PlaybackService : Service() {
             }
             return
         }
-        resolveJob?.cancel()
-        player.stop()
         lastPlayedStationId = station.id
         scope.launch { repository.saveLastPlayedStationId(station.id) }
+        playStation(station = station, index = index, previewing = false)
+    }
+
+    private fun playPreviewStation(station: Station?) {
+        if (station == null) return
+        playStation(station = station, index = -1, previewing = true)
+    }
+
+    private fun playStation(
+        station: Station,
+        index: Int,
+        previewing: Boolean,
+    ) {
+        resolveJob?.cancel()
+        player.stop()
         lastSessionMetadata = null
         currentStreamIsHls = false
         _state.update {
             it.copy(
                 selectedIndex = index,
                 selectedStation = station,
+                previewing = previewing,
                 trackText = TRACK_TEXT_RESOLVING,
                 resolving = true,
                 buffering = false,
@@ -301,6 +322,7 @@ class PlaybackService : Service() {
                 it.copy(
                     selectedIndex = -1,
                     selectedStation = null,
+                    previewing = false,
                     trackText = TRACK_TEXT_STOPPED,
                     resolving = false,
                     buffering = false,
@@ -630,6 +652,10 @@ class PlaybackService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_UPDATE_DELAY_MS = 500L
         private const val EXTRA_INDEX = "index"
+        private const val EXTRA_PREVIEW_ID = "preview_id"
+        private const val EXTRA_PREVIEW_TITLE = "preview_title"
+        private const val EXTRA_PREVIEW_STREAM_URL = "preview_stream_url"
+        private const val EXTRA_PREVIEW_TAGS = "preview_tags"
         private val SERVICE_TRACK_TEXTS = setOf(
             TRACK_TEXT_STOPPED,
             TRACK_TEXT_LOADING_STATIONS,
@@ -639,6 +665,7 @@ class PlaybackService : Service() {
         )
 
         private const val ACTION_PLAY_STATION = "omnibeat.app.action.PLAY_STATION"
+        private const val ACTION_PLAY_PREVIEW = "omnibeat.app.action.PLAY_PREVIEW"
         private const val ACTION_PLAY_STOP = "omnibeat.app.action.PLAY_STOP"
         private const val ACTION_PREVIOUS = "omnibeat.app.action.PREVIOUS"
         private const val ACTION_NEXT = "omnibeat.app.action.NEXT"
@@ -656,12 +683,43 @@ class PlaybackService : Service() {
             )
         }
 
+        fun playPreview(context: Context, station: Station) {
+            context.startForegroundService(
+                Intent(context, PlaybackService::class.java)
+                    .setAction(ACTION_PLAY_PREVIEW)
+                    .putExtra(EXTRA_PREVIEW_ID, station.id)
+                    .putExtra(EXTRA_PREVIEW_TITLE, station.title)
+                    .putExtra(EXTRA_PREVIEW_STREAM_URL, station.streamUrl)
+                    .putExtra(EXTRA_PREVIEW_TAGS, station.tags.joinToString(",")),
+            )
+        }
+
         fun playOrStop(context: Context) {
             context.startService(Intent(context, PlaybackService::class.java).setAction(ACTION_PLAY_STOP))
         }
 
         fun stop(context: Context) {
             context.startService(Intent(context, PlaybackService::class.java).setAction(ACTION_STOP))
+        }
+
+        private fun Intent.toPreviewStation(): Station? {
+            val title = getStringExtra(EXTRA_PREVIEW_TITLE)?.trim().orEmpty()
+            val streamUrl = getStringExtra(EXTRA_PREVIEW_STREAM_URL)?.trim().orEmpty()
+            if (title.isBlank() || streamUrl.isBlank()) {
+                return null
+            }
+            return Station(
+                id = getStringExtra(EXTRA_PREVIEW_ID)?.takeIf { it.isNotBlank() } ?: "preview:$streamUrl",
+                title = title,
+                streamUrl = streamUrl,
+                tags = getStringExtra(EXTRA_PREVIEW_TAGS)
+                    .orEmpty()
+                    .split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() },
+                isFavorite = false,
+                dateAdded = "",
+            )
         }
     }
 }

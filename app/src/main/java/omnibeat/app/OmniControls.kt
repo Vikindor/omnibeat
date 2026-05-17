@@ -1,5 +1,7 @@
 package omnibeat.app
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ScrollIndicatorState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -21,8 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 
 @Composable
 fun omniTextFieldColors() = OutlinedTextFieldDefaults.colors(
@@ -200,4 +205,68 @@ fun OmniFilledIconButton(
     ) {
         content()
     }
+}
+
+@Composable
+fun OmniVerticalScrollIndicator(
+    thumbTopFraction: Float,
+    thumbHeightFraction: Float,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier.width(3.dp)) {
+        drawRect(color = RadioOutline.copy(alpha = 0.55f), size = size)
+        drawRect(
+            color = RadioPrimary,
+            topLeft = androidx.compose.ui.geometry.Offset(
+                x = 0f,
+                y = size.height * thumbTopFraction.coerceIn(0f, 1f),
+            ),
+            size = androidx.compose.ui.geometry.Size(
+                width = size.width,
+                height = size.height * thumbHeightFraction.coerceIn(0.12f, 1f),
+            ),
+        )
+    }
+}
+
+@Composable
+fun OmniLazyListScrollIndicator(
+    listState: LazyListState,
+    modifier: Modifier = Modifier,
+) {
+    OmniScrollIndicator(
+        scrollIndicatorState = listState.scrollIndicatorState,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun OmniScrollIndicator(
+    scrollIndicatorState: ScrollIndicatorState?,
+    modifier: Modifier = Modifier,
+) {
+    val state = scrollIndicatorState ?: return
+    val viewportSize = state.viewportSize
+    val contentSize = state.contentSize
+    val scrollOffset = state.scrollOffset
+    if (
+        viewportSize <= 0 ||
+        contentSize <= viewportSize ||
+        scrollOffset == Int.MAX_VALUE ||
+        contentSize == Int.MAX_VALUE ||
+        viewportSize == Int.MAX_VALUE
+    ) {
+        return
+    }
+
+    val thumbHeightFraction = (viewportSize.toFloat() / contentSize).coerceIn(0.12f, 1f)
+    val maxScrollOffset = (contentSize - viewportSize).coerceAtLeast(1)
+    val thumbTopFraction = (scrollOffset / maxScrollOffset.toFloat() * (1f - thumbHeightFraction))
+        .coerceIn(0f, 1f - thumbHeightFraction)
+
+    OmniVerticalScrollIndicator(
+        thumbTopFraction = thumbTopFraction,
+        thumbHeightFraction = thumbHeightFraction,
+        modifier = modifier.fillMaxHeight(),
+    )
 }

@@ -79,6 +79,7 @@ fun OmniBeatApp() {
     OmniBeatTheme {
         val context = LocalContext.current
         val repository = remember(context) { StationRepository(context.applicationContext) }
+        val radioBrowserClient = remember { RadioBrowserClient() }
         val scope = rememberCoroutineScope()
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val playbackState by PlaybackService.state.collectAsState()
@@ -97,6 +98,13 @@ fun OmniBeatApp() {
         var lastPlayedStationId by remember { mutableStateOf<String?>(null) }
         var pendingExportJson by remember { mutableStateOf<String?>(null) }
         var pendingImportData by remember { mutableStateOf<StationExportData?>(null) }
+        var onlineSearchState by remember { mutableStateOf(OnlineStationSearchState()) }
+        var onlineSearchResults by remember { mutableStateOf(emptyList<RadioBrowserStation>()) }
+        var onlineSearchLoading by remember { mutableStateOf(false) }
+        var onlineSearchError by remember { mutableStateOf<String?>(null) }
+        var onlineCountries by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
+        var onlineLanguages by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
+        var onlineOptionsExpanded by remember { mutableStateOf(false) }
         val pagerState = rememberPagerState(pageCount = { MainPage.tabPages.size })
 
         LaunchedEffect(repository) {
@@ -195,6 +203,25 @@ fun OmniBeatApp() {
             playbackState.errorText?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
         }
 
+        LaunchedEffect(selectedPage) {
+            if (selectedPage == MainPage.FindOnline) {
+                if (onlineCountries.isEmpty()) {
+                    scope.launch {
+                        runCatching { radioBrowserClient.countries() }
+                            .onSuccess { onlineCountries = it }
+                    }
+                }
+                if (onlineLanguages.isEmpty()) {
+                    scope.launch {
+                        runCatching { radioBrowserClient.languages() }
+                            .onSuccess { onlineLanguages = it }
+                    }
+                }
+            } else {
+                onlineOptionsExpanded = false
+            }
+        }
+
         fun selectMainPage(page: MainPage) {
             selectedPage = page
             lastMainPage = page
@@ -255,6 +282,52 @@ fun OmniBeatApp() {
             scope.launch {
                 repository.saveImportedLibrary(importResult)
                 Toast.makeText(context, "Stations imported", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        fun searchOnlineStations() {
+            if (onlineSearchLoading) return
+            onlineSearchLoading = true
+            onlineSearchError = null
+            scope.launch {
+                runCatching {
+                    radioBrowserClient.searchStations(onlineSearchState.toRadioBrowserParams())
+                }.onSuccess { results ->
+                    onlineSearchResults = results
+                }.onFailure { error ->
+                    onlineSearchResults = emptyList()
+                    onlineSearchError = error.message ?: "Could not search stations"
+                }
+                onlineSearchLoading = false
+            }
+        }
+
+        fun stationFromOnlineResult(radioStation: RadioBrowserStation): Station {
+            val streamUrl = radioStation.streamUrl.trim()
+            return Station(
+                id = radioStation.stationUuid.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
+                title = radioStation.title.trim().take(STATION_TITLE_MAX_LENGTH)
+                    .ifBlank { streamUrl.take(STATION_TITLE_MAX_LENGTH) },
+                streamUrl = streamUrl.take(STATION_STREAM_URL_MAX_LENGTH),
+                tags = radioStation.tags,
+                isFavorite = false,
+                dateAdded = Instant.now().toString(),
+            )
+        }
+
+        fun previewOnlineStation(radioStation: RadioBrowserStation) {
+            if (radioStation.streamUrl.isBlank()) return
+            PlaybackService.playPreview(context, stationFromOnlineResult(radioStation))
+        }
+
+        fun addOnlineStation(radioStation: RadioBrowserStation) {
+            val station = stationFromOnlineResult(radioStation)
+            if (station.streamUrl.isBlank() || stations.any { it.streamUrl == station.streamUrl }) return
+            val nextStations = stations + station.copy(id = UUID.randomUUID().toString())
+            stations = nextStations
+            scope.launch {
+                repository.saveStations(nextStations)
+                Toast.makeText(context, "Station added", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -509,10 +582,25 @@ fun OmniBeatApp() {
                                 tags = "",
                             )
                         },
+                        onFindOnline = {
+                            selectedPage = MainPage.FindOnline
+                        },
+                        onlineSearchControl = if (selectedPage == MainPage.FindOnline) {
+                            { controlModifier ->
+                                SearchOptionsTopBarControl(
+                                    expanded = onlineOptionsExpanded,
+                                    loading = onlineSearchLoading,
+                                    onExpandedChange = { onlineOptionsExpanded = it },
+                                    modifier = controlModifier,
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 },
                 bottomBar = {
-                    if (selectedPage in MainPage.tabPages) {
+                    if (selectedPage in MainPage.tabPages || selectedPage == MainPage.FindOnline) {
                         val pageStations = navigationStations()
                         val canStartPlayback = pageStations.isNotEmpty() ||
                             lastPlayedStationId?.let { stationId -> stations.any { it.id == stationId } } == true
@@ -650,6 +738,28 @@ fun OmniBeatApp() {
                             )
                         }
 
+                        MainPage.FindOnline -> {
+                            OnlineStationSearchPage(
+                                searchState = onlineSearchState,
+                                countries = onlineCountries,
+                                languages = onlineLanguages,
+                                results = onlineSearchResults,
+                                loading = onlineSearchLoading,
+                                errorText = onlineSearchError,
+                                optionsExpanded = onlineOptionsExpanded,
+                                addedStreamUrls = stations.mapTo(mutableSetOf()) { it.streamUrl },
+                                selectedStreamUrl = playbackState.selectedStation?.streamUrl,
+                                onSearchStateChange = {
+                                    onlineSearchState = it
+                                    onlineSearchError = null
+                                },
+                                onSearch = { searchOnlineStations() },
+                                onPreviewStation = { previewOnlineStation(it) },
+                                onAddStation = { addOnlineStation(it) },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+
                         MainPage.Settings -> {
                             EmptyFuturePage(
                                 title = "Settings",
@@ -771,6 +881,7 @@ enum class MainPage(val title: String) {
     Stations("Stations"),
     Favorites("Favorites"),
     ExportImport("Export / Import"),
+    FindOnline("Find online"),
     Settings("Settings"),
     About("About");
 
@@ -805,9 +916,12 @@ private fun MainTopBar(
     onConfirmReorder: () -> Unit,
     onOpenDrawer: () -> Unit,
     onAddStation: () -> Unit,
+    onFindOnline: () -> Unit,
+    onlineSearchControl: (@Composable (Modifier) -> Unit)? = null,
 ) {
     val density = LocalDensity.current
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    var addMenuExpanded by remember { mutableStateOf(false) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -825,11 +939,18 @@ private fun MainTopBar(
                 tint = RadioText,
             )
         }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f),
-        ) {
-            if (selectedPage in MainPage.tabPages) {
+        if (selectedPage == MainPage.FindOnline && onlineSearchControl != null) {
+            onlineSearchControl(
+                Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp, end = 8.dp),
+            )
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f),
+            ) {
+                if (selectedPage in MainPage.tabPages) {
                 MainPage.tabPages.forEach { tab ->
                 var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
                 Column(
@@ -862,16 +983,17 @@ private fun MainTopBar(
                     )
                 }
                 }
-            } else {
-                Text(
-                    text = selectedPage.title,
-                    color = RadioText,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 12.dp),
-                )
+                } else {
+                    Text(
+                        text = selectedPage.title,
+                        color = RadioText,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
+                }
             }
         }
         if (selectedPage in MainPage.tabPages) {
@@ -952,11 +1074,51 @@ private fun MainTopBar(
                     }
                 }
             }
-                OmniTopBarIconButton(
-                    painter = painterResource(R.drawable.ic_add_circle_outline),
-                    contentDescription = "Add station",
-                    onClick = onAddStation,
-                )
+                Box {
+                    OmniTopBarIconButton(
+                        painter = painterResource(R.drawable.ic_add_circle_outline),
+                        contentDescription = "Add station",
+                        onClick = { addMenuExpanded = true },
+                    )
+                    DropdownMenu(
+                        expanded = addMenuExpanded,
+                        onDismissRequest = { addMenuExpanded = false },
+                        containerColor = RadioSurface,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                        offset = DpOffset(x = 0.dp, y = 4.dp),
+                    ) {
+                        OmniDropdownMenuItem(
+                            text = "Add manually",
+                            onClick = {
+                                addMenuExpanded = false
+                                onAddStation()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_add_circle_outline),
+                                    contentDescription = null,
+                                    tint = RadioText,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                        )
+                        OmniDropdownMenuItem(
+                            text = "Find online",
+                            onClick = {
+                                addMenuExpanded = false
+                                onFindOnline()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_search),
+                                    contentDescription = null,
+                                    tint = RadioText,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                        )
+                    }
+                }
             }
         }
     }

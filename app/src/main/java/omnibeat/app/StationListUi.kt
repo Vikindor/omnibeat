@@ -1,6 +1,5 @@
 package omnibeat.app
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -8,15 +7,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -143,48 +139,11 @@ fun StationList(
                 }
             }
         }
-        StationScrollIndicator(
+        OmniLazyListScrollIndicator(
             listState = listState,
-            itemCount = stations.size,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun StationScrollIndicator(
-    listState: LazyListState,
-    itemCount: Int,
-    modifier: Modifier = Modifier,
-) {
-    val visibleItems = listState.layoutInfo.visibleItemsInfo
-    if (itemCount == 0 || visibleItems.isEmpty() || visibleItems.size >= itemCount) {
-        return
-    }
-
-    val viewportHeight = listState.layoutInfo.viewportSize.height.toFloat().coerceAtLeast(1f)
-    val averageItemHeight = visibleItems.map { it.size }.average().toFloat().coerceAtLeast(1f)
-    val contentHeight = averageItemHeight * itemCount
-    val scrollOffset = listState.firstVisibleItemIndex * averageItemHeight + listState.firstVisibleItemScrollOffset
-    val thumbHeightFraction = (viewportHeight / contentHeight).coerceIn(0.12f, 1f)
-    val thumbTopFraction = (scrollOffset / (contentHeight - viewportHeight).coerceAtLeast(1f))
-        .coerceIn(0f, 1f - thumbHeightFraction)
-
-    Canvas(
-        modifier = modifier
-            .width(3.dp)
-            .fillMaxHeight(),
-    ) {
-        drawRect(color = RadioOutline.copy(alpha = 0.55f), size = size)
-        drawRect(
-            color = RadioPrimary,
-            topLeft = androidx.compose.ui.geometry.Offset(x = 0f, y = size.height * thumbTopFraction),
-            size = androidx.compose.ui.geometry.Size(
-                width = size.width,
-                height = size.height * thumbHeightFraction,
-            ),
         )
     }
 }
