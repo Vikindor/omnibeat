@@ -263,7 +263,7 @@ private fun StationRow(
                     painter = painterResource(R.drawable.ic_drag_indicator),
                     contentDescription = "Drag station",
                     tint = if (dragging) RadioPrimary else RadioTextMuted,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(24.dp),
                 )
             }
             }

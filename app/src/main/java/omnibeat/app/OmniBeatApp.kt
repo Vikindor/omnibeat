@@ -32,6 +32,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -1083,8 +1084,13 @@ private fun MainTopBar(
                 ) {
                     StationSortMode.entries.forEach { option ->
                         val selected = sortState.mode == option
-                        OmniDropdownMenuItem(
-                            text = option.label,
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = option.label,
+                                    color = RadioText,
+                                )
+                            },
                             onClick = {
                                 onSortModeSelected(option)
                                 sortMenuExpanded = false
@@ -1100,7 +1106,6 @@ private fun MainTopBar(
                                     ),
                                     contentDescription = null,
                                     tint = if (selected) RadioPrimary else RadioTextMuted,
-                                    modifier = Modifier.size(18.dp),
                                 )
                             },
                             trailingIcon = if (selected && option != StationSortMode.Custom) {
@@ -1119,9 +1124,6 @@ private fun MainTopBar(
                                             "Descending"
                                         },
                                         tint = RadioText,
-                                        modifier = Modifier
-                                            .padding(start = 8.dp)
-                                            .size(18.dp),
                                     )
                                 }
                             } else {
@@ -1144,8 +1146,13 @@ private fun MainTopBar(
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                         offset = DpOffset(x = 0.dp, y = 4.dp),
                     ) {
-                        OmniDropdownMenuItem(
-                            text = "Add manually",
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "Add manually",
+                                    color = RadioText,
+                                )
+                            },
                             onClick = {
                                 addMenuExpanded = false
                                 onAddStation()
@@ -1155,12 +1162,16 @@ private fun MainTopBar(
                                     painter = painterResource(R.drawable.ic_add_circle_outline),
                                     contentDescription = null,
                                     tint = RadioText,
-                                    modifier = Modifier.size(18.dp),
                                 )
                             },
                         )
-                        OmniDropdownMenuItem(
-                            text = "Find online",
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "Find online",
+                                    color = RadioText,
+                                )
+                            },
                             onClick = {
                                 addMenuExpanded = false
                                 onFindOnline()
@@ -1170,7 +1181,6 @@ private fun MainTopBar(
                                     painter = painterResource(R.drawable.ic_search),
                                     contentDescription = null,
                                     tint = RadioText,
-                                    modifier = Modifier.size(18.dp),
                                 )
                             },
                         )
