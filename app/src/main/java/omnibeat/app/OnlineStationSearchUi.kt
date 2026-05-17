@@ -1,7 +1,6 @@
 package omnibeat.app
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -9,10 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -427,8 +424,8 @@ private fun <T> SearchDropdown(
                         )
                     },
                     onClick = {
-                        expanded = false
                         onOptionSelected(option)
+                        expanded = false
                     },
                 )
             }
@@ -543,16 +540,6 @@ private fun OnlineStationSearchState.hasSearchInput(): Boolean {
         selectedLanguage != null ||
         bitrateMin.isNotBlank() ||
         bitrateMax.isNotBlank()
-}
-
-private fun OnlineStationSearchState.summary(): String {
-    return buildList {
-        nameQuery.trim().takeIf { it.isNotBlank() }?.let { add(it) }
-        tagsQuery.trim().takeIf { it.isNotBlank() }?.let { add("tags: $it") }
-        selectedCountry?.name?.let(::add)
-        selectedLanguage?.name?.let(::add)
-        add("sort: ${selectedSort.label}")
-    }.joinToString(" / ")
 }
 
 private fun String.digitsOnly(): String {

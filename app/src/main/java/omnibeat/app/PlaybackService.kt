@@ -108,7 +108,7 @@ class PlaybackService : Service() {
                 }
                 val current = savedStations.indexOfFirst { it.id == currentStation.id }
                 if (current == -1) {
-                    stopPlayback(clearSelection = true)
+                    stopPlayback()
                 } else {
                     _state.update {
                         it.copy(
@@ -142,7 +142,7 @@ class PlaybackService : Service() {
             ACTION_NEXT -> playAdjacentStation(1)
             ACTION_RANDOM -> playRandomStation()
             ACTION_STOP -> {
-                stopPlayback(clearSelection = true)
+                stopPlayback()
                 stopSelf()
             }
         }
@@ -165,7 +165,7 @@ class PlaybackService : Service() {
     private fun playOrStop() {
         when {
             player.isPlaying -> {
-                stopPlayback(clearSelection = true)
+                stopPlayback()
                 stopSelf()
             }
             state.value.selectedStation == null -> playLastOrFirstStation()
@@ -205,7 +205,7 @@ class PlaybackService : Service() {
             scope.launch {
                 stations = repository.stations.first()
                 if (stations.getOrNull(index) == null) {
-                    stopPlayback(clearSelection = true)
+                    stopPlayback()
                     stopSelf()
                 } else {
                     playStationAt(index)
@@ -311,26 +311,24 @@ class PlaybackService : Service() {
         playStationAt(nextIndex)
     }
 
-    private fun stopPlayback(clearSelection: Boolean) {
+    private fun stopPlayback() {
         resolveJob?.cancel()
         notificationUpdateJob?.cancel()
         lastSessionMetadata = null
         currentStreamIsHls = false
         player.stop()
-        if (clearSelection) {
-            _state.update {
-                it.copy(
-                    selectedIndex = -1,
-                    selectedStation = null,
-                    previewing = false,
-                    trackText = TRACK_TEXT_STOPPED,
-                    resolving = false,
-                    buffering = false,
-                    isPlaying = false,
-                    errorText = null,
-                    streamInfo = PlaybackStreamInfo(),
-                )
-            }
+        _state.update {
+            it.copy(
+                selectedIndex = -1,
+                selectedStation = null,
+                previewing = false,
+                trackText = TRACK_TEXT_STOPPED,
+                resolving = false,
+                buffering = false,
+                isPlaying = false,
+                errorText = null,
+                streamInfo = PlaybackStreamInfo(),
+            )
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
@@ -504,7 +502,7 @@ class PlaybackService : Service() {
             return
         }
         lastSessionMetadata = metadataKey
-        player.setPlaylistMetadata(buildSessionMetadata(station, current.trackText))
+        player.playlistMetadata = buildSessionMetadata(station, current.trackText)
     }
 
     private fun buildSessionMetadata(station: Station, trackText: String?): MediaMetadata {
@@ -590,21 +588,21 @@ class PlaybackService : Service() {
             return super.getAvailableCommands()
                 .buildUpon()
                 .addAll(
-                    Player.COMMAND_SEEK_TO_PREVIOUS,
-                    Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
-                    Player.COMMAND_SEEK_TO_NEXT,
-                    Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                    COMMAND_SEEK_TO_PREVIOUS,
+                    COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                    COMMAND_SEEK_TO_NEXT,
+                    COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
                 )
-                .remove(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
-                .remove(Player.COMMAND_SEEK_TO_DEFAULT_POSITION)
-                .remove(Player.COMMAND_SEEK_TO_MEDIA_ITEM)
-                .remove(Player.COMMAND_SEEK_BACK)
-                .remove(Player.COMMAND_SEEK_FORWARD)
+                .remove(COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                .remove(COMMAND_SEEK_TO_DEFAULT_POSITION)
+                .remove(COMMAND_SEEK_TO_MEDIA_ITEM)
+                .remove(COMMAND_SEEK_BACK)
+                .remove(COMMAND_SEEK_FORWARD)
                 .build()
         }
 
         override fun isCommandAvailable(command: Int): Boolean {
-            return getAvailableCommands().contains(command)
+            return availableCommands.contains(command)
         }
 
         override fun seekToPrevious() {
@@ -632,13 +630,13 @@ class PlaybackService : Service() {
         }
 
         override fun pause() {
-            stopPlayback(clearSelection = true)
+            stopPlayback()
             stopSelf()
         }
 
         override fun getMediaMetadata(): MediaMetadata {
             val current = state.value
-            val station = current.selectedStation ?: return super.getMediaMetadata()
+            val station = current.selectedStation ?: return super.mediaMetadata
             return buildSessionMetadata(station, current.trackText)
         }
 
@@ -695,24 +693,30 @@ class PlaybackService : Service() {
         }
 
         fun playOrStop(context: Context) {
-            context.startService(Intent(context, PlaybackService::class.java).setAction(ACTION_PLAY_STOP))
+            context.startService(
+                Intent(context, PlaybackService::class.java)
+                    .setAction(ACTION_PLAY_STOP),
+            )
         }
 
         fun stop(context: Context) {
-            context.startService(Intent(context, PlaybackService::class.java).setAction(ACTION_STOP))
+            context.startService(
+                Intent(context, PlaybackService::class.java)
+                    .setAction(ACTION_STOP),
+            )
         }
 
         private fun Intent.toPreviewStation(): Station? {
-            val title = getStringExtra(EXTRA_PREVIEW_TITLE)?.trim().orEmpty()
-            val streamUrl = getStringExtra(EXTRA_PREVIEW_STREAM_URL)?.trim().orEmpty()
+            val title = extras?.getString(EXTRA_PREVIEW_TITLE)?.trim().orEmpty()
+            val streamUrl = extras?.getString(EXTRA_PREVIEW_STREAM_URL)?.trim().orEmpty()
             if (title.isBlank() || streamUrl.isBlank()) {
                 return null
             }
             return Station(
-                id = getStringExtra(EXTRA_PREVIEW_ID)?.takeIf { it.isNotBlank() } ?: "preview:$streamUrl",
+                id = extras?.getString(EXTRA_PREVIEW_ID)?.takeIf { it.isNotBlank() } ?: "preview:$streamUrl",
                 title = title,
                 streamUrl = streamUrl,
-                tags = getStringExtra(EXTRA_PREVIEW_TAGS)
+                tags = extras?.getString(EXTRA_PREVIEW_TAGS)
                     .orEmpty()
                     .split(",")
                     .map { it.trim() }

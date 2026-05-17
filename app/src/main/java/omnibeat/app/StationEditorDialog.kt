@@ -1,6 +1,6 @@
 package omnibeat.app
 
-import android.net.Uri
+import androidx.core.net.toUri
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -192,7 +192,7 @@ fun StationEditorDialog(
 }
 
 private fun isValidStreamUrl(streamUrl: String): Boolean {
-    val uri = Uri.parse(streamUrl)
+    val uri = streamUrl.toUri()
     return uri.scheme in setOf("http", "https") && !uri.host.isNullOrBlank()
 }
 

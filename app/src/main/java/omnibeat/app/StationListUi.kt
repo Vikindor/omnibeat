@@ -62,6 +62,7 @@ fun EmptyFavoritesState(modifier: Modifier = Modifier) {
 }
 
 @Composable
+@Suppress("FrequentlyChangedStateReadInComposition")
 fun StationList(
     stations: List<Station>,
     selectedIndex: Int,
@@ -126,6 +127,7 @@ fun StationList(
                         enabled = enabled,
                         reordering = reordering,
                         dragging = isDragging,
+                        modifier = Modifier.animateItem(),
                         dragHandleModifier = if (reordering) {
                             Modifier.draggableHandle()
                         } else {
@@ -134,7 +136,6 @@ fun StationList(
                         onFavoriteClick = { onFavoriteClick(index, station) },
                         onClick = { onStationClick(index, station) },
                         onLongClick = { onStationEdit(index, station) },
-                        modifier = Modifier.animateItem(),
                     )
                 }
             }
@@ -236,11 +237,11 @@ private fun StationRow(
     enabled: Boolean,
     reordering: Boolean,
     dragging: Boolean,
+    modifier: Modifier = Modifier,
     dragHandleModifier: Modifier,
     onFavoriteClick: () -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     StationListItem(
         title = station.title,

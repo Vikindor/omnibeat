@@ -32,12 +32,12 @@ data class RadioBrowserFilterOption(
 )
 
 enum class RadioBrowserSort(val label: String, val apiValue: String) {
-    Clicks("Clicks", "clickcount"),
-    Votes("Votes", "votes"),
-    Name("Name", "name"),
-    Bitrate("Bitrate", "bitrate"),
-    Country("Country", "country"),
-    Random("Random", "random"),
+    Clicks("Clicks", RadioBrowserApi.Sort.CLICK_COUNT),
+    Votes("Votes", RadioBrowserApi.Sort.VOTES),
+    Name("Name", RadioBrowserApi.Sort.NAME),
+    Bitrate("Bitrate", RadioBrowserApi.Sort.BITRATE),
+    Country("Country", RadioBrowserApi.Sort.COUNTRY),
+    Random("Random", RadioBrowserApi.Sort.RANDOM),
 }
 
 data class RadioBrowserSearchParams(
@@ -52,6 +52,56 @@ data class RadioBrowserSearchParams(
     val includeBroken: Boolean,
 )
 
+private object RadioBrowserApi {
+    object Path {
+        const val SERVERS = "/json/servers"
+        const val STATIONS_SEARCH = "/json/stations/search"
+        const val COUNTRIES = "/json/countries"
+        const val LANGUAGES = "/json/languages"
+    }
+
+    object Query {
+        const val NAME = "name"
+        const val TAG_LIST = "tagList"
+        const val COUNTRY = "country"
+        const val COUNTRY_CODE = "countrycode"
+        const val LANGUAGE = "language"
+        const val ORDER = "order"
+        const val REVERSE = "reverse"
+        const val HIDE_BROKEN = "hidebroken"
+        const val BITRATE_MIN = "bitrateMin"
+        const val BITRATE_MAX = "bitrateMax"
+        const val LIMIT = "limit"
+    }
+
+    object Sort {
+        const val CLICK_COUNT = "clickcount"
+        const val VOTES = "votes"
+        const val NAME = "name"
+        const val BITRATE = "bitrate"
+        const val COUNTRY = "country"
+        const val RANDOM = "random"
+        const val STATION_COUNT = "stationcount"
+    }
+
+    object Json {
+        const val NAME = "name"
+        const val URL_RESOLVED = "url_resolved"
+        const val URL = "url"
+        const val STATION_UUID = "stationuuid"
+        const val TAGS = "tags"
+        const val COUNTRY_CODE = "countrycode"
+        const val CODEC = "codec"
+        const val BITRATE = "bitrate"
+        const val ISO_3166_1 = "iso_3166_1"
+    }
+
+    object Value {
+        const val TRUE = "true"
+        const val SEARCH_LIMIT = "40"
+    }
+}
+
 class RadioBrowserClient {
     private var cachedBaseUrl: String? = null
     private var cachedCountries: List<RadioBrowserFilterOption>? = null
@@ -60,38 +110,44 @@ class RadioBrowserClient {
     suspend fun searchStations(params: RadioBrowserSearchParams): List<RadioBrowserStation> = withContext(Dispatchers.IO) {
         val query = buildQuery(
             listOfNotNull(
-                "name" to params.name.trim(),
+                RadioBrowserApi.Query.NAME to params.name.trim(),
                 params.tags.trim().takeIf { it.isNotBlank() }?.let { tags ->
-                    "tagList" to tags.split(",")
+                    RadioBrowserApi.Query.TAG_LIST to tags.split(",")
                         .map { it.trim() }
                         .filter { it.isNotEmpty() }
                         .joinToString(",")
                 },
                 params.country?.let { country ->
-                    if (country.code.isNotBlank()) "countrycode" to country.code else "country" to country.name
+                    if (country.code.isNotBlank()) {
+                        RadioBrowserApi.Query.COUNTRY_CODE to country.code
+                    } else {
+                        RadioBrowserApi.Query.COUNTRY to country.name
+                    }
                 },
-                params.language?.let { "language" to it.name },
-                "order" to params.sort.apiValue,
-                "reverse" to params.reverse.toString(),
-                "hidebroken" to (!params.includeBroken).toString(),
-                params.bitrateMin?.let { "bitrateMin" to it.toString() },
-                params.bitrateMax?.let { "bitrateMax" to it.toString() },
-                "limit" to "40",
+                params.language?.let { RadioBrowserApi.Query.LANGUAGE to it.name },
+                RadioBrowserApi.Query.ORDER to params.sort.apiValue,
+                RadioBrowserApi.Query.REVERSE to params.reverse.toString(),
+                RadioBrowserApi.Query.HIDE_BROKEN to (!params.includeBroken).toString(),
+                params.bitrateMin?.let { RadioBrowserApi.Query.BITRATE_MIN to it.toString() },
+                params.bitrateMax?.let { RadioBrowserApi.Query.BITRATE_MAX to it.toString() },
+                RadioBrowserApi.Query.LIMIT to RadioBrowserApi.Value.SEARCH_LIMIT,
             ).filter { it.second.isNotBlank() },
         )
-        decodeStations(readRadioBrowserText("/json/stations/search?$query"))
+        decodeStations(readRadioBrowserText("${RadioBrowserApi.Path.STATIONS_SEARCH}?$query"))
     }
 
     suspend fun countries(): List<RadioBrowserFilterOption> = withContext(Dispatchers.IO) {
+        val query = buildDefaultFilterQuery()
         cachedCountries ?: decodeFilterOptions(
-            responseText = readRadioBrowserText("/json/countries?hidebroken=true&order=stationcount&reverse=true"),
-            codeKeys = listOf("iso_3166_1", "countrycode"),
+            responseText = readRadioBrowserText("${RadioBrowserApi.Path.COUNTRIES}?$query"),
+            codeKeys = listOf(RadioBrowserApi.Json.ISO_3166_1, RadioBrowserApi.Json.COUNTRY_CODE),
         ).also { cachedCountries = it }
     }
 
     suspend fun languages(): List<RadioBrowserFilterOption> = withContext(Dispatchers.IO) {
+        val query = buildDefaultFilterQuery()
         cachedLanguages ?: decodeFilterOptions(
-            responseText = readRadioBrowserText("/json/languages?hidebroken=true&order=stationcount&reverse=true"),
+            responseText = readRadioBrowserText("${RadioBrowserApi.Path.LANGUAGES}?$query"),
             codeKeys = emptyList(),
         ).also { cachedLanguages = it }
     }
@@ -112,9 +168,15 @@ class RadioBrowserClient {
     private fun resolveBaseUrlCandidates(): List<String> {
         cachedBaseUrl?.let { return listOf(it) + FALLBACK_BASE_URLS.filterNot { fallback -> fallback == it } }
         val indexServer = runCatching {
-            val servers = JSONArray(readText(URL("$SERVER_INDEX_URL/json/servers"), connectTimeout = 4_000, readTimeout = 4_000))
+            val servers = JSONArray(
+                readText(
+                    URL("$SERVER_INDEX_URL${RadioBrowserApi.Path.SERVERS}"),
+                    connectTimeout = 4_000,
+                    readTimeout = 4_000,
+                ),
+            )
             servers.optJSONObject(0)
-                ?.optString("name")
+                ?.optString(RadioBrowserApi.Json.NAME)
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
                 ?.let { "https://$it" }
@@ -150,24 +212,26 @@ class RadioBrowserClient {
         return buildList {
             repeat(items.length()) { index ->
                 val item = items.optJSONObject(index) ?: return@repeat
-                val title = item.optString("name").trim()
-                val streamUrl = item.optString("url_resolved").trim().ifBlank { item.optString("url").trim() }
+                val title = item.optString(RadioBrowserApi.Json.NAME).trim()
+                val streamUrl = item.optString(RadioBrowserApi.Json.URL_RESOLVED)
+                    .trim()
+                    .ifBlank { item.optString(RadioBrowserApi.Json.URL).trim() }
                 if (title.isBlank() || streamUrl.isBlank()) {
                     return@repeat
                 }
                 add(
                     RadioBrowserStation(
-                        stationUuid = item.optString("stationuuid").trim(),
+                        stationUuid = item.optString(RadioBrowserApi.Json.STATION_UUID).trim(),
                         title = title,
                         streamUrl = streamUrl,
-                        tags = item.optString("tags")
+                        tags = item.optString(RadioBrowserApi.Json.TAGS)
                             .split(",")
                             .map { it.trim() }
                             .filter { it.isNotEmpty() }
                             .distinctBy { it.lowercase() },
-                        countryCode = item.optString("countrycode").trim(),
-                        codec = item.optString("codec").trim(),
-                        bitrate = item.optInt("bitrate", 0),
+                        countryCode = item.optString(RadioBrowserApi.Json.COUNTRY_CODE).trim(),
+                        codec = item.optString(RadioBrowserApi.Json.CODEC).trim(),
+                        bitrate = item.optInt(RadioBrowserApi.Json.BITRATE, 0),
                     ),
                 )
             }
@@ -182,7 +246,7 @@ class RadioBrowserClient {
         return buildList {
             repeat(items.length()) { index ->
                 val item = items.optJSONObject(index) ?: return@repeat
-                val name = item.optString("name").trim()
+                val name = item.optString(RadioBrowserApi.Json.NAME).trim()
                 if (name.isBlank()) return@repeat
                 add(
                     RadioBrowserFilterOption(
@@ -200,6 +264,16 @@ class RadioBrowserClient {
         return params.joinToString("&") { (key, value) ->
             "${urlEncode(key)}=${urlEncode(value)}"
         }
+    }
+
+    private fun buildDefaultFilterQuery(): String {
+        return buildQuery(
+            listOf(
+                RadioBrowserApi.Query.HIDE_BROKEN to RadioBrowserApi.Value.TRUE,
+                RadioBrowserApi.Query.ORDER to RadioBrowserApi.Sort.STATION_COUNT,
+                RadioBrowserApi.Query.REVERSE to RadioBrowserApi.Value.TRUE,
+            ),
+        )
     }
 
     private fun urlEncode(value: String): String {

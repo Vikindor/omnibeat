@@ -22,16 +22,68 @@ private data class PlaylistResponse(
     val bitrateKbps: Int?,
 )
 
+private object StreamResolverContract {
+    object Extension {
+        const val PLS = ".pls"
+        const val XSPF = ".xspf"
+        const val ASX = ".asx"
+        const val WAX = ".wax"
+        const val WMX = ".wmx"
+        const val M3U = ".m3u"
+        const val M3U8 = ".m3u8"
+    }
+
+    object PathMarker {
+        const val XSPF = "/xspf/"
+    }
+
+    object Pls {
+        const val FILE_PREFIX = "file"
+        const val BITRATE_PREFIX = "bitrate"
+    }
+
+    object Xml {
+        const val LOCATION = "location"
+        const val REF = "ref"
+        const val HREF = "href"
+        const val ANY_TAG = "*"
+        const val DISALLOW_DOCTYPE_DECL = "http://apache.org/xml/features/disallow-doctype-decl"
+        const val EXTERNAL_GENERAL_ENTITIES = "http://xml.org/sax/features/external-general-entities"
+        const val EXTERNAL_PARAMETER_ENTITIES = "http://xml.org/sax/features/external-parameter-entities"
+    }
+
+    object Header {
+        const val USER_AGENT = "User-Agent"
+        const val ICY_METADATA = "Icy-MetaData"
+        const val ICY_BITRATE = "icy-br"
+    }
+
+    object ContentType {
+        const val AUDIO_PREFIX = "audio/"
+        val PLAYLIST_AUDIO_TYPES = setOf(
+            "audio/x-scpls",
+            "audio/scpls",
+            "audio/mpegurl",
+            "audio/x-mpegurl",
+            "audio/vnd.apple.mpegurl",
+        )
+    }
+}
+
 object StreamResolver {
     @Throws(IOException::class)
     fun resolveStream(streamUrl: String): ResolvedStream {
         val lower = streamUrl.lowercase(Locale.US)
         return when {
-            ".pls" in lower -> resolvePls(streamUrl)
-            ".xspf" in lower || "/xspf/" in lower -> resolveXspf(streamUrl)
-            ".asx" in lower || ".wax" in lower || ".wmx" in lower -> resolveAsx(streamUrl)
-            ".m3u" in lower && ".m3u8" !in lower -> resolveM3u(streamUrl)
-            ".m3u8" in lower -> ResolvedStream(streamUrl, null)
+            StreamResolverContract.Extension.PLS in lower -> resolvePls(streamUrl)
+            StreamResolverContract.Extension.XSPF in lower ||
+                StreamResolverContract.PathMarker.XSPF in lower -> resolveXspf(streamUrl)
+            StreamResolverContract.Extension.ASX in lower ||
+                StreamResolverContract.Extension.WAX in lower ||
+                StreamResolverContract.Extension.WMX in lower -> resolveAsx(streamUrl)
+            StreamResolverContract.Extension.M3U in lower &&
+                StreamResolverContract.Extension.M3U8 !in lower -> resolveM3u(streamUrl)
+            StreamResolverContract.Extension.M3U8 in lower -> ResolvedStream(streamUrl, null)
             else -> ResolvedStream(streamUrl, null)
         }
     }
@@ -43,7 +95,10 @@ object StreamResolver {
         lines.forEach { line ->
             val trimmed = line.trim()
             val equals = trimmed.indexOf('=')
-            if (equals > 0 && trimmed.substring(0, equals).lowercase(Locale.US).startsWith("file")) {
+            if (
+                equals > 0 &&
+                trimmed.substring(0, equals).lowercase(Locale.US).startsWith(StreamResolverContract.Pls.FILE_PREFIX)
+            ) {
                 val url = trimmed.substring(equals + 1).trim()
                 if (url.startsWith("http")) {
                     val index = trimmed.substring(4, equals).toIntOrNull()
@@ -72,7 +127,7 @@ object StreamResolver {
         val response = readPlaylistResponse(streamUrl)
         val lines = response.lines ?: return ResolvedStream(streamUrl, response.bitrateKbps)
         val xml = lines.joinToString("\n")
-        readFirstElementText(xml, "location")?.let { location ->
+        readXspfLocation(xml)?.let { location ->
             return ResolvedStream(URL(URL(streamUrl), location).toString(), null)
         }
         throw IOException("XSPF playlist has no stream URL")
@@ -99,14 +154,17 @@ object StreamResolver {
     }
 
     private fun readPlsBitrate(lines: List<String>, index: Int?): Int? {
-        val expectedKey = index?.let { "bitrate$it" }
+        val expectedKey = index?.let { "${StreamResolverContract.Pls.BITRATE_PREFIX}$it" }
         lines.forEach { line ->
             val trimmed = line.trim()
             val equals = trimmed.indexOf('=')
             if (equals <= 0) return@forEach
 
             val key = trimmed.substring(0, equals).lowercase(Locale.US)
-            if (key == expectedKey || (expectedKey == null && key.startsWith("bitrate"))) {
+            if (
+                key == expectedKey ||
+                (expectedKey == null && key.startsWith(StreamResolverContract.Pls.BITRATE_PREFIX))
+            ) {
                 return trimmed.substring(equals + 1).trim().toIntOrNull()?.takeIf { it > 0 }
             }
         }
@@ -119,15 +177,15 @@ object StreamResolver {
         connection.connectTimeout = 12_000
         connection.readTimeout = 12_000
         connection.instanceFollowRedirects = true
-        connection.setRequestProperty("User-Agent", USER_AGENT)
-        connection.setRequestProperty("Icy-MetaData", "1")
+        connection.setRequestProperty(StreamResolverContract.Header.USER_AGENT, USER_AGENT)
+        connection.setRequestProperty(StreamResolverContract.Header.ICY_METADATA, "1")
         return try {
             val contentType = connection.contentType
                 .orEmpty()
                 .lowercase(Locale.US)
                 .substringBefore(";")
                 .trim()
-            val bitrateKbps = readFirstNumber(connection.getHeaderField("icy-br"))
+            val bitrateKbps = readFirstNumber(connection.getHeaderField(StreamResolverContract.Header.ICY_BITRATE))
             if (contentType.isLikelyAudioStream() || (contentType.isBlank() && bitrateKbps != null)) {
                 return PlaylistResponse(lines = null, bitrateKbps = bitrateKbps)
             }
@@ -144,18 +202,18 @@ object StreamResolver {
         return value?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
     }
 
-    private fun readFirstElementText(xml: String, tagName: String): String? {
+    private fun readXspfLocation(xml: String): String? {
         return readXmlElements(xml)
-            .firstOrNull { it.localTagName().equals(tagName, ignoreCase = true) }
+            .firstOrNull { it.localTagName().equals(StreamResolverContract.Xml.LOCATION, ignoreCase = true) }
             ?.textContent
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
     }
 
-    private fun readFirstElementAttribute(xml: String, tagName: String, attributeName: String): String? {
+    private fun readAsxRefHrefAttribute(xml: String): String? {
         return readXmlElements(xml)
-            .firstOrNull { it.localTagName().equals(tagName, ignoreCase = true) }
-            ?.readAttributeIgnoreCase(attributeName)
+            .firstOrNull { it.localTagName().equals(StreamResolverContract.Xml.REF, ignoreCase = true) }
+            ?.readAttributeIgnoreCase(StreamResolverContract.Xml.HREF)
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
     }
@@ -167,21 +225,21 @@ object StreamResolver {
         ).find(asx)?.groupValues?.getOrNull(2)?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
 
         return runCatching {
-            readFirstElementAttribute(asx, "ref", "href")
+            readAsxRefHrefAttribute(asx)
         }.getOrNull()
     }
 
     private fun readXmlElements(xml: String): Sequence<Element> {
         val factory = DocumentBuilderFactory.newInstance().apply {
             isNamespaceAware = false
-            setParserFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-            setParserFeature("http://xml.org/sax/features/external-general-entities", false)
-            setParserFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            setParserFeature(StreamResolverContract.Xml.DISALLOW_DOCTYPE_DECL, true)
+            setParserFeature(StreamResolverContract.Xml.EXTERNAL_GENERAL_ENTITIES, false)
+            setParserFeature(StreamResolverContract.Xml.EXTERNAL_PARAMETER_ENTITIES, false)
         }
         val document = factory
             .newDocumentBuilder()
             .parse(InputSource(StringReader(xml)))
-        val elements = document.getElementsByTagName("*")
+        val elements = document.getElementsByTagName(StreamResolverContract.Xml.ANY_TAG)
         return (0 until elements.length)
             .asSequence()
             .mapNotNull { elements.item(it) as? Element }
@@ -209,14 +267,8 @@ object StreamResolver {
     }
 
     private fun String.isLikelyAudioStream(): Boolean {
-        return startsWith("audio/") &&
-            this !in setOf(
-                "audio/x-scpls",
-                "audio/scpls",
-                "audio/mpegurl",
-                "audio/x-mpegurl",
-                "audio/vnd.apple.mpegurl",
-            )
+        return startsWith(StreamResolverContract.ContentType.AUDIO_PREFIX) &&
+            this !in StreamResolverContract.ContentType.PLAYLIST_AUDIO_TYPES
     }
 
     private const val USER_AGENT = "OmniBeat"

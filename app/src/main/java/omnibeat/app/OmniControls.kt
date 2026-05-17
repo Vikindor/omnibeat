@@ -5,7 +5,6 @@ import androidx.compose.foundation.ScrollIndicatorState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -18,14 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 
@@ -110,33 +104,6 @@ fun OmniDangerButton(
     ) {
         Text(text)
     }
-}
-
-@Composable
-fun OmniDropdownMenuItem(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    leadingIcon: (@Composable () -> Unit)? = null,
-    trailingIcon: (@Composable () -> Unit)? = null,
-) {
-    DropdownMenuItem(
-        text = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                leadingIcon?.invoke()
-                Text(
-                    text = text,
-                    color = RadioText,
-                    fontSize = 14.sp,
-                    modifier = if (leadingIcon == null) Modifier else Modifier.padding(start = 12.dp),
-                )
-                trailingIcon?.invoke()
-            }
-        },
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-        modifier = modifier.height(40.dp),
-        onClick = onClick,
-    )
 }
 
 @Composable
@@ -241,6 +208,7 @@ fun OmniLazyListScrollIndicator(
 }
 
 @Composable
+@Suppress("FrequentlyChangedStateReadInComposition")
 fun OmniScrollIndicator(
     scrollIndicatorState: ScrollIndicatorState?,
     modifier: Modifier = Modifier,
@@ -249,12 +217,10 @@ fun OmniScrollIndicator(
     val viewportSize = state.viewportSize
     val contentSize = state.contentSize
     val scrollOffset = state.scrollOffset
+    val values = listOf(viewportSize, contentSize, scrollOffset)
     if (
-        viewportSize <= 0 ||
-        contentSize <= viewportSize ||
-        scrollOffset == Int.MAX_VALUE ||
-        contentSize == Int.MAX_VALUE ||
-        viewportSize == Int.MAX_VALUE
+        viewportSize !in 1 until contentSize ||
+        values.any { it == Int.MAX_VALUE }
     ) {
         return
     }

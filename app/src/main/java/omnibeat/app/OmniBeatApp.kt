@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -106,7 +105,6 @@ fun OmniBeatApp() {
         var onlineSearchState by remember { mutableStateOf(OnlineStationSearchState()) }
         var onlineSearchResults by remember { mutableStateOf(emptyList<RadioBrowserStation>()) }
         var onlineSearchLoading by remember { mutableStateOf(false) }
-        var onlineSearchError by remember { mutableStateOf<String?>(null) }
         var onlineSearchErrorDialog by remember { mutableStateOf<String?>(null) }
         var onlineCountries by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
         var onlineLanguages by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
@@ -295,7 +293,6 @@ fun OmniBeatApp() {
         fun searchOnlineStations() {
             if (onlineSearchLoading) return
             onlineSearchLoading = true
-            onlineSearchError = null
             scope.launch {
                 runCatching {
                     radioBrowserClient.searchStations(onlineSearchState.toRadioBrowserParams())
@@ -305,7 +302,6 @@ fun OmniBeatApp() {
                 }.onFailure { error ->
                     onlineSearchResults = emptyList()
                     val message = error.message ?: "Could not search stations"
-                    onlineSearchError = message
                     onlineSearchErrorDialog = message
                     Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
                 }
@@ -764,7 +760,6 @@ fun OmniBeatApp() {
                                 selectedStreamUrl = playbackState.selectedStation?.streamUrl,
                                 onSearchStateChange = {
                                     onlineSearchState = it
-                                    onlineSearchError = null
                                 },
                                 onSearch = { searchOnlineStations() },
                                 onPreviewStation = { previewOnlineStation(it) },
