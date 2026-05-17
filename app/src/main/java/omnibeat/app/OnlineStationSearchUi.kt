@@ -476,13 +476,13 @@ private fun OnlineStationResultItem(
 ) {
     StationListItem(
         title = station.title,
-        tags = station.resultTags(),
+        tags = station.stationTags(),
         selected = selected,
         enabled = true,
         onClick = onPreviewStation,
         trailingContent = {
             OmniListActionIconButton(
-                painter = painterResource(R.drawable.ic_add_circle_outline),
+                painter = painterResource(if (added) R.drawable.ic_check else R.drawable.ic_add_circle_outline),
                 contentDescription = if (added) "Station added" else "Add station",
                 enabled = !added,
                 onClick = onAddStation,
@@ -553,15 +553,6 @@ private fun OnlineStationSearchState.summary(): String {
         selectedLanguage?.name?.let(::add)
         add("sort: ${selectedSort.label}")
     }.joinToString(" / ")
-}
-
-private fun RadioBrowserStation.resultTags(): List<String> {
-    return buildList {
-        countryCode.takeIf { it.isNotBlank() }?.let(::add)
-        codec.takeIf { it.isNotBlank() }?.let(::add)
-        bitrate.takeIf { it > 0 }?.let { add("$it kbps") }
-        addAll(tags.take(4))
-    }
 }
 
 private fun String.digitsOnly(): String {

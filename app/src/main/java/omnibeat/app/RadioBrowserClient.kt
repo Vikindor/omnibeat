@@ -17,6 +17,15 @@ data class RadioBrowserStation(
     val bitrate: Int,
 )
 
+fun RadioBrowserStation.stationTags(): List<String> {
+    return buildList {
+        countryCode.takeIf { it.isNotBlank() }?.let(::add)
+        codec.takeIf { it.isNotBlank() }?.let(::add)
+        bitrate.takeIf { it > 0 }?.let { add("$it kbps") }
+        addAll(tags.take(4))
+    }.distinctBy { it.lowercase() }
+}
+
 data class RadioBrowserFilterOption(
     val name: String,
     val code: String = "",

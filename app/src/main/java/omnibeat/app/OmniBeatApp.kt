@@ -320,7 +320,7 @@ fun OmniBeatApp() {
                 title = radioStation.title.trim().take(STATION_TITLE_MAX_LENGTH)
                     .ifBlank { streamUrl.take(STATION_TITLE_MAX_LENGTH) },
                 streamUrl = streamUrl.take(STATION_STREAM_URL_MAX_LENGTH),
-                tags = radioStation.tags,
+                tags = radioStation.stationTags(),
                 isFavorite = false,
                 dateAdded = Instant.now().toString(),
             )
