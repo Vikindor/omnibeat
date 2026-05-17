@@ -69,7 +69,6 @@ fun OnlineStationSearchPage(
     languages: List<RadioBrowserFilterOption>,
     results: List<RadioBrowserStation>,
     loading: Boolean,
-    errorText: String?,
     optionsExpanded: Boolean,
     addedStreamUrls: Set<String>,
     selectedStreamUrl: String?,
@@ -122,7 +121,6 @@ fun OnlineStationSearchPage(
                 countries = countries,
                 languages = languages,
                 loading = loading,
-                errorText = errorText,
                 onSearchStateChange = onSearchStateChange,
                 onSearch = onSearch,
                 maxHeight = overlayMaxHeight,
@@ -193,7 +191,6 @@ private fun SearchOptionsOverlay(
     countries: List<RadioBrowserFilterOption>,
     languages: List<RadioBrowserFilterOption>,
     loading: Boolean,
-    errorText: String?,
     onSearchStateChange: (OnlineStationSearchState) -> Unit,
     onSearch: () -> Unit,
     maxHeight: androidx.compose.ui.unit.Dp,
@@ -214,10 +211,9 @@ private fun SearchOptionsOverlay(
             SearchOptionsContent(
                 searchState = searchState,
                 countries = countries,
-                languages = languages,
-                loading = loading,
-                errorText = errorText,
-                onSearchStateChange = onSearchStateChange,
+            languages = languages,
+            loading = loading,
+            onSearchStateChange = onSearchStateChange,
                 onSearch = onSearch,
                 modifier = Modifier
                     .verticalScroll(scrollState)
@@ -250,21 +246,11 @@ private fun SearchOptionsContent(
     countries: List<RadioBrowserFilterOption>,
     languages: List<RadioBrowserFilterOption>,
     loading: Boolean,
-    errorText: String?,
     onSearchStateChange: (OnlineStationSearchState) -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        errorText?.let {
-            Text(
-                text = it,
-                color = RadioDanger,
-                fontSize = 13.sp,
-                modifier = Modifier.padding(top = 10.dp),
-            )
-        }
-
         SearchTextField(
             value = searchState.nameQuery,
             onValueChange = { onSearchStateChange(searchState.copy(nameQuery = it)) },

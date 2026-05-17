@@ -205,6 +205,7 @@ fun OmniBeatApp() {
 
         LaunchedEffect(selectedPage) {
             if (selectedPage == MainPage.FindOnline) {
+                onlineOptionsExpanded = true
                 if (onlineCountries.isEmpty()) {
                     scope.launch {
                         runCatching { radioBrowserClient.countries() }
@@ -294,9 +295,12 @@ fun OmniBeatApp() {
                     radioBrowserClient.searchStations(onlineSearchState.toRadioBrowserParams())
                 }.onSuccess { results ->
                     onlineSearchResults = results
+                    onlineOptionsExpanded = false
                 }.onFailure { error ->
                     onlineSearchResults = emptyList()
-                    onlineSearchError = error.message ?: "Could not search stations"
+                    val message = error.message ?: "Could not search stations"
+                    onlineSearchError = message
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
                 onlineSearchLoading = false
             }
@@ -745,7 +749,6 @@ fun OmniBeatApp() {
                                 languages = onlineLanguages,
                                 results = onlineSearchResults,
                                 loading = onlineSearchLoading,
-                                errorText = onlineSearchError,
                                 optionsExpanded = onlineOptionsExpanded,
                                 addedStreamUrls = stations.mapTo(mutableSetOf()) { it.streamUrl },
                                 selectedStreamUrl = playbackState.selectedStation?.streamUrl,
