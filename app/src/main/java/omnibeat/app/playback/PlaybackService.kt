@@ -46,6 +46,7 @@ import omnibeat.app.network.NO_INTERNET_MESSAGE
 import omnibeat.app.network.NetworkStatus
 import omnibeat.app.stream.IcyMetadataParser
 import omnibeat.app.stream.StreamResolver
+import java.util.concurrent.CancellationException
 import kotlin.random.Random
 
 const val TRACK_TEXT_STOPPED = "No stream is playing"
@@ -173,12 +174,13 @@ class PlaybackService : Service() {
     }
 
     private fun playOrStop() {
+        val current = state.value
         when {
-            player.isPlaying -> {
+            player.isPlaying || current.resolving || current.buffering -> {
                 stopPlayback()
                 stopSelf()
             }
-            state.value.selectedStation == null -> playLastOrFirstStation()
+            current.selectedStation == null -> playLastOrFirstStation()
             else -> player.play()
         }
         updateNotification(immediate = true)
@@ -300,6 +302,9 @@ class PlaybackService : Service() {
                 player.play()
                 updateNotification()
             }.onFailure { error ->
+                if (error is CancellationException) {
+                    return@onFailure
+                }
                 _state.update {
                     it.copy(
                         errorText = "Could not resolve stream: ${error.message}",
@@ -562,7 +567,7 @@ class PlaybackService : Service() {
 
     private fun buildNotification(): Notification {
         val current = state.value
-        val playStopAction = if (current.isPlaying) {
+        val playStopAction = if (current.isPlaying || current.resolving || current.buffering) {
             notificationAction(R.drawable.ic_stop, "Stop", ACTION_PLAY_STOP)
         } else {
             notificationAction(R.drawable.ic_play_arrow, "Play", ACTION_PLAY_STOP)

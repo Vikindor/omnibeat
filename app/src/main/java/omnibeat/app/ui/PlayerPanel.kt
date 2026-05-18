@@ -82,6 +82,7 @@ fun PlayerPanel(
     val context = LocalContext.current
     val displayTrackText = errorText ?: trackText
     val bitrateText = streamInfo.bitrateText
+    val hasActivePlaybackRequest = isPlaying || loading
 
     Column(
         modifier = Modifier
@@ -195,13 +196,15 @@ fun PlayerPanel(
                     )
                 }
                 PlayerIconButton(
-                    enabled = canPlay && !resolving,
+                    enabled = canPlay,
                     onClick = onPlayStop,
                     modifier = Modifier.size(62.dp),
                 ) {
                     Icon(
-                        painter = painterResource(if (isPlaying) R.drawable.ic_stop else R.drawable.ic_play_arrow),
-                        contentDescription = if (isPlaying) "Stop" else "Play",
+                        painter = painterResource(
+                            if (hasActivePlaybackRequest) R.drawable.ic_stop else R.drawable.ic_play_arrow,
+                        ),
+                        contentDescription = if (hasActivePlaybackRequest) "Stop" else "Play",
                         modifier = Modifier.size(32.dp),
                     )
                 }

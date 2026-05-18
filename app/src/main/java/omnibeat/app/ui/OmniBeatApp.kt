@@ -578,12 +578,13 @@ fun OmniBeatApp() {
 
         fun playOrStop() {
             val pageStations = navigationStations()
-            if (!playbackState.isPlaying && playbackState.selectedStation == null && pageStations.isNotEmpty()) {
+            val hasActivePlaybackRequest = playbackState.isPlaying || playbackState.resolving || playbackState.buffering
+            if (!hasActivePlaybackRequest && playbackState.selectedStation == null && pageStations.isNotEmpty()) {
                 val lastPlayedStation = lastPlayedStationId
                     ?.let { stationId -> stations.firstOrNull { it.id == stationId } }
                 playStation(lastPlayedStation ?: pageStations.first())
             } else {
-                if (!playbackState.isPlaying && !hasInternetOrToast()) return
+                if (!hasActivePlaybackRequest && !hasInternetOrToast()) return
                 PlaybackService.playOrStop(context)
             }
         }
