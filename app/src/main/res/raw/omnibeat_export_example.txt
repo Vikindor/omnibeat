@@ -1,0 +1,7 @@
+First station title
+https://station-link-1
+optional tag 1, optional tag 2
+
+Second station title
+https://station-link-2
+optional tag 1, optional tag 2
