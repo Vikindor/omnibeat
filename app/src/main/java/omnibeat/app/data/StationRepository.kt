@@ -22,6 +22,7 @@ private val Context.stationDataStore by preferencesDataStore(name = "stations")
 private const val DEFAULT_APP_VOLUME = 0.75f
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
+private val addRadioBrowserTagsKey = booleanPreferencesKey("add_radio_browser_tags")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationSortKey = stringPreferencesKey("station_sort")
@@ -35,6 +36,9 @@ class StationRepository(private val context: Context) {
 
     val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showStationArtworkKey] ?: true }
+
+    val addRadioBrowserTags: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[addRadioBrowserTagsKey] ?: true }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
@@ -65,6 +69,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveShowStationArtwork(show: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[showStationArtworkKey] = show
+        }
+    }
+
+    suspend fun saveAddRadioBrowserTags(add: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[addRadioBrowserTagsKey] = add
         }
     }
 

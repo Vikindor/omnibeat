@@ -113,6 +113,7 @@ fun OmniBeatApp() {
         var stations by remember { mutableStateOf(emptyList<Station>()) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var showStationArtwork by remember { mutableStateOf(true) }
+        var addRadioBrowserTags by remember { mutableStateOf(true) }
         var syncingStationArtwork by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
@@ -151,6 +152,12 @@ fun OmniBeatApp() {
         LaunchedEffect(repository) {
             repository.showStationArtwork.collect { savedShowStationArtwork ->
                 showStationArtwork = savedShowStationArtwork
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.addRadioBrowserTags.collect { savedAddRadioBrowserTags ->
+                addRadioBrowserTags = savedAddRadioBrowserTags
             }
         }
 
@@ -383,7 +390,7 @@ fun OmniBeatApp() {
                 title = radioStation.title.trim().take(STATION_TITLE_MAX_LENGTH)
                     .ifBlank { streamUrl.take(STATION_TITLE_MAX_LENGTH) },
                 streamUrl = streamUrl.take(STATION_STREAM_URL_MAX_LENGTH),
-                tags = radioStation.stationTags(),
+                tags = if (addRadioBrowserTags) radioStation.stationTags() else emptyList(),
                 imageUrl = radioStation.imageUrl,
                 isFavorite = false,
                 dateAdded = Instant.now().toString(),
@@ -937,10 +944,15 @@ fun OmniBeatApp() {
                         MainPage.Settings -> {
                             SettingsPage(
                                 showStationArtwork = showStationArtwork,
+                                addRadioBrowserTags = addRadioBrowserTags,
                                 syncingStationArtwork = syncingStationArtwork,
                                 onShowStationArtworkChange = { show ->
                                     showStationArtwork = show
                                     scope.launch { repository.saveShowStationArtwork(show) }
+                                },
+                                onAddRadioBrowserTagsChange = { add ->
+                                    addRadioBrowserTags = add
+                                    scope.launch { repository.saveAddRadioBrowserTags(add) }
                                 },
                                 onSyncStationArtwork = { syncStationArtwork() },
                                 modifier = Modifier.fillMaxSize(),
