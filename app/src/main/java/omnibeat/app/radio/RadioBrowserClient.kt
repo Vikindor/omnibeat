@@ -15,6 +15,7 @@ data class RadioBrowserStation(
     val countryCode: String,
     val codec: String,
     val bitrate: Int,
+    val imageUrl: String?,
 )
 
 fun RadioBrowserStation.stationTags(): List<String> {
@@ -56,11 +57,13 @@ private object RadioBrowserApi {
     object Path {
         const val SERVERS = "/json/servers"
         const val STATIONS_SEARCH = "/json/stations/search"
+        const val STATIONS_BY_URL = "/json/stations/byurl"
         const val COUNTRIES = "/json/countries"
         const val LANGUAGES = "/json/languages"
     }
 
     object Query {
+        const val URL = "url"
         const val NAME = "name"
         const val TAG_LIST = "tagList"
         const val COUNTRY = "country"
@@ -93,6 +96,7 @@ private object RadioBrowserApi {
         const val COUNTRY_CODE = "countrycode"
         const val CODEC = "codec"
         const val BITRATE = "bitrate"
+        const val FAVICON = "favicon"
         const val ISO_3166_1 = "iso_3166_1"
     }
 
@@ -134,6 +138,11 @@ class RadioBrowserClient {
             ).filter { it.second.isNotBlank() },
         )
         decodeStations(readRadioBrowserText("${RadioBrowserApi.Path.STATIONS_SEARCH}?$query"))
+    }
+
+    suspend fun findStationByStreamUrl(streamUrl: String): RadioBrowserStation? = withContext(Dispatchers.IO) {
+        val query = buildQuery(listOf(RadioBrowserApi.Query.URL to streamUrl.trim()))
+        decodeStations(readRadioBrowserText("${RadioBrowserApi.Path.STATIONS_BY_URL}?$query")).firstOrNull()
     }
 
     suspend fun countries(): List<RadioBrowserFilterOption> = withContext(Dispatchers.IO) {
@@ -232,6 +241,7 @@ class RadioBrowserClient {
                         countryCode = item.optString(RadioBrowserApi.Json.COUNTRY_CODE).trim(),
                         codec = item.optString(RadioBrowserApi.Json.CODEC).trim(),
                         bitrate = item.optInt(RadioBrowserApi.Json.BITRATE, 0),
+                        imageUrl = item.optString(RadioBrowserApi.Json.FAVICON).trim().takeIf { it.isNotBlank() },
                     ),
                 )
             }

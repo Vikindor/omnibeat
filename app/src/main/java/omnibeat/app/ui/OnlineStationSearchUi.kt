@@ -74,6 +74,7 @@ fun OnlineStationSearchPage(
     results: List<RadioBrowserStation>,
     loading: Boolean,
     optionsExpanded: Boolean,
+    showArtwork: Boolean,
     addedStreamUrls: Set<String>,
     selectedStreamUrl: String?,
     onSearchStateChange: (OnlineStationSearchState) -> Unit,
@@ -105,6 +106,7 @@ fun OnlineStationSearchPage(
                             station = station,
                             added = station.streamUrl in addedStreamUrls,
                             selected = station.streamUrl == selectedStreamUrl,
+                            showArtwork = showArtwork,
                             onPreviewStation = { onPreviewStation(station) },
                             onAddStation = { onAddStation(station) },
                         )
@@ -475,12 +477,15 @@ private fun OnlineStationResultItem(
     station: RadioBrowserStation,
     added: Boolean,
     selected: Boolean,
+    showArtwork: Boolean,
     onPreviewStation: () -> Unit,
     onAddStation: () -> Unit,
 ) {
     StationListItem(
         title = station.title,
         tags = station.stationTags(),
+        imageUrl = station.imageUrl,
+        showArtwork = showArtwork,
         selected = selected,
         enabled = true,
         onClick = onPreviewStation,

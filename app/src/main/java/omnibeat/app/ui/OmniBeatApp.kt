@@ -112,6 +112,8 @@ fun OmniBeatApp() {
 
         var stations by remember { mutableStateOf(emptyList<Station>()) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
+        var showStationArtwork by remember { mutableStateOf(true) }
+        var syncingStationArtwork by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
         var lastMainPage by remember { mutableStateOf(MainPage.Stations) }
@@ -143,6 +145,12 @@ fun OmniBeatApp() {
         LaunchedEffect(repository) {
             repository.appVolume.collect { savedVolume ->
                 appVolume = savedVolume
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.showStationArtwork.collect { savedShowStationArtwork ->
+                showStationArtwork = savedShowStationArtwork
             }
         }
 
@@ -376,6 +384,7 @@ fun OmniBeatApp() {
                     .ifBlank { streamUrl.take(STATION_TITLE_MAX_LENGTH) },
                 streamUrl = streamUrl.take(STATION_STREAM_URL_MAX_LENGTH),
                 tags = radioStation.stationTags(),
+                imageUrl = radioStation.imageUrl,
                 isFavorite = false,
                 dateAdded = Instant.now().toString(),
             )
@@ -395,6 +404,96 @@ fun OmniBeatApp() {
             scope.launch {
                 repository.saveStations(nextStations)
                 Toast.makeText(context, "Station added", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        fun syncStationArtwork() {
+            if (syncingStationArtwork) return
+            if (!hasInternetOrToast()) return
+            syncingStationArtwork = true
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        stations.mapNotNull { station ->
+                            if (!station.imageUrl.isNullOrBlank()) return@mapNotNull null
+                            val imageUrl = radioBrowserClient.findStationByStreamUrl(station.streamUrl)
+                                ?.imageUrl
+                                ?.takeIf { it.isNotBlank() }
+                                ?: return@mapNotNull null
+                            station.id to imageUrl
+                        }
+                    }
+                }.onSuccess { updates ->
+                    if (updates.isNotEmpty()) {
+                        val imageByStationId = updates.toMap()
+                        val nextStations = stations.map { station ->
+                            imageByStationId[station.id]?.let { imageUrl ->
+                                station.copy(imageUrl = imageUrl)
+                            } ?: station
+                        }
+                        stations = nextStations
+                        repository.saveStations(nextStations)
+                    }
+                    Toast.makeText(context, "Artwork synced: ${updates.size}", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(context, "Artwork sync failed: ${error.message}", Toast.LENGTH_LONG).show()
+                }
+                syncingStationArtwork = false
+            }
+        }
+
+        fun syncNewStationArtwork(station: Station) {
+            if (!showStationArtwork || !station.imageUrl.isNullOrBlank()) return
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        radioBrowserClient.findStationByStreamUrl(station.streamUrl)
+                            ?.imageUrl
+                            ?.takeIf { it.isNotBlank() }
+                    }
+                }.onSuccess { imageUrl ->
+                    if (imageUrl == null) return@onSuccess
+                    val nextStations = stations.map { savedStation ->
+                        if (savedStation.id == station.id && savedStation.imageUrl.isNullOrBlank()) {
+                            savedStation.copy(imageUrl = imageUrl)
+                        } else {
+                            savedStation
+                        }
+                    }
+                    stations = nextStations
+                    repository.saveStations(nextStations)
+                }
+            }
+        }
+
+        fun syncStationArtwork(index: Int) {
+            val station = stations.getOrNull(index) ?: return
+            if (!hasInternetOrToast()) return
+            Toast.makeText(context, "Searching for artwork...", Toast.LENGTH_SHORT).show()
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        radioBrowserClient.findStationByStreamUrl(station.streamUrl)
+                            ?.imageUrl
+                            ?.takeIf { it.isNotBlank() }
+                    }
+                }.onSuccess { imageUrl ->
+                    if (imageUrl == null) {
+                        Toast.makeText(context, "No artwork found", Toast.LENGTH_SHORT).show()
+                        return@onSuccess
+                    }
+                    val nextStations = stations.toMutableList().also { list ->
+                        val currentIndex = list.indexOfFirst { it.id == station.id }
+                        if (currentIndex != -1) {
+                            list[currentIndex] = list[currentIndex].copy(imageUrl = imageUrl)
+                        }
+                    }
+                    stations = nextStations
+                    repository.saveStations(nextStations)
+                    Toast.makeText(context, "Artwork synced", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(context, "Artwork sync failed: ${error.message}", Toast.LENGTH_LONG).show()
+                }
             }
         }
 
@@ -731,6 +830,7 @@ fun OmniBeatApp() {
                                                     selectedIndex = visibleStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
                                                     scrollToSelectedRequest = scrollToSelectedRequest,
                                                     scrollToStationId = scrollToStationId,
+                                                    showArtwork = showStationArtwork,
                                                     enabled = drawerState.isClosed && reorderDraft == null,
                                                     reordering = reorderDraft != null,
                                                     onMove = ::moveReorderDraft,
@@ -767,6 +867,7 @@ fun OmniBeatApp() {
                                                     selectedIndex = favoriteStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
                                                     scrollToSelectedRequest = scrollToSelectedRequest,
                                                     scrollToStationId = scrollToStationId,
+                                                    showArtwork = showStationArtwork,
                                                     enabled = drawerState.isClosed && reorderDraft == null,
                                                     reordering = reorderDraft != null,
                                                     onMove = ::moveReorderDraft,
@@ -820,6 +921,7 @@ fun OmniBeatApp() {
                                 results = onlineSearchResults,
                                 loading = onlineSearchLoading,
                                 optionsExpanded = onlineOptionsExpanded,
+                                showArtwork = showStationArtwork,
                                 addedStreamUrls = stations.mapTo(mutableSetOf()) { it.streamUrl },
                                 selectedStreamUrl = playbackState.selectedStation?.streamUrl,
                                 onSearchStateChange = {
@@ -833,11 +935,15 @@ fun OmniBeatApp() {
                         }
 
                         MainPage.Settings -> {
-                            EmptyFuturePage(
-                                title = "Settings",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 32.dp),
+                            SettingsPage(
+                                showStationArtwork = showStationArtwork,
+                                syncingStationArtwork = syncingStationArtwork,
+                                onShowStationArtworkChange = { show ->
+                                    showStationArtwork = show
+                                    scope.launch { repository.saveShowStationArtwork(show) }
+                                },
+                                onSyncStationArtwork = { syncStationArtwork() },
+                                modifier = Modifier.fillMaxSize(),
                             )
                         }
 
@@ -947,6 +1053,9 @@ fun OmniBeatApp() {
                 state = state,
                 showDelete = state.stationIndex != null,
                 onDismiss = { editorState = null },
+                onSyncArtwork = state.stationIndex?.let { stationIndex ->
+                    { syncStationArtwork(stationIndex) }
+                },
                 onDelete = {
                     val index = state.stationIndex ?: return@StationEditorDialog
                     val nextStations = stations.toMutableList().also { it.removeAt(index) }
@@ -964,6 +1073,7 @@ fun OmniBeatApp() {
                         title = title.trim().ifBlank { trimmedStreamUrl.take(STATION_TITLE_MAX_LENGTH) },
                         streamUrl = trimmedStreamUrl,
                         tags = parseTags(tags),
+                        imageUrl = state.stationIndex?.let { stations[it].imageUrl },
                         isFavorite = state.stationIndex?.let { stations[it].isFavorite } ?: false,
                         dateAdded = state.stationIndex?.let { stations[it].dateAdded } ?: Instant.now().toString(),
                     )
@@ -977,6 +1087,9 @@ fun OmniBeatApp() {
                     }
                     stations = nextStations
                     scope.launch { repository.saveStations(nextStations) }
+                    if (state.stationIndex == null) {
+                        syncNewStationArtwork(updatedStation)
+                    }
                     editorState = null
                 },
             )

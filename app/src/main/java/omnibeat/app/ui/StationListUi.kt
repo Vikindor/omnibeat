@@ -3,7 +3,9 @@ package omnibeat.app.ui
 import omnibeat.app.R
 import omnibeat.app.model.Station
 
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,13 +21,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -33,8 +40,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import java.net.HttpURLConnection
+import java.net.URL
 
 @Composable
 fun EmptyStationsState(modifier: Modifier = Modifier) {
@@ -71,6 +82,7 @@ fun StationList(
     selectedIndex: Int,
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
+    showArtwork: Boolean,
     enabled: Boolean = true,
     reordering: Boolean = false,
     onMove: (Int, Int) -> Unit = { _, _ -> },
@@ -129,6 +141,7 @@ fun StationList(
                         selected = selectedIndex == index,
                         enabled = enabled,
                         reordering = reordering,
+                        showArtwork = showArtwork,
                         dragging = isDragging,
                         modifier = Modifier.animateItem(),
                         dragHandleModifier = if (reordering) {
@@ -157,6 +170,8 @@ fun StationList(
 fun StationListItem(
     title: String,
     tags: List<String>,
+    imageUrl: String?,
+    showArtwork: Boolean,
     selected: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
@@ -179,6 +194,12 @@ fun StationListItem(
             .padding(start = startPadding, end = 20.dp, top = 14.dp, bottom = 14.dp),
     ) {
         leadingContent?.invoke()
+        if (showArtwork) {
+            StationArtwork(
+                imageUrl = imageUrl,
+                modifier = Modifier.padding(end = 12.dp),
+            )
+        }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
@@ -232,6 +253,78 @@ fun StationTagPills(
     }
 }
 
+@Composable
+private fun StationArtwork(
+    imageUrl: String?,
+    modifier: Modifier = Modifier,
+) {
+    val normalizedUrl = imageUrl?.takeIf { it.isNotBlank() }
+    var imageBitmap by remember(normalizedUrl) { mutableStateOf(StationArtworkMemoryCache[normalizedUrl]) }
+
+    LaunchedEffect(normalizedUrl) {
+        if (normalizedUrl == null || imageBitmap != null) return@LaunchedEffect
+        imageBitmap = loadStationArtwork(normalizedUrl)?.also { bitmap ->
+            StationArtworkMemoryCache[normalizedUrl] = bitmap
+        }
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(52.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(RadioSurfaceHigh.copy(alpha = 0.72f)),
+    ) {
+        if (imageBitmap != null) {
+            Image(
+                bitmap = imageBitmap!!,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Icon(
+                painter = painterResource(R.drawable.ic_radio_button_unchecked),
+                contentDescription = null,
+                tint = RadioTextMuted,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
+private object StationArtworkMemoryCache {
+    private val images = mutableMapOf<String, androidx.compose.ui.graphics.ImageBitmap>()
+
+    operator fun get(url: String?): androidx.compose.ui.graphics.ImageBitmap? {
+        if (url == null) return null
+        return synchronized(images) { images[url] }
+    }
+
+    operator fun set(url: String, bitmap: androidx.compose.ui.graphics.ImageBitmap) {
+        synchronized(images) { images[url] = bitmap }
+    }
+}
+
+private suspend fun loadStationArtwork(imageUrl: String): androidx.compose.ui.graphics.ImageBitmap? {
+    return withContext(Dispatchers.IO) {
+        runCatching {
+            val connection = URL(imageUrl).openConnection() as HttpURLConnection
+            connection.connectTimeout = 6_000
+            connection.readTimeout = 6_000
+            connection.instanceFollowRedirects = true
+            connection.setRequestProperty("User-Agent", "OmniBeat Android")
+            try {
+                connection.inputStream.use { inputStream ->
+                    BitmapFactory.decodeStream(inputStream)?.asImageBitmap()
+                }
+            } finally {
+                connection.disconnect()
+            }
+        }.getOrNull()
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StationRow(
@@ -239,6 +332,7 @@ private fun StationRow(
     selected: Boolean,
     enabled: Boolean,
     reordering: Boolean,
+    showArtwork: Boolean,
     dragging: Boolean,
     modifier: Modifier = Modifier,
     dragHandleModifier: Modifier,
@@ -249,6 +343,8 @@ private fun StationRow(
     StationListItem(
         title = station.title,
         tags = station.tags,
+        imageUrl = station.imageUrl,
+        showArtwork = showArtwork,
         selected = selected,
         enabled = enabled,
         onClick = onClick,

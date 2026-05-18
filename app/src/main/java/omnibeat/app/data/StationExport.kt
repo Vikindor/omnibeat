@@ -7,9 +7,9 @@ import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.URI
 import java.time.Instant
 import java.util.UUID
-import java.net.URI
 
 private const val EXPORT_SCHEMA_VERSION = 1
 private const val EXPORT_APP_NAME = "OmniBeat"
@@ -148,6 +148,7 @@ object StationExportCodec {
                     .put("title", station.title)
                     .put("streamUrl", station.streamUrl)
                     .put("tags", JSONArray(station.tags))
+                    .put("imageUrl", station.imageUrl.orEmpty())
                     .put("isFavorite", station.isFavorite)
                     .put("dateAdded", station.dateAdded),
             )
@@ -176,6 +177,7 @@ object StationExportCodec {
                         title = title,
                         streamUrl = streamUrl,
                         tags = decodeTags(item.optJSONArray("tags")),
+                        imageUrl = item.optString("imageUrl").trim().takeIf { it.isNotBlank() },
                         isFavorite = item.optBoolean("isFavorite", false),
                         dateAdded = item.optString("dateAdded")
                             .takeIf { it.isValidInstant() }
@@ -291,6 +293,7 @@ object SimpleStationTextCodec {
             title = title,
             streamUrl = streamUrl,
             tags = lines.getOrNull(2)?.parseTags().orEmpty(),
+            imageUrl = null,
             isFavorite = false,
             dateAdded = Instant.now().toString(),
         )

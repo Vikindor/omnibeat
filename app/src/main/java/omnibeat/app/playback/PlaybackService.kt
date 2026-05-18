@@ -407,6 +407,9 @@ class PlaybackService : Service() {
         }
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            mediaMetadata.artworkUri?.toString()?.takeIf { it.isNotBlank() }?.let { imageUrl ->
+                saveCurrentStationImageUrl(imageUrl)
+            }
             val title = mediaMetadata.title?.toString().orEmpty()
             val artist = mediaMetadata.artist?.toString().orEmpty()
             val stationTitle = state.value.selectedStation?.title.orEmpty()
@@ -561,6 +564,19 @@ class PlaybackService : Service() {
             .build()
     }
 
+    private fun saveCurrentStationImageUrl(imageUrl: String) {
+        val current = state.value
+        val station = current.selectedStation ?: return
+        if (current.previewing || station.imageUrl == imageUrl) {
+            return
+        }
+        val stationId = station.id
+        _state.update { playbackState ->
+            playbackState.copy(selectedStation = playbackState.selectedStation?.copy(imageUrl = imageUrl))
+        }
+        scope.launch { repository.saveStationImageUrl(stationId, imageUrl) }
+    }
+
     private fun String.isPublicTrackText(): Boolean {
         return isNotBlank() && this !in SERVICE_TRACK_TEXTS
     }
@@ -703,6 +719,7 @@ class PlaybackService : Service() {
         private const val EXTRA_PREVIEW_TITLE = "preview_title"
         private const val EXTRA_PREVIEW_STREAM_URL = "preview_stream_url"
         private const val EXTRA_PREVIEW_TAGS = "preview_tags"
+        private const val EXTRA_PREVIEW_IMAGE_URL = "preview_image_url"
         private val SERVICE_TRACK_TEXTS = setOf(
             TRACK_TEXT_STOPPED,
             TRACK_TEXT_LOADING_STATIONS,
@@ -737,7 +754,8 @@ class PlaybackService : Service() {
                     .putExtra(EXTRA_PREVIEW_ID, station.id)
                     .putExtra(EXTRA_PREVIEW_TITLE, station.title)
                     .putExtra(EXTRA_PREVIEW_STREAM_URL, station.streamUrl)
-                    .putExtra(EXTRA_PREVIEW_TAGS, station.tags.joinToString(",")),
+                    .putExtra(EXTRA_PREVIEW_TAGS, station.tags.joinToString(","))
+                    .putExtra(EXTRA_PREVIEW_IMAGE_URL, station.imageUrl.orEmpty()),
             )
         }
 
@@ -770,6 +788,7 @@ class PlaybackService : Service() {
                     .split(",")
                     .map { it.trim() }
                     .filter { it.isNotEmpty() },
+                imageUrl = extras?.getString(EXTRA_PREVIEW_IMAGE_URL)?.trim()?.takeIf { it.isNotBlank() },
                 isFavorite = false,
                 dateAdded = "",
             )

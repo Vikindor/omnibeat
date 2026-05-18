@@ -44,6 +44,7 @@ fun StationEditorDialog(
     state: StationEditorState,
     showDelete: Boolean,
     onDismiss: () -> Unit,
+    onSyncArtwork: (() -> Unit)? = null,
     onDelete: () -> Unit,
     onSave: (String, String, String) -> Unit,
 ) {
@@ -74,6 +75,15 @@ fun StationEditorDialog(
                     text = if (state.stationIndex == null) "Add station" else "Edit station",
                     modifier = Modifier.weight(1f),
                 )
+                if (onSyncArtwork != null) {
+                    IconButton(onClick = onSyncArtwork) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_image_search),
+                            contentDescription = "Sync station artwork",
+                            tint = RadioPrimary,
+                        )
+                    }
+                }
                 if (showDelete) {
                     IconButton(onClick = { confirmDelete = true }) {
                         Icon(

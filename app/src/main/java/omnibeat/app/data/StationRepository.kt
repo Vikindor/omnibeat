@@ -3,6 +3,7 @@ package omnibeat.app.data
 import omnibeat.app.R
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -20,6 +21,7 @@ import java.util.UUID
 private val Context.stationDataStore by preferencesDataStore(name = "stations")
 private const val DEFAULT_APP_VOLUME = 0.75f
 private val appVolumeKey = floatPreferencesKey("app_volume")
+private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationSortKey = stringPreferencesKey("station_sort")
@@ -30,6 +32,9 @@ private val stationsJsonKey = stringPreferencesKey("stations_json")
 class StationRepository(private val context: Context) {
     val appVolume: Flow<Float> = context.stationDataStore.data
         .map { preferences -> preferences[appVolumeKey] ?: DEFAULT_APP_VOLUME }
+
+    val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showStationArtworkKey] ?: true }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
@@ -54,6 +59,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveAppVolume(volume: Float) {
         context.stationDataStore.edit { preferences ->
             preferences[appVolumeKey] = volume.coerceIn(0f, 1f)
+        }
+    }
+
+    suspend fun saveShowStationArtwork(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showStationArtworkKey] = show
         }
     }
 
@@ -102,6 +113,18 @@ class StationRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveStationImageUrl(stationId: String, imageUrl: String) {
+        context.stationDataStore.edit { preferences ->
+            val stations = decodeStations(preferences[stationsJsonKey].orEmpty())
+            val index = stations.indexOfFirst { it.id == stationId }
+            if (index == -1) return@edit
+            val nextStations = stations.toMutableList().also { list ->
+                list[index] = list[index].copy(imageUrl = imageUrl)
+            }
+            preferences[stationsJsonKey] = encodeStations(nextStations)
+        }
+    }
+
     suspend fun seedTestStationsForPrototype() {
         context.stationDataStore.edit { preferences ->
             if (preferences[stationsJsonKey].isNullOrBlank()) {
@@ -123,6 +146,7 @@ class StationRepository(private val context: Context) {
                     .put("title", station.title)
                     .put("streamUrl", station.streamUrl)
                     .put("tags", JSONArray(station.tags))
+                    .put("imageUrl", station.imageUrl.orEmpty())
                     .put("isFavorite", station.isFavorite)
                     .put("dateAdded", station.dateAdded),
             )
@@ -148,6 +172,7 @@ class StationRepository(private val context: Context) {
                                 title = title,
                                 streamUrl = streamUrl,
                                 tags = decodeTags(item.optJSONArray("tags")),
+                                imageUrl = item.optString("imageUrl").trim().takeIf { it.isNotBlank() },
                                 isFavorite = item.optBoolean("isFavorite", false),
                                 dateAdded = item.getString("dateAdded"),
                             ),
