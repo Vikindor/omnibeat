@@ -87,6 +87,8 @@ import omnibeat.app.model.StationEditorState
 import omnibeat.app.model.StationReorderDraft
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
+import omnibeat.app.network.NO_INTERNET_MESSAGE
+import omnibeat.app.network.NetworkStatus
 import omnibeat.app.playback.PlaybackService
 import omnibeat.app.radio.RadioBrowserStation
 import omnibeat.app.radio.stationTags
@@ -310,8 +312,17 @@ fun OmniBeatApp() {
             }
         }
 
+        fun hasInternetOrToast(): Boolean {
+            if (NetworkStatus.isOnline(context)) {
+                return true
+            }
+            Toast.makeText(context, NO_INTERNET_MESSAGE, Toast.LENGTH_SHORT).show()
+            return false
+        }
+
         fun searchOnlineStations() {
             if (onlineSearchLoading) return
+            if (!hasInternetOrToast()) return
             onlineSearchLoading = true
             scope.launch {
                 runCatching {
@@ -344,6 +355,7 @@ fun OmniBeatApp() {
 
         fun previewOnlineStation(radioStation: RadioBrowserStation) {
             if (radioStation.streamUrl.isBlank()) return
+            if (!hasInternetOrToast()) return
             PlaybackService.playPreview(context, stationFromOnlineResult(radioStation))
         }
 
@@ -408,6 +420,7 @@ fun OmniBeatApp() {
         }
 
         fun playStationAt(index: Int) {
+            if (!hasInternetOrToast()) return
             scope.launch { drawerState.close() }
             scrollToStationId = stations.getOrNull(index)?.id
             scrollToSelectedRequest += 1
@@ -542,6 +555,7 @@ fun OmniBeatApp() {
                     ?.let { stationId -> stations.firstOrNull { it.id == stationId } }
                 playStation(lastPlayedStation ?: pageStations.first())
             } else {
+                if (!playbackState.isPlaying && !hasInternetOrToast()) return
                 PlaybackService.playOrStop(context)
             }
         }

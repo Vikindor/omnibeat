@@ -41,6 +41,8 @@ import kotlinx.coroutines.withContext
 import omnibeat.app.MainActivity
 import omnibeat.app.data.StationRepository
 import omnibeat.app.model.Station
+import omnibeat.app.network.NO_INTERNET_MESSAGE
+import omnibeat.app.network.NetworkStatus
 import omnibeat.app.stream.IcyMetadataParser
 import omnibeat.app.stream.StreamResolver
 import kotlin.random.Random
@@ -239,6 +241,23 @@ class PlaybackService : Service() {
         player.stop()
         lastSessionMetadata = null
         currentStreamIsHls = false
+        if (!NetworkStatus.isOnline(this)) {
+            _state.update {
+                it.copy(
+                    selectedIndex = index,
+                    selectedStation = station,
+                    previewing = previewing,
+                    trackText = TRACK_TEXT_STOPPED,
+                    resolving = false,
+                    buffering = false,
+                    isPlaying = false,
+                    errorText = NO_INTERNET_MESSAGE,
+                    streamInfo = PlaybackStreamInfo(),
+                )
+            }
+            updateNotification(immediate = true)
+            return
+        }
         _state.update {
             it.copy(
                 selectedIndex = index,
@@ -408,14 +427,22 @@ class PlaybackService : Service() {
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            resolveJob?.cancel()
+            notificationUpdateJob?.cancel()
+            lastSessionMetadata = null
+            currentStreamIsHls = false
+            player.stop()
             _state.update {
                 it.copy(
                     errorText = error.message ?: "Playback error",
                     resolving = false,
                     buffering = false,
+                    isPlaying = false,
+                    streamInfo = PlaybackStreamInfo(),
                 )
             }
-            updateNotification(immediate = true)
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
         }
     }
 
