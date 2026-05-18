@@ -31,6 +31,7 @@ private object StreamResolverContract {
         const val WMX = ".wmx"
         const val M3U = ".m3u"
         const val M3U8 = ".m3u8"
+        const val MPD = ".mpd"
     }
 
     object PathMarker {
@@ -84,6 +85,7 @@ object StreamResolver {
             StreamResolverContract.Extension.M3U in lower &&
                 StreamResolverContract.Extension.M3U8 !in lower -> resolveM3u(streamUrl)
             StreamResolverContract.Extension.M3U8 in lower -> ResolvedStream(streamUrl, null)
+            StreamResolverContract.Extension.MPD in lower -> ResolvedStream(streamUrl, null)
             else -> ResolvedStream(streamUrl, null)
         }
     }

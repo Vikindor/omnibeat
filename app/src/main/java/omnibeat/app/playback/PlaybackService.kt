@@ -18,6 +18,7 @@ import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
@@ -291,6 +292,7 @@ class PlaybackService : Service() {
                 player.setMediaItem(
                     MediaItem.Builder()
                         .setUri(resolvedStream.playableUrl)
+                        .setMimeType(resolvedStream.playableUrl.mediaMimeType())
                         .setLiveConfiguration(MediaItem.LiveConfiguration.Builder().build())
                         .build(),
                 )
@@ -502,6 +504,14 @@ class PlaybackService : Service() {
             contains("opus", ignoreCase = true) -> "Opus"
             contains("vorbis", ignoreCase = true) -> "Vorbis"
             contains("flac", ignoreCase = true) -> "FLAC"
+            else -> null
+        }
+    }
+
+    private fun String.mediaMimeType(): String? {
+        return when {
+            contains(".m3u8", ignoreCase = true) -> MimeTypes.APPLICATION_M3U8
+            contains(".mpd", ignoreCase = true) -> MimeTypes.APPLICATION_MPD
             else -> null
         }
     }

@@ -52,5 +52,11 @@
     "streamUrl": "https://cbcradiolive.akamaized.net/hls/live/2041030/ES_R1EMT/master.m3u8",
     "tags": ["playlist", "hls", "m3u8"],
     "dateAdded": "2024-07-07T16:50:00Z"
+  },
+  {
+    "title": "BBC Radio 1 - DASH",
+    "streamUrl": "https://a.files.bbci.co.uk/ms6/live/3441A116-B12E-4D2F-ACA8-C1984642FA4B/audio/simulcast/dash/nonuk/pc_hd_abr_v2/aks/bbc_radio_one.mpd",
+    "tags": ["playlist", "dash", "mpd"],
+    "dateAdded": "2024-07-21T16:50:00Z"
   }
 ]
