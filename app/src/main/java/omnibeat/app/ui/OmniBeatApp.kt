@@ -1,4 +1,11 @@
-package omnibeat.app
+package omnibeat.app.ui
+
+import omnibeat.app.R
+import omnibeat.app.data.StationExportData
+import omnibeat.app.model.STATION_STREAM_URL_MAX_LENGTH
+import omnibeat.app.model.STATION_TITLE_MAX_LENGTH
+import omnibeat.app.radio.RadioBrowserClient
+import omnibeat.app.radio.RadioBrowserFilterOption
 
 import android.app.Activity
 import android.content.ClipData
@@ -70,6 +77,19 @@ import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import omnibeat.app.data.StationExportCodec
+import omnibeat.app.data.StationImportMode
+import omnibeat.app.data.StationImportResult
+import omnibeat.app.data.StationRepository
+import omnibeat.app.model.MainPage
+import omnibeat.app.model.Station
+import omnibeat.app.model.StationEditorState
+import omnibeat.app.model.StationReorderDraft
+import omnibeat.app.model.StationSortMode
+import omnibeat.app.model.StationSortState
+import omnibeat.app.playback.PlaybackService
+import omnibeat.app.radio.RadioBrowserStation
+import omnibeat.app.radio.stationTags
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -931,19 +951,6 @@ private fun Modifier.pagerFade(
     val minPageAlpha = 0.35f
     val fadeProgress = (pageOffset * 2.2f).coerceIn(0f, 1f)
     alpha = 1f - fadeProgress * (1f - minPageAlpha)
-}
-
-enum class MainPage(val title: String) {
-    Stations("Stations"),
-    Favorites("Favorites"),
-    ExportImport("Export / Import"),
-    FindOnline("Find online"),
-    Settings("Settings"),
-    About("About");
-
-    companion object {
-        val tabPages = listOf(Stations, Favorites)
-    }
 }
 
 private tailrec fun Context.findActivity(): Activity? {

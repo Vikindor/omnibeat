@@ -1,4 +1,4 @@
-package omnibeat.app
+package omnibeat.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

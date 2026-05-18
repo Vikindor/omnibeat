@@ -1,4 +1,6 @@
-package omnibeat.app
+package omnibeat.app.ui
+
+import omnibeat.app.R
 
 import android.content.pm.PackageManager
 import androidx.compose.foundation.clickable

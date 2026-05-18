@@ -1,4 +1,8 @@
-package omnibeat.app
+package omnibeat.app.ui
+
+import omnibeat.app.R
+
+import omnibeat.app.model.MainPage
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

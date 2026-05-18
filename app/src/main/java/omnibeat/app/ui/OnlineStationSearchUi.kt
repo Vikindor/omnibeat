@@ -1,4 +1,7 @@
-package omnibeat.app
+package omnibeat.app.ui
+
+import omnibeat.app.R
+import omnibeat.app.radio.stationTags
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -46,6 +49,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import omnibeat.app.radio.RadioBrowserFilterOption
+import omnibeat.app.radio.RadioBrowserSearchParams
+import omnibeat.app.radio.RadioBrowserSort
+import omnibeat.app.radio.RadioBrowserStation
 
 data class OnlineStationSearchState(
     val nameQuery: String = "",

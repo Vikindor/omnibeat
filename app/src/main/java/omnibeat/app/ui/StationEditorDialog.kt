@@ -1,6 +1,12 @@
-package omnibeat.app
+package omnibeat.app.ui
+
+import omnibeat.app.R
+import omnibeat.app.model.STATION_STREAM_URL_MAX_LENGTH
+import omnibeat.app.model.STATION_TAGS_INPUT_MAX_LENGTH
+import omnibeat.app.model.STATION_TITLE_MAX_LENGTH
 
 import androidx.core.net.toUri
+import omnibeat.app.model.StationEditorState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

@@ -1,4 +1,4 @@
-package omnibeat.app
+package omnibeat.app.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollIndicatorState

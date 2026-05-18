@@ -1,4 +1,7 @@
-package omnibeat.app
+package omnibeat.app.ui
+
+import omnibeat.app.R
+import omnibeat.app.model.Station
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background

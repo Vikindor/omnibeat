@@ -1,4 +1,4 @@
-package omnibeat.app
+package omnibeat.app.ui
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme

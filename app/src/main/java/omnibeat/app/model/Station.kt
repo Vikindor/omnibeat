@@ -1,4 +1,4 @@
-package omnibeat.app
+package omnibeat.app.model
 
 const val STATION_TITLE_MAX_LENGTH = 100
 const val STATION_STREAM_URL_MAX_LENGTH = 2048
@@ -24,6 +24,19 @@ data class StationSortState(
     val mode: StationSortMode = StationSortMode.DateAdded,
     val ascending: Boolean = false,
 )
+
+enum class MainPage(val title: String) {
+    Stations("Stations"),
+    Favorites("Favorites"),
+    ExportImport("Export / Import"),
+    FindOnline("Find online"),
+    Settings("Settings"),
+    About("About");
+
+    companion object {
+        val tabPages = listOf(Stations, Favorites)
+    }
+}
 
 data class StationReorderDraft(
     val page: MainPage,

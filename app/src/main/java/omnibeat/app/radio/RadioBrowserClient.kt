@@ -1,4 +1,4 @@
-package omnibeat.app
+package omnibeat.app.radio
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

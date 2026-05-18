@@ -1,4 +1,6 @@
-package omnibeat.app
+package omnibeat.app.ui
+
+import omnibeat.app.R
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -52,6 +54,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import omnibeat.app.model.Station
+import omnibeat.app.playback.PlaybackStreamInfo
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 

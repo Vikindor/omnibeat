@@ -1,4 +1,6 @@
-package omnibeat.app
+package omnibeat.app.ui
+
+import omnibeat.app.R
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

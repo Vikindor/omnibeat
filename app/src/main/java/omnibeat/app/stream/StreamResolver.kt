@@ -1,4 +1,4 @@
-package omnibeat.app
+package omnibeat.app.stream
 
 import java.io.BufferedReader
 import java.io.IOException
