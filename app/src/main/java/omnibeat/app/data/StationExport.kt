@@ -9,6 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
 import java.util.UUID
+import java.net.URI
 
 private const val EXPORT_SCHEMA_VERSION = 1
 private const val EXPORT_APP_NAME = "OmniBeat"
@@ -232,5 +233,80 @@ object StationExportCodec {
 
     private fun String.isValidInstant(): Boolean {
         return runCatching { Instant.parse(this) }.isSuccess
+    }
+}
+
+object SimpleStationTextCodec {
+    fun encode(stations: List<Station>): String {
+        return stations.joinToString("\n\n") { station ->
+            buildList {
+                add(station.title)
+                add(station.streamUrl)
+                if (station.tags.isNotEmpty()) {
+                    add(station.tags.joinToString(", "))
+                }
+            }.joinToString("\n")
+        } + "\n"
+    }
+
+    fun decode(text: String): StationExportData {
+        val stations = text
+            .trim()
+            .split(Regex("""\r?\n\s*\r?\n"""))
+            .filter { it.isNotBlank() }
+            .mapIndexed { index, block -> decodeStation(block, index) }
+
+        require(stations.isNotEmpty()) {
+            "No stations found in TXT file"
+        }
+
+        return StationExportData(stations = stations)
+    }
+
+    private fun decodeStation(block: String, index: Int): Station {
+        val lines = block
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toList()
+
+        require(lines.size in 2..3) {
+            "Station ${index + 1} must contain 2 or 3 lines"
+        }
+
+        val streamUrl = lines[1].take(STATION_STREAM_URL_MAX_LENGTH)
+        require(streamUrl.isNotBlank()) {
+            "Station ${index + 1} has no stream URL"
+        }
+        require(streamUrl.isValidStreamUrl()) {
+            "Station ${index + 1} has invalid stream URL"
+        }
+
+        val title = lines[0]
+            .ifBlank { streamUrl.take(STATION_TITLE_MAX_LENGTH) }
+            .take(STATION_TITLE_MAX_LENGTH)
+
+        return Station(
+            id = UUID.randomUUID().toString(),
+            title = title,
+            streamUrl = streamUrl,
+            tags = lines.getOrNull(2)?.parseTags().orEmpty(),
+            isFavorite = false,
+            dateAdded = Instant.now().toString(),
+        )
+    }
+
+    private fun String.parseTags(): List<String> {
+        return split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .distinctBy { it.lowercase() }
+    }
+
+    private fun String.isValidStreamUrl(): Boolean {
+        return runCatching {
+            val uri = URI(this)
+            uri.scheme in setOf("http", "https") && !uri.host.isNullOrBlank()
+        }.getOrDefault(false)
     }
 }

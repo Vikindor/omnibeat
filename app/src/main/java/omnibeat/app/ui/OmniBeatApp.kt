@@ -77,9 +77,9 @@ import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import omnibeat.app.data.SimpleStationTextCodec
 import omnibeat.app.data.StationExportCodec
 import omnibeat.app.data.StationImportMode
-import omnibeat.app.data.StationImportResult
 import omnibeat.app.data.StationRepository
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
@@ -122,7 +122,7 @@ fun OmniBeatApp() {
         var scrollToSelectedRequest by remember { mutableIntStateOf(0) }
         var scrollToStationId by remember { mutableStateOf<String?>(null) }
         var lastPlayedStationId by remember { mutableStateOf<String?>(null) }
-        var pendingExportJson by remember { mutableStateOf<String?>(null) }
+        var pendingExportContent by remember { mutableStateOf<String?>(null) }
         var pendingImportData by remember { mutableStateOf<StationExportData?>(null) }
         var onlineSearchState by remember { mutableStateOf(OnlineStationSearchState()) }
         var onlineSearchResults by remember { mutableStateOf(emptyList<RadioBrowserStation>()) }
@@ -180,27 +180,37 @@ fun OmniBeatApp() {
             }
         }
 
-        val exportLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("application/json"),
-        ) { uri ->
-            val exportJson = pendingExportJson ?: return@rememberLauncherForActivityResult
-            pendingExportJson = null
+        fun writePendingExport(uri: android.net.Uri?, successMessage: String) {
+            val exportContent = pendingExportContent ?: return
+            pendingExportContent = null
             if (uri == null) {
-                return@rememberLauncherForActivityResult
+                return
             }
             scope.launch {
                 runCatching {
                     withContext(Dispatchers.IO) {
                         context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                            outputStream.write(exportJson.toByteArray(Charsets.UTF_8))
+                            outputStream.write(exportContent.toByteArray(Charsets.UTF_8))
                         } ?: error("Could not open export file")
                     }
                 }.onSuccess {
-                    Toast.makeText(context, "Stations exported", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
                 }.onFailure { error ->
                     Toast.makeText(context, "Export failed: ${error.message}", Toast.LENGTH_LONG).show()
                 }
             }
+        }
+
+        val jsonExportLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/json"),
+        ) { uri ->
+            writePendingExport(uri, "JSON exported")
+        }
+
+        val textExportLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("text/plain"),
+        ) { uri ->
+            writePendingExport(uri, "TXT exported")
         }
 
         val importLauncher = rememberLauncherForActivityResult(
@@ -211,12 +221,16 @@ fun OmniBeatApp() {
             }
             scope.launch {
                 runCatching {
-                    val json = withContext(Dispatchers.IO) {
+                    val importText = withContext(Dispatchers.IO) {
                         context.contentResolver.openInputStream(uri)?.use { inputStream ->
                             inputStream.readBytes().toString(Charsets.UTF_8)
                         } ?: error("Could not open import file")
                     }
-                    StationExportCodec.decode(json)
+                    if (importText.trimStart().startsWith("{")) {
+                        StationExportCodec.decode(importText)
+                    } else {
+                        SimpleStationTextCodec.decode(importText)
+                    }
                 }.onSuccess { importData ->
                     pendingImportData = importData
                 }.onFailure { error ->
@@ -272,7 +286,7 @@ fun OmniBeatApp() {
         }
 
         fun exportStations() {
-            pendingExportJson = StationExportCodec.encode(
+            pendingExportContent = StationExportCodec.encode(
                 StationExportData(
                     stations = stations,
                     sortState = sortState,
@@ -281,7 +295,21 @@ fun OmniBeatApp() {
                 ),
             )
             val exportDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd"))
-            exportLauncher.launch("omnibeat_stations_$exportDate.json")
+            jsonExportLauncher.launch("omnibeat_stations_$exportDate.json")
+        }
+
+        fun exportSimpleText() {
+            if (stations.isEmpty()) {
+                pendingExportContent = context.resources
+                    .openRawResource(R.raw.omnibeat_export_example)
+                    .bufferedReader()
+                    .use { it.readText() }
+                textExportLauncher.launch("omnibeat_export_example.txt")
+            } else {
+                pendingExportContent = SimpleStationTextCodec.encode(stations)
+                val exportDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd"))
+                textExportLauncher.launch("omnibeat_stations_$exportDate.txt")
+            }
         }
 
         fun importStations(mode: StationImportMode) {
@@ -775,6 +803,7 @@ fun OmniBeatApp() {
                                 stationCount = stations.size,
                                 favoriteCount = stations.count { it.isFavorite },
                                 onExportStations = { exportStations() },
+                                onExportSimpleText = { exportSimpleText() },
                                 onImportStations = {
                                     importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
                                 },

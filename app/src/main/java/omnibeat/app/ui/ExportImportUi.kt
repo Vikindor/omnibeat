@@ -26,6 +26,7 @@ fun ExportImportPage(
     stationCount: Int,
     favoriteCount: Int,
     onExportStations: () -> Unit,
+    onExportSimpleText: () -> Unit,
     onImportStations: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -53,17 +54,67 @@ fun ExportImportPage(
             modifier = Modifier.padding(top = 22.dp, bottom = 8.dp),
         )
 
+        FormatDescription(
+            title = "OmniBeat JSON",
+            text = "Complete OmniBeat backup with stations, favorites, sorting, and custom order.",
+        )
         ExportImportActionRow(
             icon = R.drawable.ic_file_download,
-            title = "Export stations",
+            title = "Export OmniBeat JSON",
             subtitle = "Save an OmniBeat JSON backup",
             onClick = onExportStations,
         )
         ExportImportActionRow(
             icon = R.drawable.ic_file_upload,
-            title = "Import stations",
+            title = "Import OmniBeat JSON",
             subtitle = "Merge or replace from an OmniBeat JSON backup",
             onClick = onImportStations,
+        )
+
+        HorizontalDivider(
+            color = RadioOutline.copy(alpha = 0.65f),
+            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+        )
+
+        FormatDescription(
+            title = "Simple TXT",
+            text = "Plain-text format for manual editing. Write each station as separate lines: title, stream URL, and optional comma-separated tags on the third line. Separate stations with an empty line. Export TXT to get a sample file.",
+        )
+        ExportImportActionRow(
+            icon = R.drawable.ic_file_download,
+            title = "Export simple TXT",
+            subtitle = "Save title, stream URL and tags",
+            onClick = onExportSimpleText,
+        )
+        ExportImportActionRow(
+            icon = R.drawable.ic_file_upload,
+            title = "Import simple TXT",
+            subtitle = "Read blocks with title, URL and optional tags",
+            onClick = onImportStations,
+        )
+    }
+}
+
+@Composable
+private fun FormatDescription(
+    title: String,
+    text: String,
+) {
+    Column(
+        modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
+    ) {
+        Text(
+            text = title,
+            color = RadioText,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = text,
+            color = RadioTextMuted,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
