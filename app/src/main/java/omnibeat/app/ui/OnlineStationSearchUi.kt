@@ -3,6 +3,9 @@ package omnibeat.app.ui
 import omnibeat.app.R
 import omnibeat.app.radio.stationTags
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -60,11 +63,16 @@ data class OnlineStationSearchState(
     val selectedCountry: RadioBrowserFilterOption? = null,
     val selectedLanguage: RadioBrowserFilterOption? = null,
     val selectedSort: RadioBrowserSort = RadioBrowserSort.Clicks,
+    val sortDirection: SearchSortDirection = SearchSortDirection.Descending,
     val bitrateMin: String = "",
     val bitrateMax: String = "",
-    val reverse: Boolean = true,
     val includeBroken: Boolean = false,
 )
+
+enum class SearchSortDirection(val label: String, val reverse: Boolean) {
+    Descending("Descending order", true),
+    Ascending("Ascending order", false),
+}
 
 @Composable
 fun OnlineStationSearchPage(
@@ -121,7 +129,12 @@ fun OnlineStationSearchPage(
             }
         }
 
-        if (optionsExpanded) {
+        AnimatedVisibility(
+            visible = optionsExpanded,
+            enter = slideInVertically(initialOffsetY = { -it }),
+            exit = slideOutVertically(targetOffsetY = { -it }),
+            modifier = Modifier.align(Alignment.TopCenter),
+        ) {
             SearchOptionsOverlay(
                 searchState = searchState,
                 countries = countries,
@@ -130,9 +143,6 @@ fun OnlineStationSearchPage(
                 onSearchStateChange = onSearchStateChange,
                 onSearch = onSearch,
                 maxHeight = overlayMaxHeight,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(horizontal = 16.dp),
             )
         }
     }
@@ -205,11 +215,11 @@ private fun SearchOptionsOverlay(
     Surface(
         color = RadioBackground,
         contentColor = RadioText,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(0.dp),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .heightIn(max = maxHeight),
     ) {
         val scrollState = rememberScrollState()
@@ -308,13 +318,24 @@ private fun SearchOptionsContent(
             color = RadioOutline.copy(alpha = 0.65f),
             modifier = Modifier.padding(top = 16.dp, bottom = 12.dp),
         )
-        SearchDropdown(
-            label = "Sort by",
-            selectedText = searchState.selectedSort.label,
-            options = RadioBrowserSort.entries,
-            optionText = { it.label },
-            onOptionSelected = { onSearchStateChange(searchState.copy(selectedSort = it)) },
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SearchDropdown(
+                label = "Sort by",
+                selectedText = searchState.selectedSort.label,
+                options = RadioBrowserSort.entries,
+                optionText = { it.label },
+                onOptionSelected = { onSearchStateChange(searchState.copy(selectedSort = it)) },
+                modifier = Modifier.weight(1f),
+            )
+            SearchDropdown(
+                label = "Sort in",
+                selectedText = searchState.sortDirection.label,
+                options = SearchSortDirection.entries,
+                optionText = { it.label },
+                onOptionSelected = { onSearchStateChange(searchState.copy(sortDirection = it)) },
+                modifier = Modifier.weight(1f),
+            )
+        }
         SearchTextField(
             value = searchState.bitrateMin,
             onValueChange = { onSearchStateChange(searchState.copy(bitrateMin = it.digitsOnly())) },
@@ -336,15 +357,10 @@ private fun SearchOptionsContent(
             modifier = Modifier.padding(top = 10.dp),
         )
         SearchCheckbox(
-            checked = searchState.reverse,
-            text = "Show results in reverse order",
-            onCheckedChange = { onSearchStateChange(searchState.copy(reverse = it)) },
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        SearchCheckbox(
             checked = searchState.includeBroken,
             text = "Include stations marked as broken",
             onCheckedChange = { onSearchStateChange(searchState.copy(includeBroken = it)) },
+            modifier = Modifier.padding(top = 8.dp),
         )
         OmniPrimaryButton(
             text = "Search",
@@ -540,7 +556,7 @@ fun OnlineStationSearchState.toRadioBrowserParams(): RadioBrowserSearchParams {
         sort = selectedSort,
         bitrateMin = bitrateMin.toIntOrNull(),
         bitrateMax = bitrateMax.toIntOrNull(),
-        reverse = reverse,
+        reverse = sortDirection.reverse,
         includeBroken = includeBroken,
     )
 }
