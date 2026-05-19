@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.clickable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -316,7 +315,6 @@ private fun SettingsDangerRow(
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .padding(horizontal = 22.dp, vertical = 10.dp),
     ) {
         Column(
@@ -334,12 +332,14 @@ private fun SettingsDangerRow(
                 fontSize = 14.sp,
             )
         }
-        Icon(
-            painter = painterResource(R.drawable.ic_delete_outline),
-            contentDescription = null,
-            tint = RadioDanger,
-            modifier = Modifier.size(24.dp),
-        )
+        IconButton(onClick = onClick) {
+            Icon(
+                painter = painterResource(R.drawable.ic_delete_outline),
+                contentDescription = "Delete entire library",
+                tint = RadioDanger,
+                modifier = Modifier.size(24.dp),
+            )
+        }
     }
 }
 
