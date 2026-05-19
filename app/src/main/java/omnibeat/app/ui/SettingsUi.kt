@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,6 +24,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -40,6 +46,7 @@ fun SettingsPage(
     showUnavailableBitrate: Boolean,
     marqueeTrackTitle: Boolean,
     showEmptyFavoritesTab: Boolean,
+    confirmStationDeletion: Boolean,
     syncingStationArtwork: Boolean,
     onShowStationArtworkChange: (Boolean) -> Unit,
     onAddRadioBrowserTagsChange: (Boolean) -> Unit,
@@ -49,10 +56,13 @@ fun SettingsPage(
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
+    onConfirmStationDeletionChange: (Boolean) -> Unit,
     onSyncStationArtwork: () -> Unit,
+    onDeleteLibrary: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
+    var confirmDeleteLibrary by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -91,45 +101,55 @@ fun SettingsPage(
                 checked = rememberLastStation,
                 onCheckedChange = onRememberLastStationChange,
             )
-        SettingsDivider()
+            SettingsDivider()
 
-        SettingsSectionHeader(title = "Library")
-        SettingsSwitchRow(
-            title = "Show empty Favorites tab",
-            subtitle = if (showEmptyFavoritesTab) {
-                "Favorites tab will stay visible when empty"
-            } else {
-                "Favorites tab will be hidden when empty"
-            },
-            checked = showEmptyFavoritesTab,
-            onCheckedChange = onShowEmptyFavoritesTabChange,
-        )
-        SettingsDivider()
+            SettingsSectionHeader(title = "Library")
+            SettingsSwitchRow(
+                title = "Show empty Favorites tab",
+                subtitle = if (showEmptyFavoritesTab) {
+                    "Favorites tab will stay visible when empty"
+                } else {
+                    "Favorites tab will be hidden when empty"
+                },
+                checked = showEmptyFavoritesTab,
+                onCheckedChange = onShowEmptyFavoritesTabChange,
+            )
+            SettingsSwitchRow(
+                title = "Confirm station deletion",
+                subtitle = if (confirmStationDeletion) {
+                    "Deleting a station will ask for confirmation"
+                } else {
+                    "Stations will be deleted immediately"
+                },
+                checked = confirmStationDeletion,
+                onCheckedChange = onConfirmStationDeletionChange,
+            )
+            SettingsDivider()
 
-        SettingsSectionHeader(title = "Control panel")
-        SettingsSwitchRow(
-            title = "Show bitrate in control panel",
-            subtitle = if (showBitrateInControlPanel) {
-                "Control panel will show stream bitrate"
+            SettingsSectionHeader(title = "Control panel")
+            SettingsSwitchRow(
+                title = "Show bitrate in control panel",
+                subtitle = if (showBitrateInControlPanel) {
+                    "Control panel will show stream bitrate"
                 } else {
                     "Control panel will hide stream bitrate"
                 },
-            checked = showBitrateInControlPanel,
-            onCheckedChange = onShowBitrateInControlPanelChange,
-        )
-        SettingsSwitchRow(
-            title = "Show bitrate when unavailable",
-            subtitle = if (showUnavailableBitrate) {
-                "Control panel will show N/A when bitrate is missing"
-            } else {
-                "Control panel will hide missing bitrate"
-            },
-            checked = showUnavailableBitrate,
-            onCheckedChange = onShowUnavailableBitrateChange,
-            enabled = showBitrateInControlPanel,
-        )
-        SettingsSwitchRow(
-            title = "Marquee track title",
+                checked = showBitrateInControlPanel,
+                onCheckedChange = onShowBitrateInControlPanelChange,
+            )
+            SettingsSwitchRow(
+                title = "Show bitrate when unavailable",
+                subtitle = if (showUnavailableBitrate) {
+                    "Control panel will show N/A when bitrate is missing"
+                } else {
+                    "Control panel will hide missing bitrate"
+                },
+                checked = showUnavailableBitrate,
+                onCheckedChange = onShowUnavailableBitrateChange,
+                enabled = showBitrateInControlPanel,
+            )
+            SettingsSwitchRow(
+                title = "Marquee track title",
                 subtitle = if (marqueeTrackTitle) {
                     "Long track titles will scroll"
                 } else {
@@ -164,12 +184,43 @@ fun SettingsPage(
                 checked = removeTrackingParameters,
                 onCheckedChange = onRemoveTrackingParametersChange,
             )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = "Danger zone", color = RadioDanger)
+            SettingsDangerRow(
+                title = "Delete entire library",
+                subtitle = "Remove all stations, favorites, and custom order",
+                onClick = { confirmDeleteLibrary = true },
+            )
         }
         OmniScrollIndicator(
             scrollIndicatorState = scrollState.scrollIndicatorState,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 4.dp),
+            .padding(end = 4.dp),
+        )
+    }
+
+    if (confirmDeleteLibrary) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteLibrary = false },
+            title = { Text("Delete entire library?") },
+            text = { Text("All stations, favorites, and custom order will be removed") },
+            confirmButton = {
+                OmniDangerButton(
+                    text = "Delete",
+                    onClick = {
+                        confirmDeleteLibrary = false
+                        onDeleteLibrary()
+                    },
+                )
+            },
+            dismissButton = {
+                OmniSecondaryButton(text = "Cancel", onClick = { confirmDeleteLibrary = false })
+            },
+            containerColor = RadioSurface,
+            titleContentColor = RadioText,
+            textContentColor = RadioTextMuted,
         )
     }
 }
@@ -177,11 +228,12 @@ fun SettingsPage(
 @Composable
 private fun SettingsSectionHeader(
     title: String,
+    color: androidx.compose.ui.graphics.Color = RadioTextMuted,
     modifier: Modifier = Modifier,
 ) {
     Text(
         text = title,
-        color = RadioTextMuted,
+        color = color,
         fontSize = 14.sp,
         modifier = modifier
             .fillMaxWidth()
@@ -248,6 +300,45 @@ private fun SettingsSwitchRow(
                 disabledUncheckedTrackColor = RadioSurfaceHigh.copy(alpha = 0.35f),
                 disabledUncheckedBorderColor = RadioOutline.copy(alpha = 0.35f),
             ),
+        )
+    }
+}
+
+@Composable
+private fun SettingsDangerRow(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 22.dp, vertical = 10.dp),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = title,
+                color = RadioDanger,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = subtitle,
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+            )
+        }
+        Icon(
+            painter = painterResource(R.drawable.ic_delete_outline),
+            contentDescription = null,
+            tint = RadioDanger,
+            modifier = Modifier.size(24.dp),
         )
     }
 }

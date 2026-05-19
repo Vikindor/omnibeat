@@ -121,6 +121,7 @@ fun OmniBeatApp() {
         var showUnavailableBitrate by remember { mutableStateOf(false) }
         var marqueeTrackTitle by remember { mutableStateOf(true) }
         var showEmptyFavoritesTab by remember { mutableStateOf(true) }
+        var confirmStationDeletion by remember { mutableStateOf(true) }
         var syncingStationArtwork by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
@@ -206,6 +207,12 @@ fun OmniBeatApp() {
         LaunchedEffect(repository) {
             repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
                 showEmptyFavoritesTab = savedShowEmptyFavoritesTab
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.confirmStationDeletion.collect { savedConfirmStationDeletion ->
+                confirmStationDeletion = savedConfirmStationDeletion
             }
         }
 
@@ -415,6 +422,22 @@ fun OmniBeatApp() {
             scope.launch {
                 repository.saveImportedLibrary(importResult)
                 Toast.makeText(context, "Stations imported", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        fun deleteEntireLibrary() {
+            PlaybackService.stop(context)
+            stations = emptyList()
+            customStationOrder = emptyList()
+            customFavoriteOrder = emptyList()
+            reorderDraft = null
+            lastPlayedStationId = null
+            if (selectedPage == MainPage.Favorites) {
+                selectMainPage(MainPage.Stations)
+            }
+            scope.launch {
+                repository.clearLibrary()
+                Toast.makeText(context, "Library deleted", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -992,6 +1015,7 @@ fun OmniBeatApp() {
                                 onImportStations = {
                                     importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
                                 },
+                                onDeleteLibrary = { deleteEntireLibrary() },
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
@@ -1027,6 +1051,7 @@ fun OmniBeatApp() {
                                 showUnavailableBitrate = showUnavailableBitrate,
                                 marqueeTrackTitle = marqueeTrackTitle,
                                 showEmptyFavoritesTab = showEmptyFavoritesTab,
+                                confirmStationDeletion = confirmStationDeletion,
                                 syncingStationArtwork = syncingStationArtwork,
                                 onShowStationArtworkChange = { show ->
                                     showStationArtwork = show
@@ -1060,7 +1085,12 @@ fun OmniBeatApp() {
                                     showEmptyFavoritesTab = show
                                     scope.launch { repository.saveShowEmptyFavoritesTab(show) }
                                 },
+                                onConfirmStationDeletionChange = { confirm ->
+                                    confirmStationDeletion = confirm
+                                    scope.launch { repository.saveConfirmStationDeletion(confirm) }
+                                },
                                 onSyncStationArtwork = { syncStationArtwork() },
+                                onDeleteLibrary = { deleteEntireLibrary() },
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
@@ -1170,6 +1200,7 @@ fun OmniBeatApp() {
             StationEditorDialog(
                 state = state,
                 showDelete = state.stationIndex != null,
+                confirmStationDeletion = confirmStationDeletion,
                 onDismiss = { editorState = null },
                 onSyncArtwork = state.stationIndex?.let { stationIndex ->
                     { syncStationArtwork(stationIndex) }

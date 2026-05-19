@@ -10,10 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -28,26 +34,45 @@ fun ExportImportPage(
     onExportStations: () -> Unit,
     onExportSimpleText: () -> Unit,
     onImportStations: () -> Unit,
+    onDeleteLibrary: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var confirmDeleteLibrary by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp)
             .padding(top = 14.dp, bottom = 20.dp),
     ) {
-        Text(
-            text = "Library",
-            color = RadioText,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Text(
-            text = "$stationCount stations, $favoriteCount favorites",
-            color = RadioTextMuted,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(top = 6.dp),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Library",
+                    color = RadioText,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = "$stationCount stations, $favoriteCount favorites",
+                    color = RadioTextMuted,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+            IconButton(onClick = { confirmDeleteLibrary = true }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_delete_outline),
+                    contentDescription = "Delete entire library",
+                    tint = RadioDanger,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
 
         HorizontalDivider(
             color = RadioOutline.copy(alpha = 0.65f),
@@ -91,6 +116,29 @@ fun ExportImportPage(
             title = "Import simple TXT",
             subtitle = "Read blocks with title, URL and optional tags",
             onClick = onImportStations,
+        )
+    }
+
+    if (confirmDeleteLibrary) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteLibrary = false },
+            title = { Text("Delete entire library?") },
+            text = { Text("All stations, favorites, and custom order will be removed") },
+            confirmButton = {
+                OmniDangerButton(
+                    text = "Delete",
+                    onClick = {
+                        confirmDeleteLibrary = false
+                        onDeleteLibrary()
+                    },
+                )
+            },
+            dismissButton = {
+                OmniSecondaryButton(text = "Cancel", onClick = { confirmDeleteLibrary = false })
+            },
+            containerColor = RadioSurface,
+            titleContentColor = RadioText,
+            textContentColor = RadioTextMuted,
         )
     }
 }

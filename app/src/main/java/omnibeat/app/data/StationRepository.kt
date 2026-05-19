@@ -29,6 +29,7 @@ private val showBitrateInControlPanelKey = booleanPreferencesKey("show_bitrate_i
 private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_bitrate")
 private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
 private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
+private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationSortKey = stringPreferencesKey("station_sort")
@@ -63,6 +64,9 @@ class StationRepository(private val context: Context) {
 
     val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
+
+    val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
@@ -138,6 +142,12 @@ class StationRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveConfirmStationDeletion(confirm: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[confirmStationDeletionKey] = confirm
+        }
+    }
+
     suspend fun saveLastPlayedStationId(stationId: String) {
         context.stationDataStore.edit { preferences ->
             preferences[lastPlayedStationIdKey] = stationId
@@ -180,6 +190,15 @@ class StationRepository(private val context: Context) {
     suspend fun saveStations(stations: List<Station>) {
         context.stationDataStore.edit { preferences ->
             preferences[stationsJsonKey] = encodeStations(stations)
+        }
+    }
+
+    suspend fun clearLibrary() {
+        context.stationDataStore.edit { preferences ->
+            preferences[stationsJsonKey] = encodeStations(emptyList())
+            preferences[customStationOrderKey] = encodeStringList(emptyList())
+            preferences[customFavoriteOrderKey] = encodeStringList(emptyList())
+            preferences.remove(lastPlayedStationIdKey)
         }
     }
 

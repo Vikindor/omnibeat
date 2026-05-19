@@ -43,6 +43,7 @@ import androidx.compose.ui.window.DialogProperties
 fun StationEditorDialog(
     state: StationEditorState,
     showDelete: Boolean,
+    confirmStationDeletion: Boolean,
     onDismiss: () -> Unit,
     onSyncArtwork: (() -> Unit)? = null,
     onDelete: () -> Unit,
@@ -85,7 +86,15 @@ fun StationEditorDialog(
                     }
                 }
                 if (showDelete) {
-                    IconButton(onClick = { confirmDelete = true }) {
+                    IconButton(
+                        onClick = {
+                            if (confirmStationDeletion) {
+                                confirmDelete = true
+                            } else {
+                                onDelete()
+                            }
+                        },
+                    ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_delete_outline),
                             contentDescription = "Delete station",
@@ -187,7 +196,7 @@ fun StationEditorDialog(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Delete station?") },
-            text = { Text("This station will be removed from your list") },
+            text = { Text("This station will be removed from your library") },
             confirmButton = {
                 OmniDangerButton(
                     text = "Delete",
