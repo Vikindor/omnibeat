@@ -251,12 +251,12 @@ object SimpleStationTextCodec {
         } + "\n"
     }
 
-    fun decode(text: String): StationExportData {
+    fun decode(text: String, cleanTrackingParameters: Boolean = false): StationExportData {
         val stations = text
             .trim()
             .split(Regex("""\r?\n\s*\r?\n"""))
             .filter { it.isNotBlank() }
-            .mapIndexed { index, block -> decodeStation(block, index) }
+            .mapIndexed { index, block -> decodeStation(block, index, cleanTrackingParameters) }
 
         require(stations.isNotEmpty()) {
             "No stations found in TXT file"
@@ -265,7 +265,11 @@ object SimpleStationTextCodec {
         return StationExportData(stations = stations)
     }
 
-    private fun decodeStation(block: String, index: Int): Station {
+    private fun decodeStation(
+        block: String,
+        index: Int,
+        cleanTrackingParameters: Boolean,
+    ): Station {
         val lines = block
             .lineSequence()
             .map { it.trim() }
@@ -276,7 +280,9 @@ object SimpleStationTextCodec {
             "Station ${index + 1} must contain 2 or 3 lines"
         }
 
-        val streamUrl = lines[1].take(STATION_STREAM_URL_MAX_LENGTH)
+        val streamUrl = lines[1]
+            .let { if (cleanTrackingParameters) removeTrackingParameters(it) else it }
+            .take(STATION_STREAM_URL_MAX_LENGTH)
         require(streamUrl.isNotBlank()) {
             "Station ${index + 1} has no stream URL"
         }

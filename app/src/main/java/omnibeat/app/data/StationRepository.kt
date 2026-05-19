@@ -23,6 +23,7 @@ private const val DEFAULT_APP_VOLUME = 0.75f
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
 private val addRadioBrowserTagsKey = booleanPreferencesKey("add_radio_browser_tags")
+private val removeTrackingParametersKey = booleanPreferencesKey("remove_tracking_parameters")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationSortKey = stringPreferencesKey("station_sort")
@@ -39,6 +40,9 @@ class StationRepository(private val context: Context) {
 
     val addRadioBrowserTags: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[addRadioBrowserTagsKey] ?: true }
+
+    val removeTrackingParameters: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[removeTrackingParametersKey] ?: false }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
@@ -75,6 +79,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveAddRadioBrowserTags(add: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[addRadioBrowserTagsKey] = add
+        }
+    }
+
+    suspend fun saveRemoveTrackingParameters(remove: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[removeTrackingParametersKey] = remove
         }
     }
 

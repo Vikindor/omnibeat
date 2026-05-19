@@ -81,6 +81,7 @@ import omnibeat.app.data.SimpleStationTextCodec
 import omnibeat.app.data.StationExportCodec
 import omnibeat.app.data.StationImportMode
 import omnibeat.app.data.StationRepository
+import omnibeat.app.data.removeTrackingParameters
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationEditorState
@@ -114,6 +115,7 @@ fun OmniBeatApp() {
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var showStationArtwork by remember { mutableStateOf(true) }
         var addRadioBrowserTags by remember { mutableStateOf(true) }
+        var removeTrackingParametersFromUrls by remember { mutableStateOf(false) }
         var syncingStationArtwork by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
@@ -158,6 +160,12 @@ fun OmniBeatApp() {
         LaunchedEffect(repository) {
             repository.addRadioBrowserTags.collect { savedAddRadioBrowserTags ->
                 addRadioBrowserTags = savedAddRadioBrowserTags
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.removeTrackingParameters.collect { savedRemoveTrackingParameters ->
+                removeTrackingParametersFromUrls = savedRemoveTrackingParameters
             }
         }
 
@@ -244,7 +252,10 @@ fun OmniBeatApp() {
                     if (importText.trimStart().startsWith("{")) {
                         StationExportCodec.decode(importText)
                     } else {
-                        SimpleStationTextCodec.decode(importText)
+                        SimpleStationTextCodec.decode(
+                            text = importText,
+                            cleanTrackingParameters = removeTrackingParametersFromUrls,
+                        )
                     }
                 }.onSuccess { importData ->
                     pendingImportData = importData
@@ -384,7 +395,9 @@ fun OmniBeatApp() {
         }
 
         fun stationFromOnlineResult(radioStation: RadioBrowserStation): Station {
-            val streamUrl = radioStation.streamUrl.trim()
+            val streamUrl = radioStation.streamUrl
+                .trim()
+                .let { if (removeTrackingParametersFromUrls) removeTrackingParameters(it) else it }
             return Station(
                 id = radioStation.stationUuid.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
                 title = radioStation.title.trim().take(STATION_TITLE_MAX_LENGTH)
@@ -945,6 +958,7 @@ fun OmniBeatApp() {
                             SettingsPage(
                                 showStationArtwork = showStationArtwork,
                                 addRadioBrowserTags = addRadioBrowserTags,
+                                removeTrackingParameters = removeTrackingParametersFromUrls,
                                 syncingStationArtwork = syncingStationArtwork,
                                 onShowStationArtworkChange = { show ->
                                     showStationArtwork = show
@@ -953,6 +967,10 @@ fun OmniBeatApp() {
                                 onAddRadioBrowserTagsChange = { add ->
                                     addRadioBrowserTags = add
                                     scope.launch { repository.saveAddRadioBrowserTags(add) }
+                                },
+                                onRemoveTrackingParametersChange = { remove ->
+                                    removeTrackingParametersFromUrls = remove
+                                    scope.launch { repository.saveRemoveTrackingParameters(remove) }
                                 },
                                 onSyncStationArtwork = { syncStationArtwork() },
                                 modifier = Modifier.fillMaxSize(),
@@ -1080,10 +1098,15 @@ fun OmniBeatApp() {
                 },
                 onSave = { title, streamUrl, tags ->
                     val trimmedStreamUrl = streamUrl.trim()
+                    val savedStreamUrl = if (state.stationIndex == null && removeTrackingParametersFromUrls) {
+                        removeTrackingParameters(trimmedStreamUrl)
+                    } else {
+                        trimmedStreamUrl
+                    }
                     val updatedStation = Station(
                         id = state.stationIndex?.let { stations[it].id } ?: UUID.randomUUID().toString(),
-                        title = title.trim().ifBlank { trimmedStreamUrl.take(STATION_TITLE_MAX_LENGTH) },
-                        streamUrl = trimmedStreamUrl,
+                        title = title.trim().ifBlank { savedStreamUrl.take(STATION_TITLE_MAX_LENGTH) },
+                        streamUrl = savedStreamUrl,
                         tags = parseTags(tags),
                         imageUrl = state.stationIndex?.let { stations[it].imageUrl },
                         isFavorite = state.stationIndex?.let { stations[it].isFavorite } ?: false,

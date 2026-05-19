@@ -29,9 +29,11 @@ import omnibeat.app.R
 fun SettingsPage(
     showStationArtwork: Boolean,
     addRadioBrowserTags: Boolean,
+    removeTrackingParameters: Boolean,
     syncingStationArtwork: Boolean,
     onShowStationArtworkChange: (Boolean) -> Unit,
     onAddRadioBrowserTagsChange: (Boolean) -> Unit,
+    onRemoveTrackingParametersChange: (Boolean) -> Unit,
     onSyncStationArtwork: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -50,6 +52,11 @@ fun SettingsPage(
             title = "Add Radio Browser tags",
             checked = addRadioBrowserTags,
             onCheckedChange = onAddRadioBrowserTagsChange,
+        )
+        SettingsSwitchRow(
+            title = "Remove tracking parameters from URLs",
+            checked = removeTrackingParameters,
+            onCheckedChange = onRemoveTrackingParametersChange,
         )
         SettingsActionRow(
             title = "Sync station artwork",
