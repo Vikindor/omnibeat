@@ -73,18 +73,18 @@ fun SettingsPage(
         ) {
             SettingsSectionHeader(title = "Artwork")
             SettingsSwitchRow(
-                title = "Station covers",
+                title = "Covers for stations",
                 subtitle = if (showStationArtwork) {
-                    "Station lists will show artwork"
+                    "Station lists will show covers"
                 } else {
-                    "Station lists will hide artwork"
+                    "Station lists will hide covers"
                 },
                 checked = showStationArtwork,
                 onCheckedChange = onShowStationArtworkChange,
             )
             SettingsActionRow(
-                title = "Fetch station artwork",
-                subtitle = "Look up station covers online",
+                title = "Fetch artwork for stations",
+                subtitle = "Look up covers for all stations online",
                 syncing = syncingStationArtwork,
                 onClick = onSyncStationArtwork,
             )
