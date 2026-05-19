@@ -419,11 +419,14 @@ private fun VerticalVolumeSlider(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
-    trackColor: Color = RadioOutline,
-    activeTrackColor: Color = RadioPrimary,
-    thumbColor: Color = RadioText,
+    trackColor: Color? = null,
+    activeTrackColor: Color? = null,
+    thumbColor: Color? = null,
 ) {
     val coercedVolume = volume.coerceIn(0f, 1f)
+    val resolvedTrackColor = trackColor ?: RadioOutline
+    val resolvedActiveTrackColor = activeTrackColor ?: RadioPrimary
+    val resolvedThumbColor = thumbColor ?: RadioText
 
     fun positionToVolume(y: Float, height: Float, thumbHeight: Float, verticalPadding: Float): Float {
         val trackTop = verticalPadding + thumbHeight / 2f
@@ -500,21 +503,21 @@ private fun VerticalVolumeSlider(
             }
         }
         drawTrackSegment(
-            color = trackColor,
+            color = resolvedTrackColor,
             top = trackTop,
             bottom = inactiveTrackBottom,
             roundTop = true,
             roundBottom = false,
         )
         drawTrackSegment(
-            color = activeTrackColor,
+            color = resolvedActiveTrackColor,
             top = activeTrackTop,
             bottom = trackBottom,
             roundTop = false,
             roundBottom = true,
         )
         drawRoundRect(
-            color = thumbColor,
+            color = resolvedThumbColor,
             topLeft = Offset(centerX - thumbWidth / 2f, thumbCenterY - thumbHeight / 2f),
             size = Size(thumbWidth, thumbHeight),
             cornerRadius = CornerRadius(thumbRadius, thumbRadius),

@@ -135,9 +135,10 @@ private fun AboutLinkRow(
 private fun AboutInfoRow(
     label: String,
     value: String,
-    valueColor: Color = RadioText,
+    valueColor: Color? = null,
     onClick: (() -> Unit)? = null,
 ) {
+    val resolvedValueColor = valueColor ?: RadioText
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -147,6 +148,6 @@ private fun AboutInfoRow(
             .padding(vertical = 12.dp),
     ) {
         Text(label, color = RadioTextMuted, fontSize = 14.sp)
-        Text(value, color = valueColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Text(value, color = resolvedValueColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
     }
 }

@@ -112,13 +112,14 @@ fun OmniTopBarIconButton(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tint: Color = RadioText,
+    tint: Color? = null,
 ) {
+    val resolvedTint = tint ?: RadioText
     IconButton(onClick = onClick, modifier = modifier) {
         Icon(
             painter = painter,
             contentDescription = contentDescription,
-            tint = tint,
+            tint = resolvedTint,
             modifier = Modifier.height(28.dp),
         )
     }
@@ -131,8 +132,9 @@ fun OmniListActionIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    tint: Color = RadioText,
+    tint: Color? = null,
 ) {
+    val resolvedTint = tint ?: RadioText
     IconButton(
         enabled = enabled,
         onClick = onClick,
@@ -141,7 +143,7 @@ fun OmniListActionIconButton(
         Icon(
             painter = painter,
             contentDescription = contentDescription,
-            tint = tint,
+            tint = resolvedTint,
             modifier = Modifier.size(24.dp),
         )
     }
@@ -152,10 +154,10 @@ fun OmniFilledIconButton(
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    containerColor: Color = RadioSurfaceHigh,
-    contentColor: Color = RadioPrimary,
-    disabledContainerColor: Color = RadioSurfaceHigh,
-    disabledContentColor: Color = RadioTextMuted,
+    containerColor: Color? = null,
+    contentColor: Color? = null,
+    disabledContainerColor: Color? = null,
+    disabledContentColor: Color? = null,
     content: @Composable () -> Unit,
 ) {
     FilledTonalIconButton(
@@ -163,10 +165,10 @@ fun OmniFilledIconButton(
         onClick = onClick,
         shape = CircleShape,
         colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
-            disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor,
+            containerColor = containerColor ?: RadioSurfaceHigh,
+            contentColor = contentColor ?: RadioPrimary,
+            disabledContainerColor = disabledContainerColor ?: RadioSurfaceHigh,
+            disabledContentColor = disabledContentColor ?: RadioTextMuted,
         ),
         modifier = modifier,
     ) {
@@ -180,10 +182,12 @@ fun OmniVerticalScrollIndicator(
     thumbHeightFraction: Float,
     modifier: Modifier = Modifier,
 ) {
+    val trackColor = RadioOutline.copy(alpha = 0.55f)
+    val thumbColor = RadioPrimary
     Canvas(modifier = modifier.width(3.dp)) {
-        drawRect(color = RadioOutline.copy(alpha = 0.55f), size = size)
+        drawRect(color = trackColor, size = size)
         drawRect(
-            color = RadioPrimary,
+            color = thumbColor,
             topLeft = androidx.compose.ui.geometry.Offset(
                 x = 0f,
                 y = size.height * thumbTopFraction.coerceIn(0f, 1f),

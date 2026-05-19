@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
+import omnibeat.app.model.ThemeMode
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.charset.StandardCharsets
@@ -30,6 +31,7 @@ private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_
 private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
 private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
 private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
+private val themeModeKey = stringPreferencesKey("theme_mode")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationSortKey = stringPreferencesKey("station_sort")
@@ -67,6 +69,13 @@ class StationRepository(private val context: Context) {
 
     val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
+
+    val themeMode: Flow<ThemeMode> = context.stationDataStore.data
+        .map { preferences ->
+            preferences[themeModeKey]
+                ?.let { savedMode -> ThemeMode.entries.firstOrNull { it.name == savedMode } }
+                ?: ThemeMode.System
+        }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
@@ -145,6 +154,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveConfirmStationDeletion(confirm: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[confirmStationDeletionKey] = confirm
+        }
+    }
+
+    suspend fun saveThemeMode(themeMode: ThemeMode) {
+        context.stationDataStore.edit { preferences ->
+            preferences[themeModeKey] = themeMode.name
         }
     }
 

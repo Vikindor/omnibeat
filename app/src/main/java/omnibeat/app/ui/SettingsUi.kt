@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,9 +37,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import omnibeat.app.R
+import omnibeat.app.model.ThemeMode
 
 @Composable
 fun SettingsPage(
+    themeMode: ThemeMode,
     showStationArtwork: Boolean,
     addRadioBrowserTags: Boolean,
     removeTrackingParameters: Boolean,
@@ -58,6 +63,7 @@ fun SettingsPage(
     onConfirmStationDeletionChange: (Boolean) -> Unit,
     onSyncStationArtwork: () -> Unit,
     onDeleteLibrary: () -> Unit,
+    onThemeModeChange: (ThemeMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -70,6 +76,21 @@ fun SettingsPage(
                 .verticalScroll(scrollState)
                 .padding(bottom = 20.dp),
         ) {
+            SettingsSectionHeader(title = "Appearance")
+            SettingsOptionRow(
+                title = "Theme",
+                subtitle = when (themeMode) {
+                    ThemeMode.System -> "Follow system theme"
+                    ThemeMode.Dark -> "Use dark theme"
+                    ThemeMode.Light -> "Use light theme"
+                },
+                value = themeMode.label,
+                options = ThemeMode.entries,
+                optionText = { it.label },
+                onOptionSelected = onThemeModeChange,
+            )
+            SettingsDivider()
+
             SettingsSectionHeader(title = "Artwork")
             SettingsSwitchRow(
                 title = "Covers for stations",
@@ -227,12 +248,12 @@ fun SettingsPage(
 @Composable
 private fun SettingsSectionHeader(
     title: String,
-    color: androidx.compose.ui.graphics.Color = RadioTextMuted,
+    color: androidx.compose.ui.graphics.Color? = null,
     modifier: Modifier = Modifier,
 ) {
     Text(
         text = title,
-        color = color,
+        color = color ?: RadioTextMuted,
         fontSize = 14.sp,
         modifier = modifier
             .fillMaxWidth()
@@ -247,6 +268,81 @@ private fun SettingsDivider(modifier: Modifier = Modifier) {
         color = RadioOutline.copy(alpha = 0.65f),
         modifier = modifier.padding(top = 14.dp),
     )
+}
+
+@Composable
+private fun <T> SettingsOptionRow(
+    title: String,
+    subtitle: String,
+    value: String,
+    options: List<T>,
+    optionText: (T) -> String,
+    onOptionSelected: (T) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp, vertical = 10.dp),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = title,
+                color = RadioText,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = subtitle,
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+            )
+        }
+        Box {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { expanded = true },
+            ) {
+                Text(
+                    text = value,
+                    color = RadioText,
+                    fontSize = 15.sp,
+                )
+                Icon(
+                    painter = painterResource(R.drawable.ic_keyboard_arrow_down),
+                    contentDescription = "Choose $title",
+                    tint = RadioTextMuted,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                containerColor = RadioSurface,
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = optionText(option),
+                                color = RadioText,
+                            )
+                        },
+                        onClick = {
+                            onOptionSelected(option)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable

@@ -88,6 +88,7 @@ import omnibeat.app.model.StationEditorState
 import omnibeat.app.model.StationReorderDraft
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
+import omnibeat.app.model.ThemeMode
 import omnibeat.app.network.NO_INTERNET_MESSAGE
 import omnibeat.app.network.NetworkStatus
 import omnibeat.app.playback.PlaybackService
@@ -103,9 +104,11 @@ import kotlin.random.Random
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OmniBeatApp() {
-    OmniBeatTheme {
-        val context = LocalContext.current
-        val repository = remember(context) { StationRepository(context.applicationContext) }
+    val context = LocalContext.current
+    val repository = remember(context) { StationRepository(context.applicationContext) }
+    val themeMode by repository.themeMode.collectAsState(initial = ThemeMode.System)
+
+    OmniBeatTheme(themeMode = themeMode) {
         val radioBrowserClient = remember { RadioBrowserClient() }
         val scope = rememberCoroutineScope()
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -1043,6 +1046,7 @@ fun OmniBeatApp() {
 
                         MainPage.Settings -> {
                             SettingsPage(
+                                themeMode = themeMode,
                                 showStationArtwork = showStationArtwork,
                                 addRadioBrowserTags = addRadioBrowserTags,
                                 removeTrackingParameters = removeTrackingParametersFromUrls,
@@ -1091,6 +1095,9 @@ fun OmniBeatApp() {
                                 },
                                 onSyncStationArtwork = { syncStationArtwork() },
                                 onDeleteLibrary = { deleteEntireLibrary() },
+                                onThemeModeChange = { nextThemeMode ->
+                                    scope.launch { repository.saveThemeMode(nextThemeMode) }
+                                },
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
