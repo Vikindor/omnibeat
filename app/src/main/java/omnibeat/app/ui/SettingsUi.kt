@@ -1,16 +1,21 @@
 package omnibeat.app.ui
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Switch
@@ -30,70 +35,218 @@ fun SettingsPage(
     showStationArtwork: Boolean,
     addRadioBrowserTags: Boolean,
     removeTrackingParameters: Boolean,
+    rememberLastStation: Boolean,
+    showBitrateInControlPanel: Boolean,
+    showUnavailableBitrate: Boolean,
+    marqueeTrackTitle: Boolean,
+    showEmptyFavoritesTab: Boolean,
     syncingStationArtwork: Boolean,
     onShowStationArtworkChange: (Boolean) -> Unit,
     onAddRadioBrowserTagsChange: (Boolean) -> Unit,
     onRemoveTrackingParametersChange: (Boolean) -> Unit,
+    onRememberLastStationChange: (Boolean) -> Unit,
+    onShowBitrateInControlPanelChange: (Boolean) -> Unit,
+    onShowUnavailableBitrateChange: (Boolean) -> Unit,
+    onMarqueeTrackTitleChange: (Boolean) -> Unit,
+    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
     onSyncStationArtwork: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp)
-            .padding(top = 24.dp, bottom = 20.dp),
-    ) {
+    val scrollState = rememberScrollState()
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(bottom = 20.dp),
+        ) {
+            SettingsSectionHeader(title = "Artwork")
+            SettingsSwitchRow(
+                title = "Station covers",
+                subtitle = if (showStationArtwork) {
+                    "Station lists will show artwork"
+                } else {
+                    "Station lists will hide artwork"
+                },
+                checked = showStationArtwork,
+                onCheckedChange = onShowStationArtworkChange,
+            )
+            SettingsActionRow(
+                title = "Fetch station artwork",
+                subtitle = "Look up station covers online",
+                syncing = syncingStationArtwork,
+                onClick = onSyncStationArtwork,
+            )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = "Playback")
+            SettingsSwitchRow(
+                title = "Remember last station",
+                subtitle = if (rememberLastStation) {
+                    "Play will start the last played station"
+                } else {
+                    "Play will start the first station in the list"
+                },
+                checked = rememberLastStation,
+                onCheckedChange = onRememberLastStationChange,
+            )
+        SettingsDivider()
+
+        SettingsSectionHeader(title = "Library")
         SettingsSwitchRow(
-            title = "Show station artwork",
-            checked = showStationArtwork,
-            onCheckedChange = onShowStationArtworkChange,
+            title = "Show empty Favorites tab",
+            subtitle = if (showEmptyFavoritesTab) {
+                "Favorites tab will stay visible when empty"
+            } else {
+                "Favorites tab will be hidden when empty"
+            },
+            checked = showEmptyFavoritesTab,
+            onCheckedChange = onShowEmptyFavoritesTabChange,
+        )
+        SettingsDivider()
+
+        SettingsSectionHeader(title = "Control panel")
+        SettingsSwitchRow(
+            title = "Show bitrate in control panel",
+            subtitle = if (showBitrateInControlPanel) {
+                "Control panel will show stream bitrate"
+                } else {
+                    "Control panel will hide stream bitrate"
+                },
+            checked = showBitrateInControlPanel,
+            onCheckedChange = onShowBitrateInControlPanelChange,
         )
         SettingsSwitchRow(
-            title = "Add Radio Browser tags",
-            checked = addRadioBrowserTags,
-            onCheckedChange = onAddRadioBrowserTagsChange,
+            title = "Show bitrate when unavailable",
+            subtitle = if (showUnavailableBitrate) {
+                "Control panel will show N/A when bitrate is missing"
+            } else {
+                "Control panel will hide missing bitrate"
+            },
+            checked = showUnavailableBitrate,
+            onCheckedChange = onShowUnavailableBitrateChange,
+            enabled = showBitrateInControlPanel,
         )
         SettingsSwitchRow(
-            title = "Remove tracking parameters from URLs",
-            checked = removeTrackingParameters,
-            onCheckedChange = onRemoveTrackingParametersChange,
-        )
-        SettingsActionRow(
-            title = "Sync station artwork",
-            syncing = syncingStationArtwork,
-            onClick = onSyncStationArtwork,
+            title = "Marquee track title",
+                subtitle = if (marqueeTrackTitle) {
+                    "Long track titles will scroll"
+                } else {
+                    "Long track titles will be truncated"
+                },
+                checked = marqueeTrackTitle,
+                onCheckedChange = onMarqueeTrackTitleChange,
+            )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = "Online search")
+            SettingsSwitchRow(
+                title = "Save Radio Browser tags",
+                subtitle = if (addRadioBrowserTags) {
+                    "Online search tags will be saved with new stations"
+                } else {
+                    "Online search tags will be ignored"
+                },
+                checked = addRadioBrowserTags,
+                onCheckedChange = onAddRadioBrowserTagsChange,
+            )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = "URLs")
+            SettingsSwitchRow(
+                title = "Remove tracking from URLs",
+                subtitle = if (removeTrackingParameters) {
+                    "Tracking parameters will be cleaned for new stations"
+                } else {
+                    "New station URLs will be saved unchanged"
+                },
+                checked = removeTrackingParameters,
+                onCheckedChange = onRemoveTrackingParametersChange,
+            )
+        }
+        OmniScrollIndicator(
+            scrollIndicatorState = scrollState.scrollIndicatorState,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 4.dp),
         )
     }
 }
 
 @Composable
+private fun SettingsSectionHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = title,
+        color = RadioTextMuted,
+        fontSize = 14.sp,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(top = 14.dp, bottom = 8.dp),
+    )
+}
+
+@Composable
+private fun SettingsDivider(modifier: Modifier = Modifier) {
+    HorizontalDivider(
+        color = RadioOutline.copy(alpha = 0.65f),
+        modifier = modifier.padding(top = 14.dp),
+    )
+}
+
+@Composable
 private fun SettingsSwitchRow(
     title: String,
+    subtitle: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
+    val titleColor = if (enabled) RadioText else RadioTextMuted.copy(alpha = 0.55f)
+    val subtitleColor = if (enabled) RadioTextMuted else RadioTextMuted.copy(alpha = 0.45f)
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(horizontal = 22.dp, vertical = 10.dp),
     ) {
-        Text(
-            text = title,
-            color = RadioText,
-            fontSize = 18.sp,
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
             modifier = Modifier.weight(1f),
-        )
+        ) {
+            Text(
+                text = title,
+                color = titleColor,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = subtitle,
+                color = subtitleColor,
+                fontSize = 14.sp,
+            )
+        }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = RadioText,
                 checkedTrackColor = RadioPrimary,
                 uncheckedThumbColor = RadioTextMuted,
                 uncheckedTrackColor = RadioSurfaceHigh,
                 uncheckedBorderColor = RadioOutline,
+                disabledCheckedThumbColor = RadioTextMuted.copy(alpha = 0.45f),
+                disabledCheckedTrackColor = RadioSurfaceHigh.copy(alpha = 0.45f),
+                disabledUncheckedThumbColor = RadioTextMuted.copy(alpha = 0.35f),
+                disabledUncheckedTrackColor = RadioSurfaceHigh.copy(alpha = 0.35f),
+                disabledUncheckedBorderColor = RadioOutline.copy(alpha = 0.35f),
             ),
         )
     }
@@ -102,6 +255,7 @@ private fun SettingsSwitchRow(
 @Composable
 private fun SettingsActionRow(
     title: String,
+    subtitle: String,
     syncing: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -123,16 +277,26 @@ private fun SettingsActionRow(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(horizontal = 22.dp, vertical = 10.dp),
     ) {
-        Text(
-            text = title,
-            color = RadioText,
-            fontSize = 18.sp,
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
             modifier = Modifier.weight(1f),
-        )
+        ) {
+            Text(
+                text = title,
+                color = RadioText,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = subtitle,
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+            )
+        }
         IconButton(
             onClick = onClick,
             enabled = !syncing,

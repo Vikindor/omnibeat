@@ -94,6 +94,7 @@ class PlaybackService : Service() {
     private var lastSessionMetadata: Pair<String, String?>? = null
     private var currentStreamIsHls = false
     private var lastPlayedStationId: String? = null
+    private var rememberLastStation = true
 
     override fun onCreate() {
         super.onCreate()
@@ -140,6 +141,11 @@ class PlaybackService : Service() {
         scope.launch {
             repository.lastPlayedStationId.collect { stationId ->
                 lastPlayedStationId = stationId
+            }
+        }
+        scope.launch {
+            repository.rememberLastStation.collect { remember ->
+                rememberLastStation = remember
             }
         }
     }
@@ -191,10 +197,14 @@ class PlaybackService : Service() {
             if (stations.isEmpty()) {
                 stations = repository.stations.first()
             }
-            val nextIndex = lastPlayedStationId
-                ?.let { stationId -> stations.indexOfFirst { it.id == stationId } }
-                ?.takeIf { it >= 0 }
-                ?: 0
+            val nextIndex = if (rememberLastStation) {
+                lastPlayedStationId
+                    ?.let { stationId -> stations.indexOfFirst { it.id == stationId } }
+                    ?.takeIf { it >= 0 }
+                    ?: 0
+            } else {
+                0
+            }
             playStationAt(nextIndex)
         }
     }

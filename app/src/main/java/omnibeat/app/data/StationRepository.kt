@@ -24,6 +24,11 @@ private val appVolumeKey = floatPreferencesKey("app_volume")
 private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
 private val addRadioBrowserTagsKey = booleanPreferencesKey("add_radio_browser_tags")
 private val removeTrackingParametersKey = booleanPreferencesKey("remove_tracking_parameters")
+private val rememberLastStationKey = booleanPreferencesKey("remember_last_station")
+private val showBitrateInControlPanelKey = booleanPreferencesKey("show_bitrate_in_control_panel")
+private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_bitrate")
+private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
+private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val stationSortKey = stringPreferencesKey("station_sort")
@@ -43,6 +48,21 @@ class StationRepository(private val context: Context) {
 
     val removeTrackingParameters: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[removeTrackingParametersKey] ?: false }
+
+    val rememberLastStation: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[rememberLastStationKey] ?: true }
+
+    val showBitrateInControlPanel: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showBitrateInControlPanelKey] ?: true }
+
+    val showUnavailableBitrate: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showUnavailableBitrateKey] ?: false }
+
+    val marqueeTrackTitle: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[marqueeTrackTitleKey] ?: true }
+
+    val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
@@ -85,6 +105,36 @@ class StationRepository(private val context: Context) {
     suspend fun saveRemoveTrackingParameters(remove: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[removeTrackingParametersKey] = remove
+        }
+    }
+
+    suspend fun saveRememberLastStation(remember: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[rememberLastStationKey] = remember
+        }
+    }
+
+    suspend fun saveShowBitrateInControlPanel(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showBitrateInControlPanelKey] = show
+        }
+    }
+
+    suspend fun saveShowUnavailableBitrate(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showUnavailableBitrateKey] = show
+        }
+    }
+
+    suspend fun saveMarqueeTrackTitle(marquee: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[marqueeTrackTitleKey] = marquee
+        }
+    }
+
+    suspend fun saveShowEmptyFavoritesTab(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showEmptyFavoritesTabKey] = show
         }
     }
 

@@ -116,6 +116,11 @@ fun OmniBeatApp() {
         var showStationArtwork by remember { mutableStateOf(true) }
         var addRadioBrowserTags by remember { mutableStateOf(true) }
         var removeTrackingParametersFromUrls by remember { mutableStateOf(false) }
+        var rememberLastStation by remember { mutableStateOf(true) }
+        var showBitrateInControlPanel by remember { mutableStateOf(true) }
+        var showUnavailableBitrate by remember { mutableStateOf(false) }
+        var marqueeTrackTitle by remember { mutableStateOf(true) }
+        var showEmptyFavoritesTab by remember { mutableStateOf(true) }
         var syncingStationArtwork by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
@@ -136,7 +141,12 @@ fun OmniBeatApp() {
         var onlineCountries by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
         var onlineLanguages by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
         var onlineOptionsExpanded by remember { mutableStateOf(false) }
-        val pagerState = rememberPagerState(pageCount = { MainPage.tabPages.size })
+        val visibleTabPages = if (showEmptyFavoritesTab || stations.any { it.isFavorite }) {
+            MainPage.tabPages
+        } else {
+            listOf(MainPage.Stations)
+        }
+        val pagerState = rememberPagerState(pageCount = { visibleTabPages.size })
 
         LaunchedEffect(repository) {
             repository.seedTestStationsForPrototype()
@@ -170,10 +180,40 @@ fun OmniBeatApp() {
         }
 
         LaunchedEffect(repository) {
+            repository.rememberLastStation.collect { savedRememberLastStation ->
+                rememberLastStation = savedRememberLastStation
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.showBitrateInControlPanel.collect { savedShowBitrate ->
+                showBitrateInControlPanel = savedShowBitrate
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.showUnavailableBitrate.collect { savedShowUnavailableBitrate ->
+                showUnavailableBitrate = savedShowUnavailableBitrate
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.marqueeTrackTitle.collect { savedMarqueeTrackTitle ->
+                marqueeTrackTitle = savedMarqueeTrackTitle
+            }
+        }
+
+        LaunchedEffect(repository) {
+            repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
+                showEmptyFavoritesTab = savedShowEmptyFavoritesTab
+            }
+        }
+
+        LaunchedEffect(repository) {
             repository.lastMainPage.collect { savedPage ->
                 val restoredPage = MainPage.tabPages.firstOrNull { it.name == savedPage } ?: MainPage.Stations
                 lastMainPage = restoredPage
-                if (selectedPage in MainPage.tabPages) {
+                if (selectedPage in visibleTabPages) {
                     selectedPage = restoredPage
                 }
             }
@@ -295,17 +335,29 @@ fun OmniBeatApp() {
             scope.launch { repository.saveLastMainPage(page.name) }
         }
 
+        fun activeNavigationPage(): MainPage {
+            return selectedPage.takeIf { it in visibleTabPages }
+                ?: lastMainPage.takeIf { it in visibleTabPages }
+                ?: MainPage.Stations
+        }
+
+        LaunchedEffect(visibleTabPages, selectedPage) {
+            if (selectedPage == MainPage.Favorites && MainPage.Favorites !in visibleTabPages) {
+                selectMainPage(MainPage.Stations)
+            }
+        }
+
         LaunchedEffect(selectedPage) {
-            val tabIndex = MainPage.tabPages.indexOf(selectedPage)
+            val tabIndex = visibleTabPages.indexOf(selectedPage)
             if (tabIndex >= 0 && pagerState.currentPage != tabIndex) {
                 pagerState.animateScrollToPage(tabIndex)
             }
         }
 
-        LaunchedEffect(pagerState) {
+        LaunchedEffect(pagerState, visibleTabPages) {
             snapshotFlow { pagerState.currentPage }.collect { pageIndex ->
-                val page = MainPage.tabPages.getOrNull(pageIndex) ?: return@collect
-                if (selectedPage in MainPage.tabPages && selectedPage != page) {
+                val page = visibleTabPages.getOrNull(pageIndex) ?: return@collect
+                if (selectedPage in visibleTabPages && selectedPage != page) {
                     selectMainPage(page)
                 }
             }
@@ -582,7 +634,7 @@ fun OmniBeatApp() {
         }
 
         fun navigationStations(): List<Station> {
-            val navigationPage = selectedPage.takeIf { it in MainPage.tabPages } ?: lastMainPage
+            val navigationPage = activeNavigationPage()
             val pageStations = if (navigationPage == MainPage.Favorites) {
                 stations.filter { it.isFavorite }
             } else {
@@ -593,7 +645,7 @@ fun OmniBeatApp() {
 
         fun selectSortMode(nextSortMode: StationSortMode) {
             if (nextSortMode == StationSortMode.Custom) {
-                val reorderPage = selectedPage.takeIf { it in MainPage.tabPages } ?: lastMainPage
+                val reorderPage = activeNavigationPage()
                 val pageStations = if (reorderPage == MainPage.Favorites) {
                     stations.filter { it.isFavorite }
                 } else {
@@ -699,16 +751,20 @@ fun OmniBeatApp() {
             val pageStations = navigationStations()
             val hasActivePlaybackRequest = playbackState.isPlaying || playbackState.resolving || playbackState.buffering
             if (!hasActivePlaybackRequest && playbackState.selectedStation == null && pageStations.isNotEmpty()) {
-                val lastPlayedStation = lastPlayedStationId
-                    ?.let { stationId -> stations.firstOrNull { it.id == stationId } }
-                playStation(lastPlayedStation ?: pageStations.first())
+                val rememberedStation = if (rememberLastStation) {
+                    lastPlayedStationId
+                        ?.let { stationId -> stations.firstOrNull { it.id == stationId } }
+                } else {
+                    null
+                }
+                playStation(rememberedStation ?: pageStations.first())
             } else {
                 if (!hasActivePlaybackRequest && !hasInternetOrToast()) return
                 PlaybackService.playOrStop(context)
             }
         }
 
-        BackHandler(enabled = drawerState.isOpen || reorderDraft != null || selectedPage !in MainPage.tabPages) {
+        BackHandler(enabled = drawerState.isOpen || reorderDraft != null || selectedPage !in visibleTabPages) {
             if (drawerState.isOpen) {
                 scope.launch { drawerState.close() }
             } else if (reorderDraft != null) {
@@ -752,6 +808,7 @@ fun OmniBeatApp() {
                 topBar = {
                     MainTopBar(
                         selectedPage = selectedPage,
+                        tabPages = visibleTabPages,
                         sortState = sortState,
                         reordering = reorderDraft != null,
                         onPageSelected = { page ->
@@ -790,10 +847,13 @@ fun OmniBeatApp() {
                     )
                 },
                 bottomBar = {
-                    if (selectedPage in MainPage.tabPages || selectedPage == MainPage.FindOnline) {
+                    if (selectedPage in visibleTabPages || selectedPage == MainPage.FindOnline) {
                         val pageStations = navigationStations()
                         val canStartPlayback = pageStations.isNotEmpty() ||
-                            lastPlayedStationId?.let { stationId -> stations.any { it.id == stationId } } == true
+                            (
+                                rememberLastStation &&
+                                    lastPlayedStationId?.let { stationId -> stations.any { it.id == stationId } } == true
+                            )
                         PlayerPanel(
                             station = playbackState.selectedStation,
                             trackText = playbackState.trackText,
@@ -805,6 +865,9 @@ fun OmniBeatApp() {
                             canNavigateStations = pageStations.isNotEmpty(),
                             appVolume = appVolume,
                             canPlay = canStartPlayback,
+                            showBitrate = showBitrateInControlPanel,
+                            showUnavailableBitrate = showUnavailableBitrate,
+                            marqueeTrackTitle = marqueeTrackTitle,
                             onPlayStop = { playOrStop() },
                             onPreviousStation = { playAdjacentStation(-1) },
                             onNextStation = { playAdjacentStation(1) },
@@ -835,7 +898,7 @@ fun OmniBeatApp() {
                                         .fillMaxSize()
                                         .pagerFade(pagerState, pageIndex),
                                 ) {
-                                    when (MainPage.tabPages[pageIndex]) {
+                                    when (visibleTabPages[pageIndex]) {
                                         MainPage.Stations -> {
                                             val visibleStations = reorderDraft?.stations ?: sortedStations(stations, MainPage.Stations)
                                             if (visibleStations.isEmpty()) {
@@ -959,6 +1022,11 @@ fun OmniBeatApp() {
                                 showStationArtwork = showStationArtwork,
                                 addRadioBrowserTags = addRadioBrowserTags,
                                 removeTrackingParameters = removeTrackingParametersFromUrls,
+                                rememberLastStation = rememberLastStation,
+                                showBitrateInControlPanel = showBitrateInControlPanel,
+                                showUnavailableBitrate = showUnavailableBitrate,
+                                marqueeTrackTitle = marqueeTrackTitle,
+                                showEmptyFavoritesTab = showEmptyFavoritesTab,
                                 syncingStationArtwork = syncingStationArtwork,
                                 onShowStationArtworkChange = { show ->
                                     showStationArtwork = show
@@ -971,6 +1039,26 @@ fun OmniBeatApp() {
                                 onRemoveTrackingParametersChange = { remove ->
                                     removeTrackingParametersFromUrls = remove
                                     scope.launch { repository.saveRemoveTrackingParameters(remove) }
+                                },
+                                onRememberLastStationChange = { remember ->
+                                    rememberLastStation = remember
+                                    scope.launch { repository.saveRememberLastStation(remember) }
+                                },
+                                onShowBitrateInControlPanelChange = { show ->
+                                    showBitrateInControlPanel = show
+                                    scope.launch { repository.saveShowBitrateInControlPanel(show) }
+                                },
+                                onShowUnavailableBitrateChange = { show ->
+                                    showUnavailableBitrate = show
+                                    scope.launch { repository.saveShowUnavailableBitrate(show) }
+                                },
+                                onMarqueeTrackTitleChange = { marquee ->
+                                    marqueeTrackTitle = marquee
+                                    scope.launch { repository.saveMarqueeTrackTitle(marquee) }
+                                },
+                                onShowEmptyFavoritesTabChange = { show ->
+                                    showEmptyFavoritesTab = show
+                                    scope.launch { repository.saveShowEmptyFavoritesTab(show) }
                                 },
                                 onSyncStationArtwork = { syncStationArtwork() },
                                 modifier = Modifier.fillMaxSize(),
@@ -1163,6 +1251,7 @@ private fun parseTags(tags: String): List<String> {
 @Composable
 private fun MainTopBar(
     selectedPage: MainPage,
+    tabPages: List<MainPage>,
     sortState: StationSortState,
     reordering: Boolean,
     onPageSelected: (MainPage) -> Unit,
@@ -1205,8 +1294,8 @@ private fun MainTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f),
             ) {
-                if (selectedPage in MainPage.tabPages) {
-                MainPage.tabPages.forEach { tab ->
+                if (selectedPage in tabPages) {
+                tabPages.forEach { tab ->
                 var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
                 Column(
                     modifier = Modifier
@@ -1251,7 +1340,7 @@ private fun MainTopBar(
                 }
             }
         }
-        if (selectedPage in MainPage.tabPages) {
+        if (selectedPage in tabPages) {
             if (reordering) {
                 OmniTopBarIconButton(
                     painter = painterResource(R.drawable.ic_close),

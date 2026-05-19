@@ -34,7 +34,7 @@ fun ExportImportPage(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp)
-            .padding(top = 24.dp, bottom = 20.dp),
+            .padding(top = 14.dp, bottom = 20.dp),
     ) {
         Text(
             text = "Library",

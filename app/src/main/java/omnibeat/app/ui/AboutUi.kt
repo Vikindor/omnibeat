@@ -41,7 +41,7 @@ fun AboutPage(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .padding(horizontal = 28.dp)
-            .padding(top = 32.dp, bottom = 24.dp),
+            .padding(top = 14.dp, bottom = 24.dp),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_launcher_foreground),

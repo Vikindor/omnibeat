@@ -72,6 +72,9 @@ fun PlayerPanel(
     canNavigateStations: Boolean,
     appVolume: Float,
     canPlay: Boolean,
+    showBitrate: Boolean,
+    showUnavailableBitrate: Boolean,
+    marqueeTrackTitle: Boolean,
     onPlayStop: () -> Unit,
     onPreviousStation: () -> Unit,
     onNextStation: () -> Unit,
@@ -81,7 +84,11 @@ fun PlayerPanel(
     var showStreamInfo by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val displayTrackText = errorText ?: trackText
-    val bitrateText = streamInfo.bitrateText
+    val bitrateText = if (showBitrate) {
+        streamInfo.bitrateText ?: "N/A kbps".takeIf { showUnavailableBitrate }
+    } else {
+        null
+    }
     val hasActivePlaybackRequest = isPlaying || loading
 
     Column(
@@ -141,13 +148,19 @@ fun PlayerPanel(
                     color = RadioTextMuted,
                     fontSize = 14.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Clip,
+                    overflow = if (marqueeTrackTitle) TextOverflow.Clip else TextOverflow.Ellipsis,
                     softWrap = false,
                     modifier = Modifier
                         .weight(1f)
-                        .basicMarquee(
-                            iterations = Int.MAX_VALUE,
-                            repeatDelayMillis = 1_500,
+                        .then(
+                            if (marqueeTrackTitle) {
+                                Modifier.basicMarquee(
+                                    iterations = Int.MAX_VALUE,
+                                    repeatDelayMillis = 1_500,
+                                )
+                            } else {
+                                Modifier
+                            },
                         ),
                 )
                 bitrateText?.let { bitrate ->
