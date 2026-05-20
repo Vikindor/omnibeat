@@ -2,8 +2,13 @@ package omnibeat.app.ui
 
 import omnibeat.app.R
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.pm.PackageManager
-import androidx.compose.foundation.clickable
+import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +39,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun AboutPage(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
     val packageInfo = remember(context) {
         context.packageManager.getPackageInfo(
@@ -68,18 +72,18 @@ fun AboutPage(modifier: Modifier = Modifier) {
             AboutSectionHeader("Project")
             AboutLinkRow(
                 label = "Source Code",
-                value = "github.com/Vikindor/omnibeat",
-                onClick = { uriHandler.openUri("https://github.com/Vikindor/omnibeat") },
+                value = "Open-source repository",
+                url = "https://github.com/Vikindor/omnibeat",
             )
             AboutLinkRow(
                 label = "License",
                 value = "GNU GPL 3.0",
-                onClick = { uriHandler.openUri("https://github.com/Vikindor/omnibeat/blob/master/LICENSE") },
+                url = "https://github.com/Vikindor/omnibeat/blob/master/LICENSE",
             )
             AboutLinkRow(
                 label = "Radio Browser",
-                value = "radio-browser.info",
-                onClick = { uriHandler.openUri("https://www.radio-browser.info") },
+                value = "Online search data source",
+                url = "https://www.radio-browser.info",
             )
             AboutDivider()
 
@@ -87,7 +91,7 @@ fun AboutPage(modifier: Modifier = Modifier) {
             AboutLinkRow(
                 label = "Vikindor",
                 value = "vikindor.github.io",
-                onClick = { uriHandler.openUri("https://vikindor.github.io") },
+                url = "https://vikindor.github.io",
             )
 
             Text(
@@ -171,21 +175,33 @@ private fun AboutDivider(modifier: Modifier = Modifier) {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AboutLinkRow(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
+    url: String? = null,
 ) {
-    val enabled = onClick != null
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    val enabled = url != null
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled) { onClick?.invoke() }
+            .combinedClickable(
+                enabled = enabled,
+                onClick = { url?.let(uriHandler::openUri) },
+                onLongClick = {
+                    url?.let {
+                        copyLinkToClipboard(context, label = label, url = it)
+                        Toast.makeText(context, "Link copied", Toast.LENGTH_SHORT).show()
+                    }
+                },
+            )
             .padding(horizontal = 22.dp, vertical = 10.dp),
     ) {
         Column(
@@ -214,6 +230,11 @@ private fun AboutLinkRow(
             )
         }
     }
+}
+
+private fun copyLinkToClipboard(context: Context, label: String, url: String) {
+    val clipboardManager = context.getSystemService(ClipboardManager::class.java)
+    clipboardManager.setPrimaryClip(ClipData.newPlainText(label, url))
 }
 
 @Composable
