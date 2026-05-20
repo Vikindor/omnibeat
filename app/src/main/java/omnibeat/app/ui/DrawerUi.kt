@@ -4,8 +4,9 @@ import omnibeat.app.R
 
 import omnibeat.app.model.MainPage
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -43,6 +44,7 @@ fun DrawerContent(
 ) {
     val aboutFocusRequester = remember { FocusRequester() }
     val exitFocusRequester = remember { FocusRequester() }
+    val drawerScrollState = rememberScrollState()
 
     ModalDrawerSheet(
         drawerContainerColor = RadioSurface,
@@ -54,59 +56,64 @@ fun DrawerContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 12.dp)
-                .padding(top = 28.dp),
+                .padding(horizontal = 12.dp),
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = null,
-                tint = Color.Unspecified,
+            Column(
                 modifier = Modifier
-                    .padding(start = 16.dp)
-                    .size(52.dp)
-                    .clip(CircleShape),
-            )
-            Text(
-                text = "OmniBeat",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 16.dp, top = 14.dp),
-            )
-            Text(
-                text = "Streaming audio player",
-                color = RadioTextMuted,
-                fontSize = 13.sp,
-                modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 12.dp),
-            )
-            DrawerDivider()
-            DrawerItem(
-                text = "Stations",
-                iconRes = R.drawable.ic_list,
-                selected = selectedPage in MainPage.tabPages,
-                onClick = onStationsClick,
-            )
-            DrawerItem(
-                text = "Export / Import",
-                iconRes = R.drawable.ic_file_download,
-                selected = selectedPage == MainPage.ExportImport,
-                onClick = onExportImportClick,
-            )
-            DrawerItem(
-                text = "Settings",
-                iconRes = R.drawable.ic_settings,
-                selected = selectedPage == MainPage.Settings,
-                onClick = onSettingsClick,
-            )
-            DrawerItem(
-                text = "About",
-                iconRes = R.drawable.ic_info,
-                selected = selectedPage == MainPage.About,
-                onClick = onAboutClick,
-                modifier = Modifier
-                    .focusRequester(aboutFocusRequester)
-                    .focusProperties { down = exitFocusRequester },
-            )
-            Spacer(modifier = Modifier.weight(1f))
+                    .weight(1f)
+                    .verticalScroll(drawerScrollState)
+                    .padding(top = 28.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                    modifier = Modifier
+                        .padding(start = 16.dp)
+                        .size(52.dp)
+                        .clip(CircleShape),
+                )
+                Text(
+                    text = "OmniBeat",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 16.dp, top = 14.dp),
+                )
+                Text(
+                    text = "Streaming audio player",
+                    color = RadioTextMuted,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 12.dp),
+                )
+                DrawerDivider()
+                DrawerItem(
+                    text = "Stations",
+                    iconRes = R.drawable.ic_list,
+                    selected = selectedPage in MainPage.tabPages,
+                    onClick = onStationsClick,
+                )
+                DrawerItem(
+                    text = "Export / Import",
+                    iconRes = R.drawable.ic_file_download,
+                    selected = selectedPage == MainPage.ExportImport,
+                    onClick = onExportImportClick,
+                )
+                DrawerItem(
+                    text = "Settings",
+                    iconRes = R.drawable.ic_settings,
+                    selected = selectedPage == MainPage.Settings,
+                    onClick = onSettingsClick,
+                )
+                DrawerItem(
+                    text = "About",
+                    iconRes = R.drawable.ic_info,
+                    selected = selectedPage == MainPage.About,
+                    onClick = onAboutClick,
+                    modifier = Modifier
+                        .focusRequester(aboutFocusRequester)
+                        .focusProperties { down = exitFocusRequester },
+                )
+            }
             DrawerDivider()
             DrawerItem(
                 text = "Close app",
