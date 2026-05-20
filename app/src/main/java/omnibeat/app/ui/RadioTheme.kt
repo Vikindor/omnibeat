@@ -38,10 +38,10 @@ private val DarkRadioColors = RadioColors(
 )
 
 private val LightRadioColors = RadioColors(
-    background = Color(0xFFF8F7FB),
-    surface = Color(0xFFFFFFFF),
-    surfaceHigh = Color(0xFFEDEAF3),
-    outline = Color(0xFFD6D0E0),
+    background = Color(0xFFF2F0F6),
+    surface = Color(0xFFE7E5E9),
+    surfaceHigh = Color(0xFFDBD9DD),
+    outline = Color(0xFFC6C1CE),
     primary = Color(0xFF7650E8),
     danger = Color(0xFFD83A4A),
     text = Color(0xFF16131D),
