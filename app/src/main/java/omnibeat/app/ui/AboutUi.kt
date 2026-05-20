@@ -4,10 +4,13 @@ import omnibeat.app.R
 
 import android.content.pm.PackageManager
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +26,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -30,104 +35,184 @@ import androidx.compose.ui.unit.sp
 fun AboutPage(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val versionName = remember(context) {
-        val packageInfo = context.packageManager.getPackageInfo(
+    val scrollState = rememberScrollState()
+    val packageInfo = remember(context) {
+        context.packageManager.getPackageInfo(
             context.packageName,
             PackageManager.PackageInfoFlags.of(0),
         )
-        packageInfo.versionName.orEmpty()
     }
+    val versionName = packageInfo.versionName.orEmpty()
+    val versionCode = packageInfo.longVersionCode
 
-    Column(
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(bottom = 22.dp),
+        ) {
+            AboutHeader()
+            AboutDivider()
+
+            AboutSectionHeader("App")
+            AboutInfoRow(label = "Version", value = versionName.ifBlank { "Unknown" })
+            AboutInfoRow(label = "Build", value = versionCode.toString())
+            AboutInfoRow(
+                label = "Formats",
+                value = "Direct streams, PLS, M3U, HLS, XSPF, ASX/WAX/WMX, DASH",
+                stacked = true,
+            )
+            AboutDivider()
+
+            AboutSectionHeader("Project")
+            AboutLinkRow(
+                label = "Source Code",
+                value = "github.com/Vikindor/omnibeat",
+                onClick = { uriHandler.openUri("https://github.com/Vikindor/omnibeat") },
+            )
+            AboutLinkRow(
+                label = "License",
+                value = "GNU GPL 3.0",
+                onClick = { uriHandler.openUri("https://github.com/Vikindor/omnibeat/blob/master/LICENSE") },
+            )
+            AboutLinkRow(
+                label = "Radio Browser",
+                value = "radio-browser.info",
+                onClick = { uriHandler.openUri("https://www.radio-browser.info") },
+            )
+            AboutDivider()
+
+            AboutSectionHeader("Author")
+            AboutLinkRow(
+                label = "Vikindor",
+                value = "vikindor.github.io",
+                onClick = { uriHandler.openUri("https://vikindor.github.io") },
+            )
+
+            Text(
+                text = "© 2026",
+                color = RadioTextMuted,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 22.dp, vertical = 18.dp),
+            )
+        }
+        OmniScrollIndicator(
+            scrollIndicatorState = scrollState.scrollIndicatorState,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun AboutHeader(modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
-            .padding(horizontal = 28.dp)
-            .padding(top = 14.dp, bottom = 24.dp),
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(top = 4.dp, bottom = 18.dp),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_launcher_foreground),
             contentDescription = null,
             tint = Color.Unspecified,
-            modifier = Modifier.size(88.dp),
+            modifier = Modifier.size(72.dp),
         )
-        Text(
-            text = "OmniBeat",
-            color = RadioText,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 18.dp),
-        )
-        Text(
-            text = "A streaming audio player built to handle the messy reality of internet audio links, from direct streams to common playlist formats.",
-            color = RadioTextMuted,
-            fontSize = 16.sp,
-            lineHeight = 23.sp,
-            modifier = Modifier.padding(top = 10.dp),
-        )
-
-        HorizontalDivider(
-            color = RadioOutline.copy(alpha = 0.65f),
-            modifier = Modifier.padding(top = 28.dp, bottom = 14.dp),
-        )
-
-        AboutInfoRow(label = "Version", value = versionName.ifBlank { "Unknown" })
-
-        HorizontalDivider(
-            color = RadioOutline.copy(alpha = 0.45f),
-            modifier = Modifier.padding(top = 14.dp, bottom = 8.dp),
-        )
-
-        AboutLinkRow(label = "Privacy Policy", value = "Coming later")
-        AboutLinkRow(label = "License", value = "Coming later")
-        AboutLinkRow(label = "Source Code", value = "Coming later")
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Text(
-            text = "Made by Vikindor",
-            color = RadioPrimary,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .clickable { uriHandler.openUri("https://vikindor.github.io") }
-                .padding(top = 24.dp),
-        )
-        Text(
-            text = "2026",
-            color = RadioTextMuted,
-            fontSize = 13.sp,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 4.dp),
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = "OmniBeat",
+                color = RadioText,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Streaming audio, without the fuss",
+                color = RadioText,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = "Built to handle internet audio links, from direct streams to common playlist formats",
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+            )
+        }
     }
+}
+
+@Composable
+private fun AboutSectionHeader(title: String, modifier: Modifier = Modifier) {
+    Text(
+        text = title,
+        color = RadioTextMuted,
+        fontSize = 14.sp,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(top = 14.dp, bottom = 8.dp),
+    )
+}
+
+@Composable
+private fun AboutDivider(modifier: Modifier = Modifier) {
+    HorizontalDivider(
+        color = RadioOutline.copy(alpha = 0.65f),
+        modifier = modifier.padding(top = 14.dp),
+    )
 }
 
 @Composable
 private fun AboutLinkRow(
     label: String,
     value: String,
+    modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
+    val enabled = onClick != null
+
     Row(
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
-            .padding(vertical = 13.dp),
+            .clickable(enabled = enabled) { onClick?.invoke() }
+            .padding(horizontal = 22.dp, vertical = 10.dp),
     ) {
-        Text(
-            text = label,
-            color = if (onClick == null) RadioText else RadioPrimary,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-        )
-        Text(
-            text = value,
-            color = RadioTextMuted,
-            fontSize = 13.sp,
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = label,
+                color = if (enabled) RadioText else RadioTextMuted,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = value,
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (enabled) {
+            Icon(
+                painter = painterResource(R.drawable.ic_open_in_new),
+                contentDescription = "Open $label in browser",
+                tint = RadioTextMuted,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
@@ -135,19 +220,50 @@ private fun AboutLinkRow(
 private fun AboutInfoRow(
     label: String,
     value: String,
-    valueColor: Color? = null,
-    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    stacked: Boolean = false,
 ) {
-    val resolvedValueColor = valueColor ?: RadioText
+    if (stacked) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp, vertical = 10.dp),
+        ) {
+            Text(
+                text = label,
+                color = RadioText,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = value,
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+            )
+        }
+        return
+    }
+
     Row(
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
-            .padding(vertical = 12.dp),
+            .padding(horizontal = 22.dp, vertical = 10.dp),
     ) {
-        Text(label, color = RadioTextMuted, fontSize = 14.sp)
-        Text(value, color = resolvedValueColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Text(
+            text = label,
+            color = RadioText,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = value,
+            color = RadioTextMuted,
+            fontSize = 14.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
