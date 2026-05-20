@@ -13,8 +13,11 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.ClipboardManager
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
@@ -51,6 +54,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -63,10 +67,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.text.font.FontWeight
@@ -107,8 +113,30 @@ fun OmniBeatApp() {
     val context = LocalContext.current
     val repository = remember(context) { StationRepository(context.applicationContext) }
     val themeMode by repository.themeMode.collectAsState(initial = ThemeMode.System)
+    val useDarkTheme = shouldUseDarkTheme(themeMode)
 
     OmniBeatTheme(themeMode = themeMode) {
+        val resources = LocalResources.current
+        val statusBarColor = RadioBackground
+        val navigationBarColor = RadioBackground
+        SideEffect {
+            val activity = context.findActivity() as? ComponentActivity ?: return@SideEffect
+            val statusBarArgb = statusBarColor.toArgb()
+            val navigationBarArgb = navigationBarColor.toArgb()
+            activity.enableEdgeToEdge(
+                statusBarStyle = if (useDarkTheme) {
+                    SystemBarStyle.dark(statusBarArgb)
+                } else {
+                    SystemBarStyle.light(statusBarArgb, statusBarArgb)
+                },
+                navigationBarStyle = if (useDarkTheme) {
+                    SystemBarStyle.dark(navigationBarArgb)
+                } else {
+                    SystemBarStyle.light(navigationBarArgb, navigationBarArgb)
+                },
+            )
+        }
+
         val radioBrowserClient = remember { RadioBrowserClient() }
         val scope = rememberCoroutineScope()
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -388,7 +416,7 @@ fun OmniBeatApp() {
 
         fun exportSimpleText() {
             if (stations.isEmpty()) {
-                pendingExportContent = context.resources
+                pendingExportContent = resources
                     .openRawResource(R.raw.omnibeat_export_example)
                     .bufferedReader()
                     .use { it.readText() }
