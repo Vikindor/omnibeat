@@ -93,7 +93,7 @@ fun ThemeModeSegmentedControl(
                         painter = painterResource(themeModeIcon(option)),
                         contentDescription = option.label,
                         tint = if (selected) RadioText else RadioTextMuted,
-                        modifier = Modifier.size(themeModeIconSize(option)),
+                        modifier = Modifier.size(24.dp),
                     )
                 }
             }
@@ -107,12 +107,6 @@ private fun themeModeIcon(themeMode: ThemeMode): Int {
         ThemeMode.Light -> R.drawable.ic_light_mode
         ThemeMode.Dark -> R.drawable.ic_dark_mode
     }
-}
-
-private fun themeModeIconSize(themeMode: ThemeMode) = when (themeMode) {
-    ThemeMode.System -> 24.dp
-    ThemeMode.Light -> 26.dp
-    ThemeMode.Dark -> 28.dp
 }
 
 @Composable
@@ -335,8 +329,8 @@ fun SettingsPage(
 @Composable
 private fun SettingsSectionHeader(
     title: String,
-    color: androidx.compose.ui.graphics.Color? = null,
     modifier: Modifier = Modifier,
+    color: androidx.compose.ui.graphics.Color? = null,
 ) {
     Text(
         text = title,
