@@ -1,11 +1,14 @@
 package omnibeat.app.ui
 
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -14,17 +17,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +46,76 @@ import omnibeat.app.R
 import omnibeat.app.model.ThemeMode
 
 @Composable
+fun ThemeModeSegmentedControl(
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val options = listOf(ThemeMode.System, ThemeMode.Light, ThemeMode.Dark)
+    val selectedIndex = options.indexOf(themeMode).coerceAtLeast(0)
+    val segmentWidth = 52.dp
+    val controlHeight = 32.dp
+    val selectedOffset by animateDpAsState(
+        targetValue = segmentWidth * selectedIndex,
+        animationSpec = tween(durationMillis = 220),
+        label = "theme selector",
+    )
+
+    Box(
+        modifier = modifier
+            .width(segmentWidth * options.size)
+            .height(controlHeight)
+            .background(RadioSurfaceHigh, CircleShape),
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = selectedOffset)
+                .width(segmentWidth)
+                .height(controlHeight)
+                .background(RadioPrimary, CircleShape),
+        )
+        Row(modifier = Modifier.matchParentSize()) {
+            options.forEach { option ->
+                val selected = themeMode == option
+                val interactionSource = remember(option) { MutableInteractionSource() }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .width(segmentWidth)
+                        .height(controlHeight)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = { onThemeModeChange(option) },
+                        ),
+                ) {
+                    Icon(
+                        painter = painterResource(themeModeIcon(option)),
+                        contentDescription = option.label,
+                        tint = if (selected) RadioText else RadioTextMuted,
+                        modifier = Modifier.size(themeModeIconSize(option)),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun themeModeIcon(themeMode: ThemeMode): Int {
+    return when (themeMode) {
+        ThemeMode.System -> R.drawable.ic_routine
+        ThemeMode.Light -> R.drawable.ic_light_mode
+        ThemeMode.Dark -> R.drawable.ic_dark_mode
+    }
+}
+
+private fun themeModeIconSize(themeMode: ThemeMode) = when (themeMode) {
+    ThemeMode.System -> 24.dp
+    ThemeMode.Light -> 26.dp
+    ThemeMode.Dark -> 28.dp
+}
+
+@Composable
 fun SettingsPage(
     themeMode: ThemeMode,
     showStationArtwork: Boolean,
@@ -51,6 +127,7 @@ fun SettingsPage(
     marqueeTrackTitle: Boolean,
     showEmptyFavoritesTab: Boolean,
     confirmStationDeletion: Boolean,
+    notificationPermissionGranted: Boolean,
     syncingStationArtwork: Boolean,
     onShowStationArtworkChange: (Boolean) -> Unit,
     onAddRadioBrowserTagsChange: (Boolean) -> Unit,
@@ -61,6 +138,7 @@ fun SettingsPage(
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
     onConfirmStationDeletionChange: (Boolean) -> Unit,
+    onGrantNotificationPermission: () -> Unit,
     onSyncStationArtwork: () -> Unit,
     onDeleteLibrary: () -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
@@ -77,17 +155,39 @@ fun SettingsPage(
                 .padding(bottom = 20.dp),
         ) {
             SettingsSectionHeader(title = "Appearance")
-            SettingsOptionRow(
+            SettingsThemeRow(
                 title = "Theme",
                 subtitle = when (themeMode) {
                     ThemeMode.System -> "Follow system theme"
                     ThemeMode.Dark -> "Use dark theme"
                     ThemeMode.Light -> "Use light theme"
                 },
-                value = themeMode.label,
-                options = ThemeMode.entries,
-                optionText = { it.label },
-                onOptionSelected = onThemeModeChange,
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange,
+            )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = "Playback")
+            SettingsActionRow(
+                title = "Notifications",
+                subtitle = if (notificationPermissionGranted) {
+                    "Media controls can appear in notifications"
+                } else {
+                    "Grant permission to show media controls"
+                },
+                actionText = if (notificationPermissionGranted) "Granted" else "Grant",
+                enabled = !notificationPermissionGranted,
+                onClick = onGrantNotificationPermission,
+            )
+            SettingsSwitchRow(
+                title = "Remember last station",
+                subtitle = if (rememberLastStation) {
+                    "Play will start the last played station"
+                } else {
+                    "Play will start the first station in the list"
+                },
+                checked = rememberLastStation,
+                onCheckedChange = onRememberLastStationChange,
             )
             SettingsDivider()
 
@@ -107,19 +207,6 @@ fun SettingsPage(
                 subtitle = "Look up covers for all stations online",
                 syncing = syncingStationArtwork,
                 onClick = onSyncStationArtwork,
-            )
-            SettingsDivider()
-
-            SettingsSectionHeader(title = "Playback")
-            SettingsSwitchRow(
-                title = "Remember last station",
-                subtitle = if (rememberLastStation) {
-                    "Play will start the last played station"
-                } else {
-                    "Play will start the first station in the list"
-                },
-                checked = rememberLastStation,
-                onCheckedChange = onRememberLastStationChange,
             )
             SettingsDivider()
 
@@ -271,17 +358,13 @@ private fun SettingsDivider(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun <T> SettingsOptionRow(
+private fun SettingsThemeRow(
     title: String,
     subtitle: String,
-    value: String,
-    options: List<T>,
-    optionText: (T) -> String,
-    onOptionSelected: (T) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(18.dp),
@@ -304,44 +387,10 @@ private fun <T> SettingsOptionRow(
                 fontSize = 14.sp,
             )
         }
-        Box {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { expanded = true },
-            ) {
-                Text(
-                    text = value,
-                    color = RadioText,
-                    fontSize = 15.sp,
-                )
-                Icon(
-                    painter = painterResource(R.drawable.ic_keyboard_arrow_down),
-                    contentDescription = "Choose $title",
-                    tint = RadioTextMuted,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                containerColor = RadioSurface,
-            ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = optionText(option),
-                                color = RadioText,
-                            )
-                        },
-                        onClick = {
-                            onOptionSelected(option)
-                            expanded = false
-                        },
-                    )
-                }
-            }
-        }
+        ThemeModeSegmentedControl(
+            themeMode = themeMode,
+            onThemeModeChange = onThemeModeChange,
+        )
     }
 }
 
@@ -443,9 +492,11 @@ private fun SettingsDangerRow(
 private fun SettingsActionRow(
     title: String,
     subtitle: String,
-    syncing: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    syncing: Boolean = false,
+    enabled: Boolean = true,
+    actionText: String? = null,
 ) {
     val transition = rememberInfiniteTransition(label = "artwork sync")
     val rotation = if (syncing) {
@@ -484,18 +535,30 @@ private fun SettingsActionRow(
                 fontSize = 14.sp,
             )
         }
-        IconButton(
-            onClick = onClick,
-            enabled = !syncing,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_sync),
-                contentDescription = "Sync station artwork",
-                tint = if (syncing) RadioTextMuted else RadioPrimary,
-                modifier = Modifier
-                    .size(24.dp)
-                    .rotate(rotation),
-            )
+        if (actionText == null) {
+            IconButton(
+                onClick = onClick,
+                enabled = enabled && !syncing,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_sync),
+                    contentDescription = title,
+                    tint = if (syncing || !enabled) RadioTextMuted else RadioPrimary,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .rotate(rotation),
+                )
+            }
+        } else {
+            TextButton(
+                onClick = onClick,
+                enabled = enabled,
+            ) {
+                Text(
+                    text = actionText,
+                    color = if (enabled) RadioPrimary else RadioTextMuted,
+                )
+            }
         }
     }
 }

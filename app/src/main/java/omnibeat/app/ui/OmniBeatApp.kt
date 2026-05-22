@@ -7,11 +7,13 @@ import omnibeat.app.model.STATION_TITLE_MAX_LENGTH
 import omnibeat.app.radio.RadioBrowserClient
 import omnibeat.app.radio.RadioBrowserFilterOption
 
+import android.Manifest
 import android.app.Activity
 import android.content.ClipData
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.ClipboardManager
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -80,6 +82,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -137,8 +140,58 @@ fun OmniBeatApp() {
             )
         }
 
-        val radioBrowserClient = remember { RadioBrowserClient() }
         val scope = rememberCoroutineScope()
+        val onboardingCompleted by repository.onboardingCompleted.collectAsState(initial = null)
+        val notificationPermissionPromptCompleted by repository.notificationPermissionPromptCompleted.collectAsState(
+            initial = null,
+        )
+        var notificationPermissionGranted by remember {
+            mutableStateOf(hasNotificationPermission(context))
+        }
+        val notificationPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            notificationPermissionGranted = granted
+            scope.launch { repository.saveNotificationPermissionPromptCompleted(true) }
+        }
+
+        if (onboardingCompleted == null || notificationPermissionPromptCompleted == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(RadioBackground),
+            )
+            return@OmniBeatTheme
+        }
+
+        if (onboardingCompleted == false) {
+            OnboardingFlow(
+                onFinished = {
+                    scope.launch { repository.saveOnboardingCompleted(true) }
+                },
+                themeMode = themeMode,
+                onThemeModeChange = { nextThemeMode ->
+                    scope.launch { repository.saveThemeMode(nextThemeMode) }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+            return@OmniBeatTheme
+        }
+
+        if (!notificationPermissionGranted && notificationPermissionPromptCompleted == false) {
+            NotificationPermissionIntro(
+                onGrant = {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                },
+                onSkip = {
+                    scope.launch { repository.saveNotificationPermissionPromptCompleted(true) }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+            return@OmniBeatTheme
+        }
+
+        val radioBrowserClient = remember { RadioBrowserClient() }
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val playbackState by PlaybackService.state.collectAsState()
 
@@ -1084,6 +1137,7 @@ fun OmniBeatApp() {
                                 marqueeTrackTitle = marqueeTrackTitle,
                                 showEmptyFavoritesTab = showEmptyFavoritesTab,
                                 confirmStationDeletion = confirmStationDeletion,
+                                notificationPermissionGranted = notificationPermissionGranted,
                                 syncingStationArtwork = syncingStationArtwork,
                                 onShowStationArtworkChange = { show ->
                                     showStationArtwork = show
@@ -1120,6 +1174,9 @@ fun OmniBeatApp() {
                                 onConfirmStationDeletionChange = { confirm ->
                                     confirmStationDeletion = confirm
                                     scope.launch { repository.saveConfirmStationDeletion(confirm) }
+                                },
+                                onGrantNotificationPermission = {
+                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 },
                                 onSyncStationArtwork = { syncStationArtwork() },
                                 onDeleteLibrary = { deleteEntireLibrary() },
@@ -1305,6 +1362,13 @@ private tailrec fun Context.findActivity(): Activity? {
         is ContextWrapper -> baseContext.findActivity()
         else -> null
     }
+}
+
+private fun hasNotificationPermission(context: Context): Boolean {
+    return ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS,
+    ) == PackageManager.PERMISSION_GRANTED
 }
 
 private fun parseTags(tags: String): List<String> {

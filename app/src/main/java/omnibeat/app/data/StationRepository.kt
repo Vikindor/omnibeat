@@ -31,6 +31,8 @@ private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_
 private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
 private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
 private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
+private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
+private val notificationPermissionPromptCompletedKey = booleanPreferencesKey("notification_permission_prompt_completed")
 private val themeModeKey = stringPreferencesKey("theme_mode")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
@@ -69,6 +71,12 @@ class StationRepository(private val context: Context) {
 
     val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
+
+    val onboardingCompleted: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[onboardingCompletedKey] ?: false }
+
+    val notificationPermissionPromptCompleted: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[notificationPermissionPromptCompletedKey] ?: false }
 
     val themeMode: Flow<ThemeMode> = context.stationDataStore.data
         .map { preferences ->
@@ -154,6 +162,18 @@ class StationRepository(private val context: Context) {
     suspend fun saveConfirmStationDeletion(confirm: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[confirmStationDeletionKey] = confirm
+        }
+    }
+
+    suspend fun saveOnboardingCompleted(completed: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[onboardingCompletedKey] = completed
+        }
+    }
+
+    suspend fun saveNotificationPermissionPromptCompleted(completed: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[notificationPermissionPromptCompletedKey] = completed
         }
     }
 
