@@ -289,7 +289,7 @@ fun SettingsPage(
 
             SettingsSectionHeader(title = "Danger zone", color = RadioDanger)
             SettingsDangerRow(
-                title = "Delete entire library",
+                title = "Delete all stations",
                 subtitle = "Remove all stations, favorites, and custom order",
                 onClick = { confirmDeleteLibrary = true },
             )
@@ -308,16 +308,19 @@ fun SettingsPage(
             title = { Text("Delete entire library?") },
             text = { Text("All stations, favorites, and custom order will be removed") },
             confirmButton = {
-                OmniDangerButton(
-                    text = "Delete",
-                    onClick = {
-                        confirmDeleteLibrary = false
-                        onDeleteLibrary()
-                    },
-                )
-            },
-            dismissButton = {
-                OmniSecondaryButton(text = "Cancel", onClick = { confirmDeleteLibrary = false })
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    OmniSecondaryButton(text = "Cancel", onClick = { confirmDeleteLibrary = false })
+                    OmniDangerButton(
+                        text = "Delete",
+                        onClick = {
+                            confirmDeleteLibrary = false
+                            onDeleteLibrary()
+                        },
+                    )
+                }
             },
             containerColor = RadioSurface,
             titleContentColor = RadioText,
@@ -473,7 +476,7 @@ private fun SettingsDangerRow(
         }
         IconButton(onClick = onClick) {
             Icon(
-                painter = painterResource(R.drawable.ic_delete_outline),
+                painter = painterResource(R.drawable.ic_delete),
                 contentDescription = "Delete entire library",
                 tint = RadioDanger,
                 modifier = Modifier.size(24.dp),

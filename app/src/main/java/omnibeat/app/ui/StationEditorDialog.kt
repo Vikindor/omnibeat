@@ -96,7 +96,7 @@ fun StationEditorDialog(
                         },
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_delete_outline),
+                            painter = painterResource(R.drawable.ic_delete),
                             contentDescription = "Delete station",
                             tint = RadioDanger,
                         )
