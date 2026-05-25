@@ -17,6 +17,15 @@ Create your own station library, discover new streams, and keep playback within 
 - **Move your library safely.** Back up everything with native JSON format, or use a simple TXT format for handwritten station lists.
 - **Make it yours.** Choose dark, light, or system theme, tune playback behavior, and decide which online metadata should be saved.
 
+## 🖼 Screenshots
+
+<p align="center">
+  <img src="media/main_screen.jpg" alt="Main screen - Light & Dark theme screenshot" title="Main screen - Light & Dark theme" width="24%" />
+  <img src="media/online_search.jpg" alt="Online search fields screenshot" title="Online search fields" width="24%" />
+  <img src="media/settings.jpg" alt="Settings screenshot" title="Settings screen" width="24%" />
+  <img src="media/export_import.jpg" alt="Export and Import screenshot" title="Export and Import screen" width="24%" />
+</p>
+
 ## 📡 Supported Stream Formats
 
 OmniBeat currently supports:
@@ -33,7 +42,7 @@ OmniBeat currently supports:
 
 Online station search uses [Radio Browser](https://www.radio-browser.info), a community-driven directory of internet radio stations.
 
-Radio Browser is used only as a search and metadata source. Stations can still be added manually, previewed before saving, and the local library remains user-controlled.
+Radio Browser is used as a search and metadata source. Stations can still be added manually, and the local library remains user-controlled.
 
 ## 📦 Import And Export
 
