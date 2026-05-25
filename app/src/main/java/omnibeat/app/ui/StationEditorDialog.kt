@@ -193,25 +193,16 @@ fun StationEditorDialog(
     )
 
     if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete station?") },
-            text = { Text("This station will be removed from your library") },
-            confirmButton = {
-                OmniDangerButton(
-                    text = "Delete",
-                    onClick = {
-                        confirmDelete = false
-                        onDelete()
-                    },
-                )
+        OmniConfirmDialog(
+            title = "Delete station?",
+            text = "This station will be removed from your library",
+            confirmText = "Delete",
+            destructive = true,
+            onDismiss = { confirmDelete = false },
+            onConfirm = {
+                confirmDelete = false
+                onDelete()
             },
-            dismissButton = {
-                OmniSecondaryButton(text = "Cancel", onClick = { confirmDelete = false })
-            },
-            containerColor = RadioSurface,
-            titleContentColor = RadioText,
-            textContentColor = RadioTextMuted,
         )
     }
 }

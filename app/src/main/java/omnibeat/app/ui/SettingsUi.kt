@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -303,28 +302,16 @@ fun SettingsPage(
     }
 
     if (confirmDeleteLibrary) {
-        AlertDialog(
-            onDismissRequest = { confirmDeleteLibrary = false },
-            title = { Text("Delete entire library?") },
-            text = { Text("All stations, favorites, and custom order will be removed") },
-            confirmButton = {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    OmniSecondaryButton(text = "Cancel", onClick = { confirmDeleteLibrary = false })
-                    OmniDangerButton(
-                        text = "Delete",
-                        onClick = {
-                            confirmDeleteLibrary = false
-                            onDeleteLibrary()
-                        },
-                    )
-                }
+        OmniConfirmDialog(
+            title = "Delete entire library?",
+            text = "All stations, favorites, and custom order will be removed",
+            confirmText = "Delete",
+            destructive = true,
+            onDismiss = { confirmDeleteLibrary = false },
+            onConfirm = {
+                confirmDeleteLibrary = false
+                onDeleteLibrary()
             },
-            containerColor = RadioSurface,
-            titleContentColor = RadioText,
-            textContentColor = RadioTextMuted,
         )
     }
 }

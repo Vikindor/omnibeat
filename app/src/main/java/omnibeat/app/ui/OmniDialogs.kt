@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.widget.Toast
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,41 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+
+@Composable
+fun OmniConfirmDialog(
+    title: String,
+    text: String,
+    confirmText: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    destructive: Boolean = false,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(text) },
+        confirmButton = {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OmniSecondaryButton(text = "Cancel", onClick = onDismiss)
+                if (destructive) {
+                    OmniDangerButton(text = confirmText, onClick = onConfirm)
+                } else {
+                    OmniPrimaryButton(text = confirmText, onClick = onConfirm)
+                }
+            }
+        },
+        dismissButton = {},
+        containerColor = RadioSurface,
+        titleContentColor = RadioText,
+        textContentColor = RadioTextMuted,
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun ErrorDialog(
