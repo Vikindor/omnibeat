@@ -23,8 +23,11 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaLoadData
 import androidx.media3.session.MediaSession
 import kotlinx.coroutines.CoroutineScope
@@ -54,6 +57,7 @@ const val TRACK_TEXT_LOADING_STATIONS = "Loading stations..."
 const val TRACK_TEXT_RESOLVING = "Resolving stream..."
 const val TRACK_TEXT_WAITING_METADATA = "Waiting for metadata..."
 const val TRACK_TEXT_NO_METADATA = "No metadata"
+private const val PLAYER_USER_AGENT = "OmniBeat Android"
 
 data class PlaybackState(
     val selectedIndex: Int = -1,
@@ -99,7 +103,7 @@ class PlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         repository = StationRepository(applicationContext)
-        player = ExoPlayer.Builder(this).build()
+        player = buildPlayer()
         sessionPlayer = OmniBeatSessionPlayer(player)
         mediaSession = MediaSession.Builder(this, sessionPlayer).build()
         createNotificationChannel()
@@ -207,6 +211,16 @@ class PlaybackService : Service() {
             }
             playStationAt(nextIndex)
         }
+    }
+
+    private fun buildPlayer(): ExoPlayer {
+        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+            .setUserAgent(PLAYER_USER_AGENT)
+        val dataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
+        return ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+            .build()
     }
 
     private fun playStationAt(index: Int) {

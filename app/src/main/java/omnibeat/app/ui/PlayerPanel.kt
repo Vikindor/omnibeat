@@ -269,7 +269,7 @@ private fun StreamInfoDialog(
     val format = streamInfo.formatLabel ?: "Not available"
     val copyText = listOf(
         "Station: ${stationTitle.ifBlank { "Not available" }}",
-        "Track: ${trackText.ifBlank { "Not available" }}",
+        "Track / Metadata: ${trackText.ifBlank { "Not available" }}",
         "Bitrate: $bitrate",
         "Sample rate: $sampleRate",
         "Format: $format",
@@ -306,7 +306,7 @@ private fun StreamInfoDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 5,
-                    label = { Text("Track") },
+                    label = { Text("Track / Metadata") },
                     colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
