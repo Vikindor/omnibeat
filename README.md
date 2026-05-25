@@ -20,10 +20,10 @@ Create your own station library, discover new streams, and keep playback within 
 ## 🖼 Screenshots
 
 <p align="center">
-  <img src="media/main_screen.jpg" alt="Main screen - Light & Dark theme screenshot" title="Main screen - Light & Dark theme" width="24%" />
-  <img src="media/online_search.jpg" alt="Online search fields screenshot" title="Online search fields" width="24%" />
-  <img src="media/settings.jpg" alt="Settings screenshot" title="Settings screen" width="24%" />
-  <img src="media/export_import.jpg" alt="Export and Import screenshot" title="Export and Import screen" width="24%" />
+  <img src="media/main_screen_light_and_dark_themes.jpg" alt="Main screen - Light & Dark themes screenshot" title="Main screen - Light & Dark themes" width="24%" />
+  <img src="media/online_search_fields.jpg" alt="Online search fields screenshot" title="Online search fields" width="24%" />
+  <img src="media/settings_screen.jpg" alt="Settings screenshot" title="Settings screen" width="24%" />
+  <img src="media/export_import_screen.jpg" alt="Export and Import screenshot" title="Export and Import screen" width="24%" />
 </p>
 
 ## 📡 Supported Stream Formats
@@ -65,7 +65,7 @@ mp3, 320 kbps
 
 ## ⬇️ Downloads
 
-Signed APK builds are published on the [Releases](https://github.com/Vikindor/omnibeat/releases) page.
+Work in progress. APK builds will be published on the [Releases](https://github.com/Vikindor/omnibeat/releases) page soon.
 
 OmniBeat requires Android 14 or newer.
 
