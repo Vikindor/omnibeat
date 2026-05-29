@@ -51,7 +51,13 @@ data class RadioBrowserSearchParams(
     val bitrateMax: Int?,
     val reverse: Boolean,
     val includeBroken: Boolean,
-)
+    val offset: Int = 0,
+    val limit: Int = RadioBrowserSearchParams.DEFAULT_LIMIT,
+) {
+    companion object {
+        const val DEFAULT_LIMIT = 50
+    }
+}
 
 private object RadioBrowserApi {
     object Path {
@@ -75,6 +81,7 @@ private object RadioBrowserApi {
         const val BITRATE_MIN = "bitrateMin"
         const val BITRATE_MAX = "bitrateMax"
         const val LIMIT = "limit"
+        const val OFFSET = "offset"
     }
 
     object Sort {
@@ -102,7 +109,6 @@ private object RadioBrowserApi {
 
     object Value {
         const val TRUE = "true"
-        const val SEARCH_LIMIT = "40"
     }
 }
 
@@ -134,7 +140,8 @@ class RadioBrowserClient {
                 RadioBrowserApi.Query.HIDE_BROKEN to (!params.includeBroken).toString(),
                 params.bitrateMin?.let { RadioBrowserApi.Query.BITRATE_MIN to it.toString() },
                 params.bitrateMax?.let { RadioBrowserApi.Query.BITRATE_MAX to it.toString() },
-                RadioBrowserApi.Query.LIMIT to RadioBrowserApi.Value.SEARCH_LIMIT,
+                RadioBrowserApi.Query.OFFSET to params.offset.coerceAtLeast(0).toString(),
+                RadioBrowserApi.Query.LIMIT to params.limit.coerceAtLeast(1).toString(),
             ).filter { it.second.isNotBlank() },
         )
         decodeStations(readRadioBrowserText("${RadioBrowserApi.Path.STATIONS_SEARCH}?$query"))

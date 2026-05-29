@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -39,10 +40,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -56,6 +59,7 @@ import omnibeat.app.radio.RadioBrowserFilterOption
 import omnibeat.app.radio.RadioBrowserSearchParams
 import omnibeat.app.radio.RadioBrowserSort
 import omnibeat.app.radio.RadioBrowserStation
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 data class OnlineStationSearchState(
     val nameQuery: String = "",
@@ -81,12 +85,15 @@ fun OnlineStationSearchPage(
     languages: List<RadioBrowserFilterOption>,
     results: List<RadioBrowserStation>,
     loading: Boolean,
+    loadingMore: Boolean,
+    hasMoreResults: Boolean,
     optionsExpanded: Boolean,
     showArtwork: Boolean,
     addedStreamUrls: Set<String>,
     selectedStreamUrl: String?,
     onSearchStateChange: (OnlineStationSearchState) -> Unit,
     onSearch: () -> Unit,
+    onLoadMore: () -> Unit,
     onPreviewStation: (RadioBrowserStation) -> Unit,
     onAddStation: (RadioBrowserStation) -> Unit,
     modifier: Modifier = Modifier,
@@ -95,7 +102,24 @@ fun OnlineStationSearchPage(
         val overlayMaxHeight = (maxHeight - 16.dp).coerceAtLeast(240.dp)
         val listState = rememberLazyListState()
 
-        if (!loading && results.isEmpty()) {
+        LaunchedEffect(listState, results.size, loading, loadingMore, hasMoreResults) {
+            snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+                .distinctUntilChanged()
+                .collect { lastVisibleIndex ->
+                    if (
+                        lastVisibleIndex != null &&
+                        hasMoreResults &&
+                        !loading &&
+                        !loadingMore &&
+                        results.isNotEmpty() &&
+                        lastVisibleIndex >= results.lastIndex - 6
+                    ) {
+                        onLoadMore()
+                    }
+                }
+            }
+
+        if (!loading && !loadingMore && results.isEmpty()) {
             EmptyOnlineSearchState(
                 hasQuery = searchState.hasSearchInput(),
                 modifier = Modifier.fillMaxSize(),
@@ -106,10 +130,10 @@ fun OnlineStationSearchPage(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    items(
+                    itemsIndexed(
                         items = results,
-                        key = { it.stationUuid.ifBlank { it.streamUrl } },
-                    ) { station ->
+                        key = { index, station -> station.stationUuid.ifBlank { "${station.streamUrl}#$index" } },
+                    ) { _, station ->
                         OnlineStationResultItem(
                             station = station,
                             added = station.streamUrl in addedStreamUrls,
@@ -118,6 +142,23 @@ fun OnlineStationSearchPage(
                             onPreviewStation = { onPreviewStation(station) },
                             onAddStation = { onAddStation(station) },
                         )
+                    }
+                    if (loadingMore) {
+                        item(key = "online-search-loading-more") {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 14.dp),
+                            ) {
+                                CircularProgressIndicator(
+                                    color = RadioPrimary,
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            }
+                        }
                     }
                 }
                 OmniLazyListScrollIndicator(
@@ -556,6 +597,16 @@ fun OnlineStationSearchState.toRadioBrowserParams(): RadioBrowserSearchParams {
         bitrateMax = bitrateMax.toIntOrNull(),
         reverse = sortDirection.reverse,
         includeBroken = includeBroken,
+    )
+}
+
+fun OnlineStationSearchState.toRadioBrowserParams(
+    offset: Int,
+    limit: Int = RadioBrowserSearchParams.DEFAULT_LIMIT,
+): RadioBrowserSearchParams {
+    return toRadioBrowserParams().copy(
+        offset = offset,
+        limit = limit,
     )
 }
 

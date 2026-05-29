@@ -7,6 +7,7 @@ import omnibeat.app.model.STATION_STREAM_URL_MAX_LENGTH
 import omnibeat.app.model.STATION_TITLE_MAX_LENGTH
 import omnibeat.app.radio.RadioBrowserClient
 import omnibeat.app.radio.RadioBrowserFilterOption
+import omnibeat.app.radio.RadioBrowserSearchParams
 
 import android.Manifest
 import android.widget.Toast
@@ -183,6 +184,9 @@ fun OmniBeatApp() {
         var onlineSearchState by remember { mutableStateOf(OnlineStationSearchState()) }
         var onlineSearchResults by remember { mutableStateOf(emptyList<RadioBrowserStation>()) }
         var onlineSearchLoading by remember { mutableStateOf(false) }
+        var onlineSearchLoadingMore by remember { mutableStateOf(false) }
+        var onlineSearchHasMore by remember { mutableStateOf(false) }
+        var onlineSearchLastQuery by remember { mutableStateOf<OnlineStationSearchState?>(null) }
         var errorDialog by remember { mutableStateOf<String?>(null) }
         var onlineCountries by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
         var onlineLanguages by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
@@ -420,17 +424,21 @@ fun OmniBeatApp() {
         }
 
         fun searchOnlineStations() {
-            if (onlineSearchLoading) return
+            if (onlineSearchLoading || onlineSearchLoadingMore) return
             if (!hasInternetOrToast()) return
             onlineSearchLoading = true
             scope.launch {
                 runCatching {
-                    radioBrowserClient.searchStations(onlineSearchState.toRadioBrowserParams())
+                    radioBrowserClient.searchStations(onlineSearchState.toRadioBrowserParams(offset = 0))
                 }.onSuccess { results ->
                     onlineSearchResults = results
+                    onlineSearchLastQuery = onlineSearchState
+                    onlineSearchHasMore = results.size == RadioBrowserSearchParams.DEFAULT_LIMIT
                     onlineOptionsExpanded = false
                 }.onFailure { error ->
                     onlineSearchResults = emptyList()
+                    onlineSearchLastQuery = null
+                    onlineSearchHasMore = false
                     val message = error.message ?: "Could not search stations"
                     errorDialog = message
                     Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
@@ -604,6 +612,38 @@ fun OmniBeatApp() {
             val index = stations.indexOfFirst { it.id == station.id }
             if (index != -1) {
                 playStationAt(index)
+            }
+        }
+
+        fun loadMoreOnlineStations() {
+            if (onlineSearchLoading || onlineSearchLoadingMore || !onlineSearchHasMore) return
+            if (!hasInternetOrToast()) return
+            val query = onlineSearchLastQuery ?: onlineSearchState
+            onlineSearchLoadingMore = true
+            scope.launch {
+                runCatching {
+                    radioBrowserClient.searchStations(
+                        query.toRadioBrowserParams(offset = onlineSearchResults.size),
+                    )
+                }.onSuccess { results ->
+                    if (results.isEmpty()) {
+                        onlineSearchHasMore = false
+                    } else {
+                        val existingKeys = onlineSearchResults
+                            .map { it.stationUuid.ifBlank { it.streamUrl } }
+                            .toSet()
+                        val newResults = results.filter { station ->
+                            station.stationUuid.ifBlank { station.streamUrl } !in existingKeys
+                        }
+                        onlineSearchResults = onlineSearchResults + newResults
+                        onlineSearchHasMore = results.size == RadioBrowserSearchParams.DEFAULT_LIMIT
+                    }
+                }.onFailure { error ->
+                    val message = error.message ?: "Could not load more stations"
+                    errorDialog = message
+                    Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
+                }
+                onlineSearchLoadingMore = false
             }
         }
 
@@ -885,6 +925,8 @@ fun OmniBeatApp() {
                                 languages = onlineLanguages,
                                 results = onlineSearchResults,
                                 loading = onlineSearchLoading,
+                                loadingMore = onlineSearchLoadingMore,
+                                hasMoreResults = onlineSearchHasMore,
                                 optionsExpanded = onlineOptionsExpanded,
                                 showArtwork = showStationArtwork,
                                 addedStreamUrls = stations.mapTo(mutableSetOf()) { it.streamUrl },
@@ -893,6 +935,7 @@ fun OmniBeatApp() {
                                     onlineSearchState = it
                                 },
                                 onSearch = { searchOnlineStations() },
+                                onLoadMore = { loadMoreOnlineStations() },
                                 onPreviewStation = { previewOnlineStation(it) },
                                 onAddStation = { addOnlineStation(it) },
                                 modifier = Modifier.fillMaxSize(),
