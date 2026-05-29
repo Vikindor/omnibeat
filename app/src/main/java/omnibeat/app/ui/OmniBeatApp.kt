@@ -723,21 +723,6 @@ fun OmniBeatApp() {
             scope.launch { repository.saveStations(nextStations) }
         }
 
-        fun playStationAt(index: Int) {
-            if (!hasInternetOrToast()) return
-            scope.launch { drawerState.close() }
-            scrollToStationId = stations.getOrNull(index)?.id
-            scrollToSelectedRequest += 1
-            PlaybackService.playStation(context, index)
-        }
-
-        fun playStation(station: Station) {
-            val index = stations.indexOfFirst { it.id == station.id }
-            if (index != -1) {
-                playStationAt(index)
-            }
-        }
-
         fun navigationStations(): List<Station> {
             val navigationPage = activeNavigationPage()
             val pageStations = if (navigationPage == MainPage.Favorites) {
@@ -746,6 +731,25 @@ fun OmniBeatApp() {
                 stations
             }
             return sortedStations(pageStations, navigationPage)
+        }
+
+        fun playStationAt(index: Int) {
+            if (!hasInternetOrToast()) return
+            scope.launch { drawerState.close() }
+            scrollToStationId = stations.getOrNull(index)?.id
+            scrollToSelectedRequest += 1
+            PlaybackService.playStation(
+                context = context,
+                index = index,
+                queueIds = navigationStations().map { it.id },
+            )
+        }
+
+        fun playStation(station: Station) {
+            val index = stations.indexOfFirst { it.id == station.id }
+            if (index != -1) {
+                playStationAt(index)
+            }
         }
 
         fun selectSortMode(nextSortMode: StationSortMode) {

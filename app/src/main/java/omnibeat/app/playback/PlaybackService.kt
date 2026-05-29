@@ -99,6 +99,7 @@ class PlaybackService : Service() {
     private var currentStreamIsHls = false
     private var lastPlayedStationId: String? = null
     private var rememberLastStation = true
+    private var navigationQueueIds: List<String> = emptyList()
 
     override fun onCreate() {
         super.onCreate()
@@ -156,7 +157,10 @@ class PlaybackService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_PLAY_STATION -> playStationAt(intent.getIntExtra(EXTRA_INDEX, -1))
+            ACTION_PLAY_STATION -> playStationAt(
+                index = intent.getIntExtra(EXTRA_INDEX, -1),
+                queueIds = intent.getStringArrayListExtra(EXTRA_QUEUE_IDS).orEmpty(),
+            )
             ACTION_PLAY_PREVIEW -> playPreviewStation(intent.toPreviewStation())
             ACTION_PLAY_STOP -> playOrStop()
             ACTION_PREVIOUS -> playAdjacentStation(-1)
@@ -223,7 +227,11 @@ class PlaybackService : Service() {
             .build()
     }
 
-    private fun playStationAt(index: Int) {
+    private fun playStationAt(
+        index: Int,
+        queueIds: List<String> = navigationQueueIds,
+    ) {
+        navigationQueueIds = queueIds
         val station = stations.getOrNull(index)
         if (station == null) {
             _state.update {
@@ -244,7 +252,7 @@ class PlaybackService : Service() {
                     stopPlayback()
                     stopSelf()
                 } else {
-                    playStationAt(index)
+                    playStationAt(index, queueIds)
                 }
             }
             return
@@ -342,30 +350,47 @@ class PlaybackService : Service() {
     }
 
     private fun playAdjacentStation(direction: Int) {
-        if (stations.isEmpty()) return
-        val currentIndex = state.value.selectedIndex
-        val nextIndex = if (currentIndex in stations.indices) {
-            (currentIndex + direction + stations.size) % stations.size
+        val navigationStations = navigationStations()
+        if (navigationStations.isEmpty()) return
+        val currentStationId = state.value.selectedStation?.id
+        val currentIndex = navigationStations.indexOfFirst { it.id == currentStationId }
+        val nextStation = if (currentIndex in navigationStations.indices) {
+            navigationStations[(currentIndex + direction + navigationStations.size) % navigationStations.size]
         } else if (direction > 0) {
-            0
+            navigationStations.first()
         } else {
-            stations.lastIndex
+            navigationStations.last()
         }
-        playStationAt(nextIndex)
+        stations.indexOfFirst { it.id == nextStation.id }
+            .takeIf { it >= 0 }
+            ?.let { playStationAt(it) }
     }
 
     private fun playRandomStation() {
-        if (stations.isEmpty()) return
-        val nextIndex = if (stations.size == 1) {
-            0
+        val navigationStations = navigationStations()
+        if (navigationStations.isEmpty()) return
+        val currentStationId = state.value.selectedStation?.id
+        val nextStation = if (navigationStations.size == 1) {
+            navigationStations.first()
         } else {
             var randomIndex: Int
             do {
-                randomIndex = Random.nextInt(stations.size)
-            } while (randomIndex == state.value.selectedIndex)
-            randomIndex
+                randomIndex = Random.nextInt(navigationStations.size)
+            } while (navigationStations[randomIndex].id == currentStationId)
+            navigationStations[randomIndex]
         }
-        playStationAt(nextIndex)
+        stations.indexOfFirst { it.id == nextStation.id }
+            .takeIf { it >= 0 }
+            ?.let { playStationAt(it) }
+    }
+
+    private fun navigationStations(): List<Station> {
+        if (navigationQueueIds.isEmpty()) {
+            return stations
+        }
+        val stationById = stations.associateBy { it.id }
+        val queuedStations = navigationQueueIds.mapNotNull(stationById::get)
+        return queuedStations.ifEmpty { stations }
     }
 
     private fun stopPlayback() {
@@ -373,6 +398,7 @@ class PlaybackService : Service() {
         notificationUpdateJob?.cancel()
         lastSessionMetadata = null
         currentStreamIsHls = false
+        navigationQueueIds = emptyList()
         player.stop()
         _state.update {
             it.copy(
@@ -739,6 +765,7 @@ class PlaybackService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_UPDATE_DELAY_MS = 500L
         private const val EXTRA_INDEX = "index"
+        private const val EXTRA_QUEUE_IDS = "queue_ids"
         private const val EXTRA_PREVIEW_ID = "preview_id"
         private const val EXTRA_PREVIEW_TITLE = "preview_title"
         private const val EXTRA_PREVIEW_STREAM_URL = "preview_stream_url"
@@ -763,11 +790,16 @@ class PlaybackService : Service() {
         private val _state = MutableStateFlow(PlaybackState())
         val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
-        fun playStation(context: Context, index: Int) {
+        fun playStation(
+            context: Context,
+            index: Int,
+            queueIds: List<String> = emptyList(),
+        ) {
             context.startForegroundService(
                 Intent(context, PlaybackService::class.java)
                     .setAction(ACTION_PLAY_STATION)
-                    .putExtra(EXTRA_INDEX, index),
+                    .putExtra(EXTRA_INDEX, index)
+                    .putStringArrayListExtra(EXTRA_QUEUE_IDS, ArrayList(queueIds)),
             )
         }
 
