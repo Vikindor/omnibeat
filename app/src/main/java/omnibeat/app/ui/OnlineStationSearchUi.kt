@@ -358,7 +358,6 @@ private fun SearchOptionsContent(
         )
         SearchCheckbox(
             checked = searchState.includeBroken,
-            text = "Include stations marked as broken",
             onCheckedChange = { onSearchStateChange(searchState.copy(includeBroken = it)) },
             modifier = Modifier.padding(top = 8.dp),
         )
@@ -461,7 +460,6 @@ private fun <T> SearchDropdown(
 @Composable
 private fun SearchCheckbox(
     checked: Boolean,
-    text: String,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -481,7 +479,7 @@ private fun SearchCheckbox(
             ),
         )
         Text(
-            text = text,
+            text = "Include stations marked as broken",
             color = RadioText,
             fontSize = 14.sp,
         )
