@@ -298,18 +298,11 @@ object SimpleStationTextCodec {
             id = UUID.randomUUID().toString(),
             title = title,
             streamUrl = streamUrl,
-            tags = lines.getOrNull(2)?.parseTags().orEmpty(),
+            tags = lines.getOrNull(2)?.let(::parseStationTags).orEmpty(),
             imageUrl = null,
             isFavorite = false,
             dateAdded = Instant.now().toString(),
         )
-    }
-
-    private fun String.parseTags(): List<String> {
-        return split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .distinctBy { it.lowercase() }
     }
 
     private fun String.isValidStreamUrl(): Boolean {

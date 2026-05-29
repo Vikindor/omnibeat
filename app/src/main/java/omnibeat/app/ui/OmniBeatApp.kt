@@ -1,6 +1,7 @@
 package omnibeat.app.ui
 
 import omnibeat.app.R
+import omnibeat.app.data.parseStationTags
 import omnibeat.app.data.StationExportData
 import omnibeat.app.model.STATION_STREAM_URL_MAX_LENGTH
 import omnibeat.app.model.STATION_TITLE_MAX_LENGTH
@@ -8,10 +9,6 @@ import omnibeat.app.radio.RadioBrowserClient
 import omnibeat.app.radio.RadioBrowserFilterOption
 
 import android.Manifest
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
-import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -22,32 +19,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -61,24 +39,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -94,6 +58,8 @@ import omnibeat.app.model.StationReorderDraft
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
 import omnibeat.app.model.ThemeMode
+import omnibeat.app.model.customSortedStations
+import omnibeat.app.model.sortedStations
 import omnibeat.app.network.NO_INTERNET_MESSAGE
 import omnibeat.app.network.NetworkStatus
 import omnibeat.app.playback.PlaybackService
@@ -103,7 +69,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -229,105 +194,28 @@ fun OmniBeatApp() {
         }
         val pagerState = rememberPagerState(pageCount = { visibleTabPages.size })
 
-        LaunchedEffect(repository) {
-            repository.stations.collect { savedStations ->
-                stations = savedStations
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.appVolume.collect { savedVolume ->
-                appVolume = savedVolume
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.showStationArtwork.collect { savedShowStationArtwork ->
-                showStationArtwork = savedShowStationArtwork
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.addRadioBrowserTags.collect { savedAddRadioBrowserTags ->
-                addRadioBrowserTags = savedAddRadioBrowserTags
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.removeTrackingParameters.collect { savedRemoveTrackingParameters ->
-                removeTrackingParametersFromUrls = savedRemoveTrackingParameters
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.rememberLastStation.collect { savedRememberLastStation ->
-                rememberLastStation = savedRememberLastStation
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.showBitrateInControlPanel.collect { savedShowBitrate ->
-                showBitrateInControlPanel = savedShowBitrate
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.showUnavailableBitrate.collect { savedShowUnavailableBitrate ->
-                showUnavailableBitrate = savedShowUnavailableBitrate
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.marqueeTrackTitle.collect { savedMarqueeTrackTitle ->
-                marqueeTrackTitle = savedMarqueeTrackTitle
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
-                showEmptyFavoritesTab = savedShowEmptyFavoritesTab
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.confirmStationDeletion.collect { savedConfirmStationDeletion ->
-                confirmStationDeletion = savedConfirmStationDeletion
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.lastMainPage.collect { savedPage ->
-                val restoredPage = MainPage.tabPages.firstOrNull { it.name == savedPage } ?: MainPage.Stations
-                lastMainPage = restoredPage
-                if (selectedPage in visibleTabPages) {
-                    selectedPage = restoredPage
-                }
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.stationSortState.collect { savedSortState ->
-                sortState = savedSortState
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.customStationOrder.collect { savedOrder ->
-                customStationOrder = savedOrder
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.customFavoriteOrder.collect { savedOrder ->
-                customFavoriteOrder = savedOrder
-            }
-        }
-
-        LaunchedEffect(repository) {
-            repository.lastPlayedStationId.collect { savedStationId ->
-                lastPlayedStationId = savedStationId
-            }
-        }
+        RepositoryStateEffects(
+            repository = repository,
+            selectedPage = selectedPage,
+            visibleTabPages = visibleTabPages,
+            onStationsChange = { stations = it },
+            onAppVolumeChange = { appVolume = it },
+            onShowStationArtworkChange = { showStationArtwork = it },
+            onAddRadioBrowserTagsChange = { addRadioBrowserTags = it },
+            onRemoveTrackingParametersChange = { removeTrackingParametersFromUrls = it },
+            onRememberLastStationChange = { rememberLastStation = it },
+            onShowBitrateInControlPanelChange = { showBitrateInControlPanel = it },
+            onShowUnavailableBitrateChange = { showUnavailableBitrate = it },
+            onMarqueeTrackTitleChange = { marqueeTrackTitle = it },
+            onShowEmptyFavoritesTabChange = { showEmptyFavoritesTab = it },
+            onConfirmStationDeletionChange = { confirmStationDeletion = it },
+            onLastMainPageChange = { lastMainPage = it },
+            onSelectedPageRestore = { selectedPage = it },
+            onStationSortStateChange = { sortState = it },
+            onCustomStationOrderChange = { customStationOrder = it },
+            onCustomFavoriteOrderChange = { customFavoriteOrder = it },
+            onLastPlayedStationIdChange = { lastPlayedStationId = it },
+        )
 
         fun writePendingExport(uri: android.net.Uri?, successMessage: String) {
             val exportContent = pendingExportContent ?: return
@@ -674,45 +562,6 @@ fun OmniBeatApp() {
             }
         }
 
-        fun customSortedStations(source: List<Station>, customOrder: List<String>): List<Station> {
-            if (customOrder.isEmpty()) {
-                return source
-            }
-            val sourceById = source.associateBy { it.id }
-            val orderedStations = customOrder.mapNotNull(sourceById::get)
-            val orderedIds = orderedStations.map { it.id }.toSet()
-            return orderedStations + source.filterNot { it.id in orderedIds }
-        }
-
-        fun sortedStations(source: List<Station>, page: MainPage): List<Station> {
-            return when (sortState.mode) {
-                StationSortMode.Custom -> customSortedStations(
-                    source = source,
-                    customOrder = if (page == MainPage.Favorites) customFavoriteOrder else customStationOrder,
-                )
-                StationSortMode.DateAdded -> if (sortState.ascending) {
-                    source.sortedBy { it.dateAdded }
-                } else {
-                    source.sortedByDescending { it.dateAdded }
-                }
-                StationSortMode.StationTitle -> {
-                    val sorted = source.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
-                    if (sortState.ascending) sorted else sorted.asReversed()
-                }
-                StationSortMode.FavoritesFirst -> if (sortState.ascending) {
-                    source.sortedWith(
-                        compareBy<Station> { it.isFavorite }
-                            .thenBy { it.dateAdded },
-                    )
-                } else {
-                    source.sortedWith(
-                        compareByDescending<Station> { it.isFavorite }
-                            .thenByDescending { it.dateAdded },
-                    )
-                }
-            }
-        }
-
         fun toggleFavorite(station: Station) {
             val index = stations.indexOfFirst { it.id == station.id }
             if (index == -1) return
@@ -730,7 +579,13 @@ fun OmniBeatApp() {
             } else {
                 stations
             }
-            return sortedStations(pageStations, navigationPage)
+            return sortedStations(
+                source = pageStations,
+                page = navigationPage,
+                sortState = sortState,
+                customStationOrder = customStationOrder,
+                customFavoriteOrder = customFavoriteOrder,
+            )
         }
 
         fun playStationAt(index: Int) {
@@ -958,22 +813,13 @@ fun OmniBeatApp() {
                 bottomBar = {
                     if (selectedPage in visibleTabPages || selectedPage == MainPage.FindOnline) {
                         val pageStations = navigationStations()
-                        val canStartPlayback = pageStations.isNotEmpty() ||
-                            (
-                                rememberLastStation &&
-                                    lastPlayedStationId?.let { stationId -> stations.any { it.id == stationId } } == true
-                            )
-                        PlayerPanel(
-                            station = playbackState.selectedStation,
-                            trackText = playbackState.trackText,
-                            errorText = playbackState.errorText,
-                            streamInfo = playbackState.streamInfo,
-                            loading = playbackState.resolving || playbackState.buffering,
-                            resolving = playbackState.resolving,
-                            isPlaying = playbackState.isPlaying,
-                            canNavigateStations = pageStations.isNotEmpty(),
+                        PlaybackPanelHost(
+                            playbackState = playbackState,
+                            pageStations = pageStations,
+                            allStations = stations,
+                            rememberLastStation = rememberLastStation,
+                            lastPlayedStationId = lastPlayedStationId,
                             appVolume = appVolume,
-                            canPlay = canStartPlayback,
                             showBitrate = showBitrateInControlPanel,
                             showUnavailableBitrate = showUnavailableBitrate,
                             marqueeTrackTitle = marqueeTrackTitle,
@@ -997,99 +843,25 @@ fun OmniBeatApp() {
                     when (selectedPage) {
                         MainPage.Stations,
                         MainPage.Favorites -> {
-                            HorizontalPager(
-                                state = pagerState,
-                                userScrollEnabled = reorderDraft == null,
+                            StationTabsPager(
+                                visibleTabPages = visibleTabPages,
+                                pagerState = pagerState,
+                                stations = stations,
+                                selectedStationId = playbackState.selectedStation?.id,
+                                sortState = sortState,
+                                customStationOrder = customStationOrder,
+                                customFavoriteOrder = customFavoriteOrder,
+                                reorderDraft = reorderDraft,
+                                scrollToSelectedRequest = scrollToSelectedRequest,
+                                scrollToStationId = scrollToStationId,
+                                showArtwork = showStationArtwork,
+                                listEnabled = drawerState.isClosed && reorderDraft == null,
+                                onMove = ::moveReorderDraft,
+                                onFavoriteClick = ::toggleFavorite,
+                                onEditStation = { editorState = it },
+                                onStationClick = ::playStation,
                                 modifier = Modifier.fillMaxSize(),
-                            ) { pageIndex ->
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .pagerFade(pagerState, pageIndex),
-                                ) {
-                                    when (visibleTabPages[pageIndex]) {
-                                        MainPage.Stations -> {
-                                            val visibleStations = reorderDraft?.stations ?: sortedStations(stations, MainPage.Stations)
-                                            if (visibleStations.isEmpty()) {
-                                                EmptyStationsState(
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .padding(horizontal = 32.dp),
-                                                )
-                                            } else {
-                                                StationList(
-                                                    stations = visibleStations,
-                                                    selectedIndex = visibleStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
-                                                    scrollToSelectedRequest = scrollToSelectedRequest,
-                                                    scrollToStationId = scrollToStationId,
-                                                    showArtwork = showStationArtwork,
-                                                    enabled = drawerState.isClosed && reorderDraft == null,
-                                                    reordering = reorderDraft != null,
-                                                    onMove = ::moveReorderDraft,
-                                                    onFavoriteClick = { _, station -> toggleFavorite(station) },
-                                                    onStationEdit = { _, station ->
-                                                        val index = stations.indexOfFirst { it.id == station.id }
-                                                        if (index != -1) {
-                                                            editorState = StationEditorState(
-                                                                stationIndex = index,
-                                                                title = station.title,
-                                                                streamUrl = station.streamUrl,
-                                                                tags = station.tags.joinToString(", "),
-                                                                dateAdded = station.dateAdded,
-                                                            )
-                                                        }
-                                                    },
-                                                    onStationClick = { _, station -> playStation(station) },
-                                                )
-                                            }
-                                        }
-
-                                        MainPage.Favorites -> {
-                                            val favoriteStations = reorderDraft?.stations
-                                                ?: sortedStations(stations.filter { it.isFavorite }, MainPage.Favorites)
-                                            if (favoriteStations.isEmpty()) {
-                                                EmptyFavoritesState(
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .padding(horizontal = 32.dp),
-                                                )
-                                            } else {
-                                                StationList(
-                                                    stations = favoriteStations,
-                                                    selectedIndex = favoriteStations.indexOfFirst { it.id == playbackState.selectedStation?.id },
-                                                    scrollToSelectedRequest = scrollToSelectedRequest,
-                                                    scrollToStationId = scrollToStationId,
-                                                    showArtwork = showStationArtwork,
-                                                    enabled = drawerState.isClosed && reorderDraft == null,
-                                                    reordering = reorderDraft != null,
-                                                    onMove = ::moveReorderDraft,
-                                                    onFavoriteClick = { _, station -> toggleFavorite(station) },
-                                                    onStationEdit = { _, station ->
-                                                        val index = stations.indexOfFirst { it.id == station.id }
-                                                        if (index != -1) {
-                                                            editorState = StationEditorState(
-                                                                stationIndex = index,
-                                                                title = station.title,
-                                                                streamUrl = station.streamUrl,
-                                                                tags = station.tags.joinToString(", "),
-                                                                dateAdded = station.dateAdded,
-                                                            )
-                                                        }
-                                                    },
-                                                    onStationClick = { _, station ->
-                                                        val index = stations.indexOfFirst { it.id == station.id }
-                                                        if (index != -1) {
-                                                            playStationAt(index)
-                                                        }
-                                                    },
-                                                )
-                                            }
-                                        }
-
-                                        else -> Unit
-                                    }
-                                }
-                            }
+                            )
                         }
 
                         MainPage.ExportImport -> {
@@ -1198,47 +970,10 @@ fun OmniBeatApp() {
         }
 
         pendingImportData?.let { importData ->
-            AlertDialog(
-                onDismissRequest = { pendingImportData = null },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .widthIn(max = 560.dp),
-                properties = DialogProperties(usePlatformDefaultWidth = false),
-                containerColor = RadioSurface,
-                title = {
-                    Text(
-                        text = "Import stations",
-                        color = RadioText,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                text = {
-                    Text(
-                        text = "Import ${importData.stations.size} stations?\nMerge keeps your current library and updates matching stream URLs.\nReplace clears the current library first.",
-                        color = RadioTextMuted,
-                        lineHeight = 20.sp,
-                    )
-                },
-                confirmButton = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        TextButton(onClick = { pendingImportData = null }) {
-                            Text("Cancel")
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        TextButton(onClick = { importStations(StationImportMode.Replace) }) {
-                            Text("Replace")
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        TextButton(onClick = { importStations(StationImportMode.Merge) }) {
-                            Text("Merge")
-                        }
-                    }
-                },
-                dismissButton = {},
+            ImportStationsDialog(
+                stationCount = importData.stations.size,
+                onImport = ::importStations,
+                onDismiss = { pendingImportData = null },
             )
         }
 
@@ -1279,7 +1014,7 @@ fun OmniBeatApp() {
                         id = state.stationIndex?.let { stations[it].id } ?: UUID.randomUUID().toString(),
                         title = title.trim().ifBlank { savedStreamUrl.take(STATION_TITLE_MAX_LENGTH) },
                         streamUrl = savedStreamUrl,
-                        tags = parseTags(tags),
+                        tags = parseStationTags(tags),
                         imageUrl = state.stationIndex?.let { stations[it].imageUrl },
                         isFavorite = state.stationIndex?.let { stations[it].isFavorite } ?: false,
                         dateAdded = state.stationIndex?.let { stations[it].dateAdded } ?: Instant.now().toString(),
@@ -1304,266 +1039,3 @@ fun OmniBeatApp() {
     }
 }
 
-@Suppress("FrequentlyChangedStateReadInComposition")
-private fun Modifier.pagerFade(
-    pagerState: PagerState,
-    pageIndex: Int,
-): Modifier = graphicsLayer {
-    val pageOffset = (
-        (pagerState.currentPage - pageIndex) + pagerState.currentPageOffsetFraction
-    ).absoluteValue.coerceIn(0f, 1f)
-    val minPageAlpha = 0.35f
-    val fadeProgress = (pageOffset * 2.2f).coerceIn(0f, 1f)
-    alpha = 1f - fadeProgress * (1f - minPageAlpha)
-}
-
-private tailrec fun Context.findActivity(): Activity? {
-    return when (this) {
-        is Activity -> this
-        is ContextWrapper -> baseContext.findActivity()
-        else -> null
-    }
-}
-
-private fun hasNotificationPermission(context: Context): Boolean {
-    return ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.POST_NOTIFICATIONS,
-    ) == PackageManager.PERMISSION_GRANTED
-}
-
-private fun parseTags(tags: String): List<String> {
-    return tags.split(",")
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .distinctBy { it.lowercase() }
-}
-
-@Composable
-private fun MainTopBar(
-    selectedPage: MainPage,
-    tabPages: List<MainPage>,
-    sortState: StationSortState,
-    reordering: Boolean,
-    onPageSelected: (MainPage) -> Unit,
-    onSortModeSelected: (StationSortMode) -> Unit,
-    onCancelReorder: () -> Unit,
-    onConfirmReorder: () -> Unit,
-    onOpenDrawer: () -> Unit,
-    onAddStation: () -> Unit,
-    onFindOnline: () -> Unit,
-    onlineSearchControl: (@Composable (Modifier) -> Unit)? = null,
-) {
-    val density = LocalDensity.current
-    var sortMenuExpanded by remember { mutableStateOf(false) }
-    var addMenuExpanded by remember { mutableStateOf(false) }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(RadioBackground)
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .height(52.dp)
-            .padding(start = 4.dp, end = 8.dp),
-    ) {
-        IconButton(onClick = onOpenDrawer) {
-            Icon(
-                painter = painterResource(R.drawable.ic_menu),
-                contentDescription = "Open drawer",
-                tint = RadioText,
-            )
-        }
-        if (selectedPage == MainPage.FindOnline && onlineSearchControl != null) {
-            onlineSearchControl(
-                Modifier
-                    .weight(1f)
-                    .padding(start = 8.dp, end = 8.dp),
-            )
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f),
-            ) {
-                if (selectedPage in tabPages) {
-                tabPages.forEach { tab ->
-                var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
-                Column(
-                    modifier = Modifier
-                        .selectable(
-                            selected = selectedPage == tab,
-                            enabled = !reordering,
-                            role = Role.Tab,
-                            onClick = { onPageSelected(tab) },
-                        )
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                ) {
-                    Text(
-                        text = tab.title,
-                        color = if (selectedPage == tab) RadioText else RadioTextMuted,
-                        fontSize = 18.sp,
-                        fontWeight = if (selectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.onSizeChanged { size ->
-                            tabTextWidth = with(density) { size.width.toDp() }
-                        },
-                    )
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 6.dp)
-                            .width(tabTextWidth)
-                            .height(2.dp)
-                            .background(if (selectedPage == tab) RadioPrimary else RadioOutline),
-                    )
-                }
-                }
-                } else {
-                    Text(
-                        text = selectedPage.title,
-                        color = RadioText,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 12.dp),
-                    )
-                }
-            }
-        }
-        if (selectedPage in tabPages) {
-            if (reordering) {
-                OmniTopBarIconButton(
-                    painter = painterResource(R.drawable.ic_close),
-                    contentDescription = "Cancel reorder",
-                    onClick = onCancelReorder,
-                    tint = Color(0xFFFF5C6C),
-                )
-                OmniTopBarIconButton(
-                    painter = painterResource(R.drawable.ic_check),
-                    contentDescription = "Save reorder",
-                    onClick = onConfirmReorder,
-                    tint = Color(0xFF66D17A),
-                )
-            } else {
-                Box {
-                OmniTopBarIconButton(
-                    painter = painterResource(R.drawable.ic_filter_list),
-                    contentDescription = "Sort stations",
-                    onClick = { sortMenuExpanded = true },
-                )
-                DropdownMenu(
-                    expanded = sortMenuExpanded,
-                    onDismissRequest = { sortMenuExpanded = false },
-                    containerColor = RadioSurface,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    offset = DpOffset(x = 0.dp, y = 4.dp),
-                ) {
-                    StationSortMode.entries.forEach { option ->
-                        val selected = sortState.mode == option
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = option.label,
-                                    color = RadioText,
-                                )
-                            },
-                            onClick = {
-                                onSortModeSelected(option)
-                                sortMenuExpanded = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(
-                                        if (selected) {
-                                            R.drawable.ic_radio_button_checked
-                                        } else {
-                                            R.drawable.ic_radio_button_unchecked
-                                        },
-                                    ),
-                                    contentDescription = null,
-                                    tint = if (selected) RadioPrimary else RadioTextMuted,
-                                )
-                            },
-                            trailingIcon = if (selected && option != StationSortMode.Custom) {
-                                {
-                                    Icon(
-                                        painter = painterResource(
-                                            if (sortState.ascending) {
-                                                R.drawable.ic_keyboard_arrow_up
-                                            } else {
-                                                R.drawable.ic_keyboard_arrow_down
-                                            },
-                                        ),
-                                        contentDescription = if (sortState.ascending) {
-                                            "Ascending"
-                                        } else {
-                                            "Descending"
-                                        },
-                                        tint = RadioText,
-                                    )
-                                }
-                            } else {
-                                null
-                            },
-                        )
-                    }
-                }
-            }
-                Box {
-                    OmniTopBarIconButton(
-                        painter = painterResource(R.drawable.ic_add_circle_outline),
-                        contentDescription = "Add station",
-                        onClick = { addMenuExpanded = true },
-                    )
-                    DropdownMenu(
-                        expanded = addMenuExpanded,
-                        onDismissRequest = { addMenuExpanded = false },
-                        containerColor = RadioSurface,
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                        offset = DpOffset(x = 0.dp, y = 4.dp),
-                    ) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = "Add manually",
-                                    color = RadioText,
-                                )
-                            },
-                            onClick = {
-                                addMenuExpanded = false
-                                onAddStation()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_add_circle_outline),
-                                    contentDescription = null,
-                                    tint = RadioText,
-                                )
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = "Find online",
-                                    color = RadioText,
-                                )
-                            },
-                            onClick = {
-                                addMenuExpanded = false
-                                onFindOnline()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_search),
-                                    contentDescription = null,
-                                    tint = RadioText,
-                                )
-                            },
-                        )
-                    }
-                }
-            }
-        }
-    }
-}

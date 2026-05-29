@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import omnibeat.app.data.StationImportMode
 
 @Composable
 fun OmniConfirmDialog(
@@ -104,6 +105,57 @@ fun ErrorDialog(
                         Toast.makeText(context, "Error copied", Toast.LENGTH_SHORT).show()
                     },
                 )
+            }
+        },
+        dismissButton = {},
+    )
+}
+
+@Composable
+fun ImportStationsDialog(
+    stationCount: Int,
+    onImport: (StationImportMode) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .widthIn(max = 560.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        containerColor = RadioSurface,
+        title = {
+            Text(
+                text = "Import stations",
+                color = RadioText,
+                fontWeight = FontWeight.SemiBold,
+            )
+        },
+        text = {
+            Text(
+                text = "Import $stationCount stations?\nMerge keeps your current library and updates matching stream URLs.\nReplace clears the current library first.",
+                color = RadioTextMuted,
+                lineHeight = 20.sp,
+            )
+        },
+        confirmButton = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                androidx.compose.material3.TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                androidx.compose.material3.TextButton(onClick = { onImport(StationImportMode.Replace) }) {
+                    Text("Replace")
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                androidx.compose.material3.TextButton(onClick = { onImport(StationImportMode.Merge) }) {
+                    Text("Merge")
+                }
             }
         },
         dismissButton = {},
