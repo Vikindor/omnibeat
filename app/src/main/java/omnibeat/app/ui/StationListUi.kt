@@ -4,6 +4,7 @@ import omnibeat.app.R
 import omnibeat.app.model.Station
 
 import android.graphics.BitmapFactory
+import android.util.LruCache
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,6 +23,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.Icon
@@ -294,19 +296,20 @@ private fun StationArtwork(
 }
 
 private object StationArtworkMemoryCache {
-    private val images = mutableMapOf<String, androidx.compose.ui.graphics.ImageBitmap>()
+    private const val MAX_ENTRIES = 32
+    private val images = LruCache<String, ImageBitmap>(MAX_ENTRIES)
 
-    operator fun get(url: String?): androidx.compose.ui.graphics.ImageBitmap? {
+    operator fun get(url: String?): ImageBitmap? {
         if (url == null) return null
-        return synchronized(images) { images[url] }
+        return synchronized(images) { images.get(url) }
     }
 
-    operator fun set(url: String, bitmap: androidx.compose.ui.graphics.ImageBitmap) {
-        synchronized(images) { images[url] = bitmap }
+    operator fun set(url: String, bitmap: ImageBitmap) {
+        synchronized(images) { images.put(url, bitmap) }
     }
 }
 
-private suspend fun loadStationArtwork(imageUrl: String): androidx.compose.ui.graphics.ImageBitmap? {
+private suspend fun loadStationArtwork(imageUrl: String): ImageBitmap? {
     return withContext(Dispatchers.IO) {
         runCatching {
             val connection = URL(imageUrl).openConnection() as HttpURLConnection
