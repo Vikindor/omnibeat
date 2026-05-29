@@ -14,6 +14,7 @@ import omnibeat.app.model.StationSortState
 import omnibeat.app.model.ThemeMode
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.Instant
 import java.util.UUID
 
 private val Context.stationDataStore by preferencesDataStore(name = "stations")
@@ -283,7 +284,9 @@ class StationRepository(private val context: Context) {
                                 tags = decodeTags(item.optJSONArray("tags")),
                                 imageUrl = item.optString("imageUrl").trim().takeIf { it.isNotBlank() },
                                 isFavorite = item.optBoolean("isFavorite", false),
-                                dateAdded = item.getString("dateAdded"),
+                                dateAdded = item.optString("dateAdded")
+                                    .takeIf { it.isValidInstant() }
+                                    ?: Instant.now().toString(),
                             ),
                         )
                     }
@@ -303,6 +306,10 @@ class StationRepository(private val context: Context) {
                 tagsJson.optString(index).trim().takeIf { it.isNotEmpty() }?.let(::add)
             }
         }
+    }
+
+    private fun String.isValidInstant(): Boolean {
+        return runCatching { Instant.parse(this) }.isSuccess
     }
 
     private fun encodeStringList(items: List<String>): String {
