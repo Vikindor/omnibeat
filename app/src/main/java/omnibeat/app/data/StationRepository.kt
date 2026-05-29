@@ -249,18 +249,6 @@ class StationRepository(private val context: Context) {
         }
     }
 
-    suspend fun seedTestStationsForPrototype() {
-        context.stationDataStore.edit { preferences ->
-            if (preferences[stationsJsonKey].isNullOrBlank()) {
-                val stationsJson = context.resources
-                    .openRawResource(R.raw.test_stations)
-                    .bufferedReader(StandardCharsets.UTF_8)
-                    .use { it.readText() }
-                preferences[stationsJsonKey] = encodeStations(decodeStations(stationsJson))
-            }
-        }
-    }
-
     private fun encodeStations(stations: List<Station>): String {
         val items = JSONArray()
         stations.forEach { station ->

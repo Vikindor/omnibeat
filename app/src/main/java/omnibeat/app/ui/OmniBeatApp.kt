@@ -230,7 +230,6 @@ fun OmniBeatApp() {
         val pagerState = rememberPagerState(pageCount = { visibleTabPages.size })
 
         LaunchedEffect(repository) {
-            repository.seedTestStationsForPrototype()
             repository.stations.collect { savedStations ->
                 stations = savedStations
             }
