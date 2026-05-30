@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -39,9 +41,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import omnibeat.app.R
+import omnibeat.app.model.AppLanguage
 import omnibeat.app.model.ThemeMode
 
 @Composable
@@ -90,7 +94,7 @@ fun ThemeModeSegmentedControl(
                 ) {
                     Icon(
                         painter = painterResource(themeModeIcon(option)),
-                        contentDescription = option.label,
+                        contentDescription = stringResource(themeModeLabel(option)),
                         tint = if (selected) RadioText else RadioTextMuted,
                         modifier = Modifier.size(24.dp),
                     )
@@ -108,9 +112,25 @@ private fun themeModeIcon(themeMode: ThemeMode): Int {
     }
 }
 
+private fun themeModeLabel(themeMode: ThemeMode): Int {
+    return when (themeMode) {
+        ThemeMode.System -> R.string.theme_system
+        ThemeMode.Light -> R.string.theme_light
+        ThemeMode.Dark -> R.string.theme_dark
+    }
+}
+
+private fun appLanguageLabel(appLanguage: AppLanguage): Int {
+    return when (appLanguage) {
+        AppLanguage.System -> R.string.language_system
+        AppLanguage.English -> R.string.language_english
+    }
+}
+
 @Composable
 fun SettingsPage(
     themeMode: ThemeMode,
+    appLanguage: AppLanguage,
     showStationArtwork: Boolean,
     addRadioBrowserTags: Boolean,
     removeTrackingParameters: Boolean,
@@ -135,6 +155,7 @@ fun SettingsPage(
     onSyncStationArtwork: () -> Unit,
     onDeleteLibrary: () -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
+    onAppLanguageChange: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -147,149 +168,162 @@ fun SettingsPage(
                 .verticalScroll(scrollState)
                 .padding(bottom = 20.dp),
         ) {
-            SettingsSectionHeader(title = "Appearance")
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
             SettingsThemeRow(
-                title = "Theme",
+                title = stringResource(R.string.settings_theme_title),
                 subtitle = when (themeMode) {
-                    ThemeMode.System -> "Follow system theme"
-                    ThemeMode.Dark -> "Use dark theme"
-                    ThemeMode.Light -> "Use light theme"
+                    ThemeMode.System -> stringResource(R.string.settings_theme_system)
+                    ThemeMode.Dark -> stringResource(R.string.settings_theme_dark)
+                    ThemeMode.Light -> stringResource(R.string.settings_theme_light)
                 },
                 themeMode = themeMode,
                 onThemeModeChange = onThemeModeChange,
             )
+            SettingsLanguageRow(
+                title = stringResource(R.string.settings_language_title),
+                subtitle = when (appLanguage) {
+                    AppLanguage.System -> stringResource(R.string.settings_language_system)
+                    AppLanguage.English -> stringResource(R.string.settings_language_english)
+                },
+                appLanguage = appLanguage,
+                onAppLanguageChange = onAppLanguageChange,
+            )
             SettingsDivider()
 
-            SettingsSectionHeader(title = "Playback")
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_playback))
             SettingsActionRow(
-                title = "Notifications",
+                title = stringResource(R.string.settings_notifications_title),
                 subtitle = if (notificationPermissionGranted) {
-                    "Media controls can appear in notifications"
+                    stringResource(R.string.settings_notifications_granted)
                 } else {
-                    "Grant permission to show media controls"
+                    stringResource(R.string.settings_notifications_not_granted)
                 },
-                actionText = if (notificationPermissionGranted) "Granted" else "Grant",
+                actionText = if (notificationPermissionGranted) {
+                    stringResource(R.string.action_granted)
+                } else {
+                    stringResource(R.string.action_grant)
+                },
                 enabled = !notificationPermissionGranted,
                 onClick = onGrantNotificationPermission,
             )
             SettingsSwitchRow(
-                title = "Remember last station",
+                title = stringResource(R.string.settings_remember_last_station_title),
                 subtitle = if (rememberLastStation) {
-                    "Play will start the last played station"
+                    stringResource(R.string.settings_remember_last_station_on)
                 } else {
-                    "Play will start the first station in the list"
+                    stringResource(R.string.settings_remember_last_station_off)
                 },
                 checked = rememberLastStation,
                 onCheckedChange = onRememberLastStationChange,
             )
             SettingsDivider()
 
-            SettingsSectionHeader(title = "Artwork")
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_artwork))
             SettingsSwitchRow(
-                title = "Covers for stations",
+                title = stringResource(R.string.settings_station_covers_title),
                 subtitle = if (showStationArtwork) {
-                    "Station lists will show covers"
+                    stringResource(R.string.settings_station_covers_on)
                 } else {
-                    "Station lists will hide covers"
+                    stringResource(R.string.settings_station_covers_off)
                 },
                 checked = showStationArtwork,
                 onCheckedChange = onShowStationArtworkChange,
             )
             SettingsActionRow(
-                title = "Fetch artwork for stations",
-                subtitle = "Look up covers for all stations online",
+                title = stringResource(R.string.settings_sync_artwork_title),
+                subtitle = stringResource(R.string.settings_sync_artwork_subtitle),
                 syncing = syncingStationArtwork,
                 onClick = onSyncStationArtwork,
             )
             SettingsDivider()
 
-            SettingsSectionHeader(title = "Library")
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_library))
             SettingsSwitchRow(
-                title = "Show empty Favorites tab",
+                title = stringResource(R.string.settings_show_empty_favorites_title),
                 subtitle = if (showEmptyFavoritesTab) {
-                    "Favorites tab will stay visible when empty"
+                    stringResource(R.string.settings_show_empty_favorites_on)
                 } else {
-                    "Favorites tab will be hidden when empty"
+                    stringResource(R.string.settings_show_empty_favorites_off)
                 },
                 checked = showEmptyFavoritesTab,
                 onCheckedChange = onShowEmptyFavoritesTabChange,
             )
             SettingsSwitchRow(
-                title = "Confirm station deletion",
+                title = stringResource(R.string.settings_confirm_station_deletion_title),
                 subtitle = if (confirmStationDeletion) {
-                    "Deleting a station will ask for confirmation"
+                    stringResource(R.string.settings_confirm_station_deletion_on)
                 } else {
-                    "Stations will be deleted immediately"
+                    stringResource(R.string.settings_confirm_station_deletion_off)
                 },
                 checked = confirmStationDeletion,
                 onCheckedChange = onConfirmStationDeletionChange,
             )
             SettingsDivider()
 
-            SettingsSectionHeader(title = "Control panel")
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_control_panel))
             SettingsSwitchRow(
-                title = "Show bitrate in control panel",
+                title = stringResource(R.string.settings_show_bitrate_title),
                 subtitle = if (showBitrateInControlPanel) {
-                    "Control panel will show stream bitrate"
+                    stringResource(R.string.settings_show_bitrate_on)
                 } else {
-                    "Control panel will hide stream bitrate"
+                    stringResource(R.string.settings_show_bitrate_off)
                 },
                 checked = showBitrateInControlPanel,
                 onCheckedChange = onShowBitrateInControlPanelChange,
             )
             SettingsSwitchRow(
-                title = "Show bitrate when unavailable",
+                title = stringResource(R.string.settings_show_unavailable_bitrate_title),
                 subtitle = if (showUnavailableBitrate) {
-                    "Control panel will show N/A when bitrate is missing"
+                    stringResource(R.string.settings_show_unavailable_bitrate_on)
                 } else {
-                    "Control panel will hide missing bitrate"
+                    stringResource(R.string.settings_show_unavailable_bitrate_off)
                 },
                 checked = showUnavailableBitrate,
                 onCheckedChange = onShowUnavailableBitrateChange,
                 enabled = showBitrateInControlPanel,
             )
             SettingsSwitchRow(
-                title = "Marquee track title",
+                title = stringResource(R.string.settings_marquee_track_title_title),
                 subtitle = if (marqueeTrackTitle) {
-                    "Long track titles will scroll"
+                    stringResource(R.string.settings_marquee_track_title_on)
                 } else {
-                    "Long track titles will be truncated"
+                    stringResource(R.string.settings_marquee_track_title_off)
                 },
                 checked = marqueeTrackTitle,
                 onCheckedChange = onMarqueeTrackTitleChange,
             )
             SettingsDivider()
 
-            SettingsSectionHeader(title = "Online search")
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_online_search))
             SettingsSwitchRow(
-                title = "Save Radio Browser tags",
+                title = stringResource(R.string.settings_save_radio_browser_tags_title),
                 subtitle = if (addRadioBrowserTags) {
-                    "Online search tags will be saved with new stations"
+                    stringResource(R.string.settings_save_radio_browser_tags_on)
                 } else {
-                    "Online search tags will be ignored"
+                    stringResource(R.string.settings_save_radio_browser_tags_off)
                 },
                 checked = addRadioBrowserTags,
                 onCheckedChange = onAddRadioBrowserTagsChange,
             )
             SettingsDivider()
 
-            SettingsSectionHeader(title = "URLs")
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_urls))
             SettingsSwitchRow(
-                title = "Remove tracking from URLs",
+                title = stringResource(R.string.settings_remove_tracking_title),
                 subtitle = if (removeTrackingParameters) {
-                    "Tracking parameters will be cleaned for new stations"
+                    stringResource(R.string.settings_remove_tracking_on)
                 } else {
-                    "New station URLs will be saved unchanged"
+                    stringResource(R.string.settings_remove_tracking_off)
                 },
                 checked = removeTrackingParameters,
                 onCheckedChange = onRemoveTrackingParametersChange,
             )
             SettingsDivider()
 
-            SettingsSectionHeader(title = "Danger zone", color = RadioDanger)
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_danger_zone), color = RadioDanger)
             SettingsDangerRow(
-                title = "Delete all stations",
-                subtitle = "Remove all stations, favorites, and custom order",
+                title = stringResource(R.string.settings_delete_all_stations_title),
+                subtitle = stringResource(R.string.settings_delete_all_stations_subtitle),
                 onClick = { confirmDeleteLibrary = true },
             )
         }
@@ -303,9 +337,9 @@ fun SettingsPage(
 
     if (confirmDeleteLibrary) {
         OmniConfirmDialog(
-            title = "Delete entire library?",
-            text = "All stations, favorites, and custom order will be removed",
-            confirmText = "Delete",
+            title = stringResource(R.string.dialog_delete_entire_library_title),
+            text = stringResource(R.string.dialog_delete_entire_library_text),
+            confirmText = stringResource(R.string.action_delete),
             destructive = true,
             onDismiss = { confirmDeleteLibrary = false },
             onConfirm = {
@@ -313,6 +347,70 @@ fun SettingsPage(
                 onDeleteLibrary()
             },
         )
+    }
+}
+
+@Composable
+private fun SettingsLanguageRow(
+    title: String,
+    subtitle: String,
+    appLanguage: AppLanguage,
+    onAppLanguageChange: (AppLanguage) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp, vertical = 10.dp),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = title,
+                color = RadioText,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = subtitle,
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+            )
+        }
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(
+                    text = stringResource(appLanguageLabel(appLanguage)),
+                    color = RadioPrimary,
+                )
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                containerColor = RadioSurface,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+            ) {
+                AppLanguage.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = stringResource(appLanguageLabel(option)),
+                                color = RadioText,
+                            )
+                        },
+                        onClick = {
+                            expanded = false
+                            onAppLanguageChange(option)
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -464,7 +562,7 @@ private fun SettingsDangerRow(
         IconButton(onClick = onClick) {
             Icon(
                 painter = painterResource(R.drawable.ic_delete),
-                contentDescription = "Delete entire library",
+                contentDescription = stringResource(R.string.settings_delete_entire_library_content_description),
                 tint = RadioDanger,
                 modifier = Modifier.size(24.dp),
             )

@@ -48,6 +48,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -85,7 +86,7 @@ fun PlayerPanel(
     val context = LocalContext.current
     val displayTrackText = errorText ?: trackText
     val bitrateText = if (showBitrate) {
-        streamInfo.bitrateText ?: "N/A kbps".takeIf { showUnavailableBitrate }
+        streamInfo.bitrateText ?: stringResource(R.string.player_bitrate_unavailable).takeIf { showUnavailableBitrate }
     } else {
         null
     }
@@ -109,8 +110,8 @@ fun PlayerPanel(
                 .combinedClickable(
                     enabled = station != null,
                     onClick = {
-                        copyTextToClipboard(context, label = "Track", text = trackText)
-                        android.widget.Toast.makeText(context, "Track name copied", android.widget.Toast.LENGTH_SHORT).show()
+                        copyTextToClipboard(context, label = context.getString(R.string.player_clipboard_track_label), text = trackText)
+                        android.widget.Toast.makeText(context, context.getString(R.string.player_track_copied), android.widget.Toast.LENGTH_SHORT).show()
                     },
                     onLongClick = { showStreamInfo = true },
                 )
@@ -119,7 +120,7 @@ fun PlayerPanel(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = station?.title ?: "Choose a station",
+                    text = station?.title ?: stringResource(R.string.player_choose_station),
                     color = RadioText,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
@@ -188,7 +189,7 @@ fun PlayerPanel(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_shuffle),
-                    contentDescription = "Random station",
+                    contentDescription = stringResource(R.string.player_random_station),
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -204,7 +205,7 @@ fun PlayerPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_skip_previous),
-                        contentDescription = "Previous station",
+                        contentDescription = stringResource(R.string.player_previous_station),
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -217,7 +218,11 @@ fun PlayerPanel(
                         painter = painterResource(
                             if (hasActivePlaybackRequest) R.drawable.ic_stop else R.drawable.ic_play_arrow,
                         ),
-                        contentDescription = if (hasActivePlaybackRequest) "Stop" else "Play",
+                        contentDescription = if (hasActivePlaybackRequest) {
+                            stringResource(R.string.player_stop)
+                        } else {
+                            stringResource(R.string.player_play)
+                        },
                         modifier = Modifier.size(32.dp),
                     )
                 }
@@ -228,7 +233,7 @@ fun PlayerPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_skip_next),
-                        contentDescription = "Next station",
+                        contentDescription = stringResource(R.string.player_next_station),
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -248,8 +253,8 @@ fun PlayerPanel(
             streamInfo = streamInfo,
             onDismiss = { showStreamInfo = false },
             onCopyInfo = { info ->
-                copyTextToClipboard(context, label = "Stream info", text = info)
-                android.widget.Toast.makeText(context, "Stream info copied", android.widget.Toast.LENGTH_SHORT).show()
+                copyTextToClipboard(context, label = context.getString(R.string.player_clipboard_stream_info_label), text = info)
+                android.widget.Toast.makeText(context, context.getString(R.string.player_stream_info_copied), android.widget.Toast.LENGTH_SHORT).show()
             },
         )
     }
@@ -264,15 +269,16 @@ private fun StreamInfoDialog(
     onCopyInfo: (String) -> Unit,
 ) {
     val textFieldColors = omniDisabledTextFieldColors()
-    val bitrate = streamInfo.bitrateText ?: "Not available"
-    val sampleRate = streamInfo.sampleRateText ?: "Not available"
-    val format = streamInfo.formatLabel ?: "Not available"
+    val notAvailable = stringResource(R.string.player_not_available)
+    val bitrate = streamInfo.bitrateText ?: notAvailable
+    val sampleRate = streamInfo.sampleRateText ?: notAvailable
+    val format = streamInfo.formatLabel ?: notAvailable
     val copyText = listOf(
-        "Station: ${stationTitle.ifBlank { "Not available" }}",
-        "Track / Metadata: ${trackText.ifBlank { "Not available" }}",
-        "Bitrate: $bitrate",
-        "Sample rate: $sampleRate",
-        "Format: $format",
+        stringResource(R.string.player_stream_info_copy_station, stationTitle.ifBlank { notAvailable }),
+        stringResource(R.string.player_stream_info_copy_track, trackText.ifBlank { notAvailable }),
+        stringResource(R.string.player_stream_info_copy_bitrate, bitrate),
+        stringResource(R.string.player_stream_info_copy_sample_rate, sampleRate),
+        stringResource(R.string.player_stream_info_copy_format, format),
     ).joinToString(" | ")
 
     AlertDialog(
@@ -282,7 +288,7 @@ private fun StreamInfoDialog(
             .padding(horizontal = 16.dp)
             .widthIn(max = 560.dp),
         properties = DialogProperties(usePlatformDefaultWidth = false),
-        title = { Text("Stream info") },
+        title = { Text(stringResource(R.string.player_stream_info_title)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -295,7 +301,7 @@ private fun StreamInfoDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 3,
-                    label = { Text("Station") },
+                    label = { Text(stringResource(R.string.player_stream_info_station)) },
                     colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -306,13 +312,13 @@ private fun StreamInfoDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 5,
-                    label = { Text("Track / Metadata") },
+                    label = { Text(stringResource(R.string.player_stream_info_track_metadata)) },
                     colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                StreamInfoRow(label = "Bitrate", value = bitrate)
-                StreamInfoRow(label = "Sample rate", value = sampleRate)
-                StreamInfoRow(label = "Format", value = format)
+                StreamInfoRow(label = stringResource(R.string.player_stream_info_bitrate), value = bitrate)
+                StreamInfoRow(label = stringResource(R.string.player_stream_info_sample_rate), value = sampleRate)
+                StreamInfoRow(label = stringResource(R.string.player_stream_info_format), value = format)
             }
         },
         confirmButton = {
@@ -320,10 +326,10 @@ private fun StreamInfoDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                OmniSecondaryButton(text = "Close", onClick = onDismiss)
+                OmniSecondaryButton(text = stringResource(R.string.action_close), onClick = onDismiss)
                 Spacer(Modifier.weight(1f))
                 OmniPrimaryButton(
-                    text = "Copy info",
+                    text = stringResource(R.string.player_stream_info_copy_info),
                     onClick = { onCopyInfo(copyText) },
                 )
             }
@@ -390,7 +396,7 @@ private fun VolumeButton(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_volume_up),
-                contentDescription = "Volume",
+                contentDescription = stringResource(R.string.player_volume),
                 modifier = Modifier.size(24.dp),
             )
         }

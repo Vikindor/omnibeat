@@ -49,6 +49,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -73,9 +74,27 @@ data class OnlineStationSearchState(
     val includeBroken: Boolean = false,
 )
 
-enum class SearchSortDirection(val label: String, val reverse: Boolean) {
-    Descending("Descending order", true),
-    Ascending("Ascending order", false),
+enum class SearchSortDirection(val reverse: Boolean) {
+    Descending(true),
+    Ascending(false),
+}
+
+private fun SearchSortDirection.labelRes(): Int {
+    return when (this) {
+        SearchSortDirection.Descending -> R.string.online_search_sort_descending_order
+        SearchSortDirection.Ascending -> R.string.online_search_sort_ascending_order
+    }
+}
+
+private fun RadioBrowserSort.labelRes(): Int {
+    return when (this) {
+        RadioBrowserSort.Clicks -> R.string.radio_browser_sort_clicks
+        RadioBrowserSort.Votes -> R.string.radio_browser_sort_votes
+        RadioBrowserSort.Name -> R.string.radio_browser_sort_name
+        RadioBrowserSort.Bitrate -> R.string.radio_browser_sort_bitrate
+        RadioBrowserSort.Country -> R.string.radio_browser_sort_country
+        RadioBrowserSort.Random -> R.string.radio_browser_sort_random
+    }
 }
 
 @Composable
@@ -214,7 +233,7 @@ fun SearchOptionsTopBarControl(
                     .padding(horizontal = 16.dp, vertical = 4.dp),
             ) {
                 Text(
-                    text = "Search options",
+                    text = stringResource(R.string.online_search_options),
                     color = RadioText,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -233,7 +252,11 @@ fun SearchOptionsTopBarControl(
                     painter = painterResource(
                         if (expanded) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down,
                     ),
-                    contentDescription = if (expanded) "Hide options" else "Show options",
+                    contentDescription = if (expanded) {
+                        stringResource(R.string.online_search_hide_options)
+                    } else {
+                        stringResource(R.string.online_search_show_options)
+                    },
                     tint = RadioText,
                     modifier = Modifier.size(24.dp),
                 )
@@ -311,8 +334,8 @@ private fun SearchOptionsContent(
         SearchTextField(
             value = searchState.nameQuery,
             onValueChange = { onSearchStateChange(searchState.copy(nameQuery = it)) },
-            label = "Search by title",
-            placeholder = "Station title",
+            label = stringResource(R.string.online_search_by_title),
+            placeholder = stringResource(R.string.online_search_station_title_placeholder),
             imeAction = ImeAction.Search,
             keyboardType = KeyboardType.Text,
             onSearch = onSearch,
@@ -320,8 +343,8 @@ private fun SearchOptionsContent(
         SearchTextField(
             value = searchState.tagsQuery,
             onValueChange = { onSearchStateChange(searchState.copy(tagsQuery = it)) },
-            label = "Search by tags",
-            placeholder = "Comma separated",
+            label = stringResource(R.string.online_search_by_tags),
+            placeholder = stringResource(R.string.common_comma_separated),
             imeAction = ImeAction.Search,
             keyboardType = KeyboardType.Text,
             onSearch = onSearch,
@@ -333,24 +356,24 @@ private fun SearchOptionsContent(
             modifier = Modifier.padding(top = 16.dp, bottom = 12.dp),
         )
         Text(
-            text = "Filters",
+            text = stringResource(R.string.online_search_filters),
             color = RadioText,
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
         )
         SearchDropdown(
-            label = "Countries",
-            selectedText = searchState.selectedCountry?.name ?: "All countries",
+            label = stringResource(R.string.online_search_countries),
+            selectedText = searchState.selectedCountry?.name ?: stringResource(R.string.online_search_all_countries),
             options = listOf<RadioBrowserFilterOption?>(null) + countries,
-            optionText = { it?.name ?: "All countries" },
+            optionText = { it?.name ?: stringResource(R.string.online_search_all_countries) },
             onOptionSelected = { onSearchStateChange(searchState.copy(selectedCountry = it)) },
             modifier = Modifier.padding(top = 10.dp),
         )
         SearchDropdown(
-            label = "Languages",
-            selectedText = searchState.selectedLanguage?.name ?: "All languages",
+            label = stringResource(R.string.online_search_languages),
+            selectedText = searchState.selectedLanguage?.name ?: stringResource(R.string.online_search_all_languages),
             options = listOf<RadioBrowserFilterOption?>(null) + languages,
-            optionText = { it?.name ?: "All languages" },
+            optionText = { it?.name ?: stringResource(R.string.online_search_all_languages) },
             onOptionSelected = { onSearchStateChange(searchState.copy(selectedLanguage = it)) },
             modifier = Modifier.padding(top = 10.dp),
         )
@@ -361,18 +384,18 @@ private fun SearchOptionsContent(
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SearchDropdown(
-                label = "Sort by",
-                selectedText = searchState.selectedSort.label,
+                label = stringResource(R.string.online_search_sort_by),
+                selectedText = stringResource(searchState.selectedSort.labelRes()),
                 options = RadioBrowserSort.entries,
-                optionText = { it.label },
+                optionText = { stringResource(it.labelRes()) },
                 onOptionSelected = { onSearchStateChange(searchState.copy(selectedSort = it)) },
                 modifier = Modifier.weight(1f),
             )
             SearchDropdown(
-                label = "Sort in",
-                selectedText = searchState.sortDirection.label,
+                label = stringResource(R.string.online_search_sort_in),
+                selectedText = stringResource(searchState.sortDirection.labelRes()),
                 options = SearchSortDirection.entries,
-                optionText = { it.label },
+                optionText = { stringResource(it.labelRes()) },
                 onOptionSelected = { onSearchStateChange(searchState.copy(sortDirection = it)) },
                 modifier = Modifier.weight(1f),
             )
@@ -380,7 +403,7 @@ private fun SearchOptionsContent(
         SearchTextField(
             value = searchState.bitrateMin,
             onValueChange = { onSearchStateChange(searchState.copy(bitrateMin = it.digitsOnly())) },
-            label = "Bitrate min",
+            label = stringResource(R.string.online_search_bitrate_min),
             placeholder = "0",
             imeAction = ImeAction.Next,
             keyboardType = KeyboardType.Number,
@@ -390,8 +413,8 @@ private fun SearchOptionsContent(
         SearchTextField(
             value = searchState.bitrateMax,
             onValueChange = { onSearchStateChange(searchState.copy(bitrateMax = it.digitsOnly())) },
-            label = "Bitrate max",
-            placeholder = "max",
+            label = stringResource(R.string.online_search_bitrate_max),
+            placeholder = stringResource(R.string.online_search_max_placeholder),
             imeAction = ImeAction.Search,
             keyboardType = KeyboardType.Number,
             onSearch = onSearch,
@@ -403,7 +426,7 @@ private fun SearchOptionsContent(
             modifier = Modifier.padding(top = 8.dp),
         )
         OmniPrimaryButton(
-            text = "Search",
+            text = stringResource(R.string.action_search),
             onClick = onSearch,
             enabled = !loading,
             modifier = Modifier
@@ -445,7 +468,7 @@ private fun <T> SearchDropdown(
     label: String,
     selectedText: String,
     options: List<T>,
-    optionText: (T) -> String,
+    optionText: @Composable (T) -> String,
     onOptionSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -520,7 +543,7 @@ private fun SearchCheckbox(
             ),
         )
         Text(
-            text = "Include stations marked as broken",
+            text = stringResource(R.string.online_search_include_broken),
             color = RadioText,
             fontSize = 14.sp,
         )
@@ -547,7 +570,11 @@ private fun OnlineStationResultItem(
         trailingContent = {
             OmniListActionIconButton(
                 painter = painterResource(if (added) R.drawable.ic_check else R.drawable.ic_add_circle_outline),
-                contentDescription = if (added) "Station added" else "Add station",
+                contentDescription = if (added) {
+                    stringResource(R.string.online_search_station_added)
+                } else {
+                    stringResource(R.string.action_add_station)
+                },
                 enabled = !added,
                 onClick = onAddStation,
                 tint = if (added) RadioPrimary else RadioText,
@@ -568,16 +595,20 @@ private fun EmptyOnlineSearchState(
         modifier = modifier,
     ) {
         Text(
-            text = if (hasQuery) "No stations found" else "Search Radio-Browser.info",
+            text = if (hasQuery) {
+                stringResource(R.string.online_search_no_stations_found)
+            } else {
+                stringResource(R.string.online_search_empty_title)
+            },
             color = RadioText,
             fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold,
         )
         Text(
             text = if (hasQuery) {
-                "Try a different search or filters"
+                stringResource(R.string.online_search_try_different)
             } else {
-                "Find stations online and add them to your library"
+                stringResource(R.string.online_search_empty_subtitle)
             },
             color = RadioTextMuted,
             fontSize = 15.sp,

@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -73,14 +74,18 @@ fun StationEditorDialog(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = if (state.stationIndex == null) "Add station" else "Edit station",
+                    text = if (state.stationIndex == null) {
+                        stringResource(R.string.station_editor_add_title)
+                    } else {
+                        stringResource(R.string.station_editor_edit_title)
+                    },
                     modifier = Modifier.weight(1f),
                 )
                 if (onSyncArtwork != null) {
                     IconButton(onClick = onSyncArtwork) {
                         Icon(
                             painter = painterResource(R.drawable.ic_image_search),
-                            contentDescription = "Sync station artwork",
+                            contentDescription = stringResource(R.string.station_editor_sync_artwork),
                             tint = RadioPrimary,
                         )
                     }
@@ -97,7 +102,7 @@ fun StationEditorDialog(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_delete),
-                            contentDescription = "Delete station",
+                            contentDescription = stringResource(R.string.station_editor_delete_station),
                             tint = RadioDanger,
                         )
                     }
@@ -115,7 +120,7 @@ fun StationEditorDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 3,
-                    label = { Text("Title") },
+                    label = { Text(stringResource(R.string.station_editor_title_label)) },
                     colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -128,11 +133,11 @@ fun StationEditorDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 5,
-                    label = { Text("Stream URL") },
-                    placeholder = { Text("https://...") },
+                    label = { Text(stringResource(R.string.station_editor_stream_url_label)) },
+                    placeholder = { Text(stringResource(R.string.station_editor_url_placeholder)) },
                     isError = showUrlError && !hasValidStreamUrl,
                     supportingText = if (showUrlError && !hasValidStreamUrl) {
-                        { Text("A valid http or https URL is required") }
+                        { Text(stringResource(R.string.station_editor_url_error)) }
                     } else {
                         null
                     },
@@ -146,8 +151,8 @@ fun StationEditorDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 5,
-                    label = { Text("Tags") },
-                    placeholder = { Text("Comma separated") },
+                    label = { Text(stringResource(R.string.station_editor_tags_label)) },
+                    placeholder = { Text(stringResource(R.string.common_comma_separated)) },
                     colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -160,7 +165,7 @@ fun StationEditorDialog(
                         singleLine = false,
                         minLines = 1,
                         maxLines = 2,
-                        label = { Text("Date added") },
+                        label = { Text(stringResource(R.string.station_editor_date_added_label)) },
                         colors = omniDisabledTextFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -172,10 +177,10 @@ fun StationEditorDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                OmniSecondaryButton(text = "Cancel", onClick = onDismiss)
+                OmniSecondaryButton(text = stringResource(R.string.action_cancel), onClick = onDismiss)
                 Spacer(Modifier.weight(1f))
                 OmniPrimaryButton(
-                    text = "Save",
+                    text = stringResource(R.string.station_editor_save),
                     onClick = {
                         if (hasValidStreamUrl) {
                             onSave(trimmedTitle, trimmedStreamUrl, tags)
@@ -194,9 +199,9 @@ fun StationEditorDialog(
 
     if (confirmDelete) {
         OmniConfirmDialog(
-            title = "Delete station?",
-            text = "This station will be removed from your library",
-            confirmText = "Delete",
+            title = stringResource(R.string.station_editor_delete_title),
+            text = stringResource(R.string.station_editor_delete_text),
+            confirmText = stringResource(R.string.action_delete),
             destructive = true,
             onDismiss = { confirmDelete = false },
             onConfirm = {

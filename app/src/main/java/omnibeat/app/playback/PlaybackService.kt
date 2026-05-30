@@ -45,7 +45,6 @@ import kotlinx.coroutines.withContext
 import omnibeat.app.MainActivity
 import omnibeat.app.data.StationRepository
 import omnibeat.app.model.Station
-import omnibeat.app.network.NO_INTERNET_MESSAGE
 import omnibeat.app.network.NetworkStatus
 import omnibeat.app.stream.IcyMetadataParser
 import omnibeat.app.stream.StreamResolver
@@ -286,7 +285,7 @@ class PlaybackService : Service() {
                     resolving = false,
                     buffering = false,
                     isPlaying = false,
-                    errorText = NO_INTERNET_MESSAGE,
+                    errorText = getString(R.string.toast_no_internet),
                     streamInfo = PlaybackStreamInfo(),
                 )
             }

@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,6 +49,7 @@ fun AboutPage(modifier: Modifier = Modifier) {
     }
     val versionName = packageInfo.versionName.orEmpty()
     val versionCode = packageInfo.longVersionCode
+    val unknownText = stringResource(R.string.about_unknown)
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -59,43 +61,43 @@ fun AboutPage(modifier: Modifier = Modifier) {
             AboutHeader()
             AboutDivider()
 
-            AboutSectionHeader("App")
-            AboutInfoRow(label = "Version", value = versionName.ifBlank { "Unknown" })
-            AboutInfoRow(label = "Build", value = versionCode.toString())
+            AboutSectionHeader(stringResource(R.string.about_section_app))
+            AboutInfoRow(label = stringResource(R.string.about_version), value = versionName.ifBlank { unknownText })
+            AboutInfoRow(label = stringResource(R.string.about_build), value = versionCode.toString())
             AboutInfoRow(
-                label = "Formats",
-                value = "Direct streams, PLS, M3U, HLS, XSPF, ASX/WAX/WMX, DASH",
+                label = stringResource(R.string.about_formats),
+                value = stringResource(R.string.about_formats_value),
                 stacked = true,
             )
             AboutDivider()
 
-            AboutSectionHeader("Project")
+            AboutSectionHeader(stringResource(R.string.about_section_project))
             AboutLinkRow(
-                label = "Source Code",
-                value = "Open-source repository",
+                label = stringResource(R.string.about_source_code),
+                value = stringResource(R.string.about_source_code_value),
                 url = "https://github.com/Vikindor/omnibeat",
             )
             AboutLinkRow(
-                label = "License",
-                value = "GNU GPL 3.0",
+                label = stringResource(R.string.about_license),
+                value = stringResource(R.string.about_license_value),
                 url = "https://github.com/Vikindor/omnibeat/blob/master/LICENSE",
             )
             AboutLinkRow(
-                label = "Radio Browser",
-                value = "Online search data source",
+                label = stringResource(R.string.about_radio_browser),
+                value = stringResource(R.string.about_radio_browser_value),
                 url = "https://www.radio-browser.info",
             )
             AboutDivider()
 
-            AboutSectionHeader("Author")
+            AboutSectionHeader(stringResource(R.string.about_section_author))
             AboutLinkRow(
-                label = "Vikindor",
-                value = "vikindor.github.io",
+                label = stringResource(R.string.about_author_name),
+                value = stringResource(R.string.about_author_site),
                 url = "https://vikindor.github.io",
             )
 
             Text(
-                text = "© 2026",
+                text = stringResource(R.string.about_year),
                 color = RadioTextMuted,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
@@ -134,18 +136,18 @@ private fun AboutHeader(modifier: Modifier = Modifier) {
             modifier = Modifier.weight(1f),
         ) {
             Text(
-                text = "OmniBeat",
+                text = stringResource(R.string.app_name),
                 color = RadioText,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Streaming audio, without the fuss",
+                text = stringResource(R.string.about_tagline),
                 color = RadioText,
                 fontSize = 16.sp,
             )
             Text(
-                text = "Built to handle internet audio links, from direct streams to common playlist formats",
+                text = stringResource(R.string.about_description),
                 color = RadioTextMuted,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
@@ -198,7 +200,7 @@ private fun AboutLinkRow(
                 onLongClick = {
                     url?.let {
                         copyLinkToClipboard(context, label = label, url = it)
-                        Toast.makeText(context, "Link copied", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_link_copied), Toast.LENGTH_SHORT).show()
                     }
                 },
             )
@@ -224,7 +226,7 @@ private fun AboutLinkRow(
         if (enabled) {
             Icon(
                 painter = painterResource(R.drawable.ic_open_in_new),
-                contentDescription = "Open $label in browser",
+                contentDescription = stringResource(R.string.about_open_link, label),
                 tint = RadioTextMuted,
                 modifier = Modifier.size(20.dp),
             )

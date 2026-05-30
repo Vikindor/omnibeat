@@ -32,13 +32,13 @@ data class RadioBrowserFilterOption(
     val code: String = "",
 )
 
-enum class RadioBrowserSort(val label: String, val apiValue: String) {
-    Clicks("Clicks", RadioBrowserApi.Sort.CLICK_COUNT),
-    Votes("Votes", RadioBrowserApi.Sort.VOTES),
-    Name("Name", RadioBrowserApi.Sort.NAME),
-    Bitrate("Bitrate", RadioBrowserApi.Sort.BITRATE),
-    Country("Country", RadioBrowserApi.Sort.COUNTRY),
-    Random("Random", RadioBrowserApi.Sort.RANDOM),
+enum class RadioBrowserSort(val apiValue: String) {
+    Clicks(RadioBrowserApi.Sort.CLICK_COUNT),
+    Votes(RadioBrowserApi.Sort.VOTES),
+    Name(RadioBrowserApi.Sort.NAME),
+    Bitrate(RadioBrowserApi.Sort.BITRATE),
+    Country(RadioBrowserApi.Sort.COUNTRY),
+    Random(RadioBrowserApi.Sort.RANDOM),
 }
 
 data class RadioBrowserSearchParams(

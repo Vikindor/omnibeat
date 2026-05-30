@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -45,40 +46,37 @@ import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
 private data class OnboardingPage(
-    val title: String,
-    val text: AnnotatedString,
+    val titleRes: Int,
+    val textType: OnboardingTextType,
     val imageRes: Int? = null,
 )
 
+private enum class OnboardingTextType {
+    Build,
+    Organize,
+    Manage,
+    StreamActions,
+}
+
 private val OnboardingPages = listOf(
     OnboardingPage(
-        title = "Build your library",
-        text = onboardingText("Add stations manually or search online"),
+        titleRes = R.string.onboarding_build_title,
+        textType = OnboardingTextType.Build,
         imageRes = R.drawable.onboarding_build_library,
     ),
     OnboardingPage(
-        title = "Organize your library",
-        text = onboardingText("Sort stations and add to favorites for quick access"),
+        titleRes = R.string.onboarding_organize_title,
+        textType = OnboardingTextType.Organize,
         imageRes = R.drawable.onboarding_organize_library,
     ),
     OnboardingPage(
-        title = "Manage stations",
-        text = onboardingText {
-            appendBold("Tap")
-            append(" a station to start playback\n")
-            appendBold("Press and hold")
-            append(" to edit title, URL, tags, or delete the station")
-        },
+        titleRes = R.string.onboarding_manage_title,
+        textType = OnboardingTextType.Manage,
         imageRes = R.drawable.onboarding_manage_stations,
     ),
     OnboardingPage(
-        title = "Use stream actions",
-        text = onboardingText {
-            appendBold("Tap")
-            append(" stream info to copy the current track name\n")
-            appendBold("Press and hold")
-            append(" to open detailed stream information")
-        },
+        titleRes = R.string.onboarding_stream_actions_title,
+        textType = OnboardingTextType.StreamActions,
         imageRes = R.drawable.onboarding_stream_actions,
     ),
 )
@@ -113,7 +111,7 @@ fun OnboardingFlow(
                 onThemeModeChange = onThemeModeChange,
             )
             TextButton(onClick = onFinished) {
-                Text("Skip", color = RadioTextMuted)
+                Text(stringResource(R.string.action_skip), color = RadioTextMuted)
             }
         }
 
@@ -137,7 +135,7 @@ fun OnboardingFlow(
         ) {
             if (pageIndex > 0) {
                 OmniSecondaryButton(
-                    text = "Back",
+                    text = stringResource(R.string.action_back),
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(pageIndex - 1) }
                     },
@@ -147,7 +145,11 @@ fun OnboardingFlow(
                 Spacer(modifier = Modifier.weight(1f))
             }
             OmniPrimaryButton(
-                text = if (isLastPage) "Continue" else "Next",
+                text = if (isLastPage) {
+                    stringResource(R.string.action_continue)
+                } else {
+                    stringResource(R.string.action_next)
+                },
                 onClick = {
                     if (isLastPage) {
                         onFinished()
@@ -161,10 +163,6 @@ fun OnboardingFlow(
     }
 }
 
-private fun onboardingText(text: String): AnnotatedString {
-    return AnnotatedString(text)
-}
-
 private fun onboardingText(builder: AnnotatedString.Builder.() -> Unit): AnnotatedString {
     return buildAnnotatedString(builder)
 }
@@ -175,11 +173,20 @@ private fun AnnotatedString.Builder.appendBold(text: String) {
     pop()
 }
 
+private fun AnnotatedString.Builder.appendSpace() {
+    append(" ")
+}
+
+private fun AnnotatedString.Builder.appendLineBreak() {
+    append("\n")
+}
+
 @Composable
 private fun OnboardingPageContent(
     page: OnboardingPage,
     modifier: Modifier = Modifier,
 ) {
+    val text = onboardingText(page.textType)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxSize(),
@@ -189,7 +196,7 @@ private fun OnboardingPageContent(
         Spacer(modifier = Modifier.height(34.dp))
 
         Text(
-            text = page.title,
+            text = stringResource(page.titleRes),
             color = RadioText,
             fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
@@ -197,7 +204,7 @@ private fun OnboardingPageContent(
             lineHeight = 34.sp,
         )
         Text(
-            text = page.text,
+            text = text,
             color = RadioTextMuted,
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
@@ -205,6 +212,44 @@ private fun OnboardingPageContent(
             modifier = Modifier.padding(top = 12.dp),
         )
         Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun onboardingText(textType: OnboardingTextType): AnnotatedString {
+    return when (textType) {
+        OnboardingTextType.Build -> AnnotatedString(stringResource(R.string.onboarding_build_text))
+        OnboardingTextType.Organize -> AnnotatedString(stringResource(R.string.onboarding_organize_text))
+        OnboardingTextType.Manage -> {
+            val tap = stringResource(R.string.onboarding_tap)
+            val tapSuffix = stringResource(R.string.onboarding_manage_tap_suffix)
+            val pressAndHold = stringResource(R.string.onboarding_press_and_hold)
+            val holdSuffix = stringResource(R.string.onboarding_manage_hold_suffix)
+            onboardingText {
+                appendBold(tap)
+                appendSpace()
+                append(tapSuffix)
+                appendLineBreak()
+                appendBold(pressAndHold)
+                appendSpace()
+                append(holdSuffix)
+            }
+        }
+        OnboardingTextType.StreamActions -> {
+            val tap = stringResource(R.string.onboarding_tap)
+            val tapSuffix = stringResource(R.string.onboarding_stream_tap_suffix)
+            val pressAndHold = stringResource(R.string.onboarding_press_and_hold)
+            val holdSuffix = stringResource(R.string.onboarding_stream_hold_suffix)
+            onboardingText {
+                appendBold(tap)
+                appendSpace()
+                append(tapSuffix)
+                appendLineBreak()
+                appendBold(pressAndHold)
+                appendSpace()
+                append(holdSuffix)
+            }
+        }
     }
 }
 
@@ -226,31 +271,31 @@ fun NotificationPermissionIntro(
             modifier = Modifier.fillMaxWidth(),
         ) {
             TextButton(onClick = onSkip) {
-                Text("Skip", color = RadioTextMuted)
+                Text(stringResource(R.string.action_skip), color = RadioTextMuted)
             }
         }
 
         Spacer(modifier = Modifier.weight(0.8f))
         Text(
-            text = "Enable playback controls",
+            text = stringResource(R.string.onboarding_enable_playback_controls),
             color = RadioText,
             fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
             lineHeight = 34.sp,
         )
         Text(
-            text = "OmniBeat does not send push notifications. This permission is only used to show the media notification with playback controls.",
+            text = stringResource(R.string.onboarding_notifications_description),
             color = RadioTextMuted,
             fontSize = 16.sp,
             lineHeight = 23.sp,
             modifier = Modifier.padding(top = 12.dp),
         )
         Text(
-            text = "You can change this later in Settings.",
+            text = stringResource(R.string.onboarding_settings_note),
             color = RadioTextMuted,
-            fontSize = 15.sp,
-            lineHeight = 22.sp,
-            modifier = Modifier.padding(top = 10.dp),
+            fontSize = 16.sp,
+            lineHeight = 23.sp,
+            modifier = Modifier.padding(top = 12.dp),
         )
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -268,19 +313,19 @@ fun NotificationPermissionIntro(
                 modifier = Modifier.weight(1f),
             ) {
                 Text(
-                    text = "Notifications",
+                    text = stringResource(R.string.onboarding_notifications_title),
                     color = RadioText,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
-                    text = "Required for media controls",
+                    text = stringResource(R.string.onboarding_notifications_subtitle),
                     color = RadioTextMuted,
                     fontSize = 14.sp,
                 )
             }
             TextButton(onClick = onGrant) {
-                Text("Grant", color = RadioPrimary, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.action_grant), color = RadioPrimary, fontWeight = FontWeight.SemiBold)
             }
         }
         Spacer(modifier = Modifier.weight(1f))
@@ -332,7 +377,7 @@ private fun OnboardingScreenshot(
                     .background(RadioSurfaceHigh),
             ) {
             Text(
-                text = "Screenshot placeholder",
+                text = stringResource(R.string.onboarding_screenshot_placeholder),
                 color = RadioTextMuted,
                 fontSize = 14.sp,
             )

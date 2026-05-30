@@ -52,6 +52,7 @@ import omnibeat.app.data.StationExportCodec
 import omnibeat.app.data.StationImportMode
 import omnibeat.app.data.StationRepository
 import omnibeat.app.data.removeTrackingParameters
+import omnibeat.app.model.AppLanguage
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationEditorState
@@ -61,7 +62,6 @@ import omnibeat.app.model.StationSortState
 import omnibeat.app.model.ThemeMode
 import omnibeat.app.model.customSortedStations
 import omnibeat.app.model.sortedStations
-import omnibeat.app.network.NO_INTERNET_MESSAGE
 import omnibeat.app.network.NetworkStatus
 import omnibeat.app.playback.PlaybackService
 import omnibeat.app.radio.RadioBrowserStation
@@ -78,6 +78,7 @@ fun OmniBeatApp() {
     val context = LocalContext.current
     val repository = remember(context) { StationRepository(context.applicationContext) }
     val themeMode by repository.themeMode.collectAsState(initial = ThemeMode.System)
+    var appLanguage by remember(context) { mutableStateOf(context.applicationContext.currentAppLanguage()) }
     val useDarkTheme = shouldUseDarkTheme(themeMode)
 
     OmniBeatTheme(themeMode = themeMode) {
@@ -237,7 +238,11 @@ fun OmniBeatApp() {
                 }.onSuccess {
                     Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
                 }.onFailure { error ->
-                    Toast.makeText(context, "Export failed: ${error.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.toast_export_failed, error.message.orEmpty()),
+                        Toast.LENGTH_LONG,
+                    ).show()
                 }
             }
         }
@@ -245,13 +250,13 @@ fun OmniBeatApp() {
         val jsonExportLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.CreateDocument("application/json"),
         ) { uri ->
-            writePendingExport(uri, "JSON exported")
+            writePendingExport(uri, context.getString(R.string.toast_export_json))
         }
 
         val textExportLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.CreateDocument("text/plain"),
         ) { uri ->
-            writePendingExport(uri, "TXT exported")
+            writePendingExport(uri, context.getString(R.string.toast_export_txt))
         }
 
         val importLauncher = rememberLauncherForActivityResult(
@@ -278,7 +283,11 @@ fun OmniBeatApp() {
                 }.onSuccess { importData ->
                     pendingImportData = importData
                 }.onFailure { error ->
-                    Toast.makeText(context, "Import failed: ${error.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.toast_import_failed, error.message.orEmpty()),
+                        Toast.LENGTH_LONG,
+                    ).show()
                 }
             }
         }
@@ -286,7 +295,7 @@ fun OmniBeatApp() {
         LaunchedEffect(playbackState.errorText) {
             playbackState.errorText?.let { errorText ->
                 errorDialog = errorText
-                Toast.makeText(context, "Playback error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.toast_playback_error), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -395,7 +404,7 @@ fun OmniBeatApp() {
             }
             scope.launch {
                 repository.saveImportedLibrary(importResult)
-                Toast.makeText(context, "Stations imported", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.toast_stations_imported), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -411,7 +420,7 @@ fun OmniBeatApp() {
             }
             scope.launch {
                 repository.clearLibrary()
-                Toast.makeText(context, "Library deleted", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.toast_library_deleted), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -419,7 +428,7 @@ fun OmniBeatApp() {
             if (NetworkStatus.isOnline(context)) {
                 return true
             }
-            Toast.makeText(context, NO_INTERNET_MESSAGE, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.toast_no_internet), Toast.LENGTH_SHORT).show()
             return false
         }
 
@@ -439,9 +448,9 @@ fun OmniBeatApp() {
                     onlineSearchResults = emptyList()
                     onlineSearchLastQuery = null
                     onlineSearchHasMore = false
-                    val message = error.message ?: "Could not search stations"
+                    val message = error.message ?: context.getString(R.string.toast_search_default_error)
                     errorDialog = message
-                    Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_search_failed), Toast.LENGTH_SHORT).show()
                 }
                 onlineSearchLoading = false
             }
@@ -476,7 +485,7 @@ fun OmniBeatApp() {
             stations = nextStations
             scope.launch {
                 repository.saveStations(nextStations)
-                Toast.makeText(context, "Station added", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.toast_station_added), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -507,9 +516,17 @@ fun OmniBeatApp() {
                         stations = nextStations
                         repository.saveStations(nextStations)
                     }
-                    Toast.makeText(context, "Artwork synced: ${updates.size}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.toast_artwork_synced_count, updates.size),
+                        Toast.LENGTH_SHORT,
+                    ).show()
                 }.onFailure { error ->
-                    Toast.makeText(context, "Artwork sync failed: ${error.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.toast_artwork_sync_failed, error.message.orEmpty()),
+                        Toast.LENGTH_LONG,
+                    ).show()
                 }
                 syncingStationArtwork = false
             }
@@ -542,7 +559,7 @@ fun OmniBeatApp() {
         fun syncStationArtwork(index: Int) {
             val station = stations.getOrNull(index) ?: return
             if (!hasInternetOrToast()) return
-            Toast.makeText(context, "Searching for artwork...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.toast_artwork_searching), Toast.LENGTH_SHORT).show()
             scope.launch {
                 runCatching {
                     withContext(Dispatchers.IO) {
@@ -552,7 +569,7 @@ fun OmniBeatApp() {
                     }
                 }.onSuccess { imageUrl ->
                     if (imageUrl == null) {
-                        Toast.makeText(context, "No artwork found", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_artwork_not_found), Toast.LENGTH_SHORT).show()
                         return@onSuccess
                     }
                     val nextStations = stations.toMutableList().also { list ->
@@ -563,9 +580,13 @@ fun OmniBeatApp() {
                     }
                     stations = nextStations
                     repository.saveStations(nextStations)
-                    Toast.makeText(context, "Artwork synced", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_artwork_synced), Toast.LENGTH_SHORT).show()
                 }.onFailure { error ->
-                    Toast.makeText(context, "Artwork sync failed: ${error.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.toast_artwork_sync_failed, error.message.orEmpty()),
+                        Toast.LENGTH_LONG,
+                    ).show()
                 }
             }
         }
@@ -639,9 +660,9 @@ fun OmniBeatApp() {
                         onlineSearchHasMore = results.size == RadioBrowserSearchParams.DEFAULT_LIMIT
                     }
                 }.onFailure { error ->
-                    val message = error.message ?: "Could not load more stations"
+                    val message = error.message ?: context.getString(R.string.toast_load_more_default_error)
                     errorDialog = message
-                    Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_search_failed), Toast.LENGTH_SHORT).show()
                 }
                 onlineSearchLoadingMore = false
             }
@@ -945,6 +966,7 @@ fun OmniBeatApp() {
                         MainPage.Settings -> {
                             SettingsPage(
                                 themeMode = themeMode,
+                                appLanguage = appLanguage,
                                 showStationArtwork = showStationArtwork,
                                 addRadioBrowserTags = addRadioBrowserTags,
                                 removeTrackingParameters = removeTrackingParametersFromUrls,
@@ -999,6 +1021,10 @@ fun OmniBeatApp() {
                                 onDeleteLibrary = { deleteEntireLibrary() },
                                 onThemeModeChange = { nextThemeMode ->
                                     scope.launch { repository.saveThemeMode(nextThemeMode) }
+                                },
+                                onAppLanguageChange = { nextAppLanguage ->
+                                    appLanguage = nextAppLanguage
+                                    context.applicationContext.applyAppLanguage(nextAppLanguage)
                                 },
                                 modifier = Modifier.fillMaxSize(),
                             )

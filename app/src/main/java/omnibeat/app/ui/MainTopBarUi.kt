@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,7 +71,7 @@ fun MainTopBar(
         IconButton(onClick = onOpenDrawer) {
             Icon(
                 painter = painterResource(R.drawable.ic_menu),
-                contentDescription = "Open drawer",
+                contentDescription = stringResource(R.string.action_open_drawer),
                 tint = RadioText,
             )
         }
@@ -99,7 +100,7 @@ fun MainTopBar(
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                         ) {
                             Text(
-                                text = tab.title,
+                                text = stringResource(tab.titleRes()),
                                 color = if (selectedPage == tab) RadioText else RadioTextMuted,
                                 fontSize = 18.sp,
                                 fontWeight = if (selectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
@@ -120,7 +121,7 @@ fun MainTopBar(
                     }
                 } else {
                     Text(
-                        text = selectedPage.title,
+                        text = stringResource(selectedPage.titleRes()),
                         color = RadioText,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -135,13 +136,13 @@ fun MainTopBar(
             if (reordering) {
                 OmniTopBarIconButton(
                     painter = painterResource(R.drawable.ic_close),
-                    contentDescription = "Cancel reorder",
+                    contentDescription = stringResource(R.string.action_cancel_reorder),
                     onClick = onCancelReorder,
                     tint = Color(0xFFFF5C6C),
                 )
                 OmniTopBarIconButton(
                     painter = painterResource(R.drawable.ic_check),
-                    contentDescription = "Save reorder",
+                    contentDescription = stringResource(R.string.action_save_reorder),
                     onClick = onConfirmReorder,
                     tint = Color(0xFF66D17A),
                 )
@@ -173,7 +174,7 @@ private fun SortMenuButton(
     Box {
         OmniTopBarIconButton(
             painter = painterResource(R.drawable.ic_filter_list),
-            contentDescription = "Sort stations",
+            contentDescription = stringResource(R.string.action_sort_stations),
             onClick = { onExpandedChange(true) },
         )
         DropdownMenu(
@@ -188,7 +189,7 @@ private fun SortMenuButton(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = option.label,
+                            text = stringResource(option.labelRes()),
                             color = RadioText,
                         )
                     },
@@ -220,9 +221,9 @@ private fun SortMenuButton(
                                     },
                                 ),
                                 contentDescription = if (sortState.ascending) {
-                                    "Ascending"
+                                    stringResource(R.string.sort_ascending)
                                 } else {
-                                    "Descending"
+                                    stringResource(R.string.sort_descending)
                                 },
                                 tint = RadioText,
                             )
@@ -246,7 +247,7 @@ private fun AddMenuButton(
     Box {
         OmniTopBarIconButton(
             painter = painterResource(R.drawable.ic_add_circle_outline),
-            contentDescription = "Add station",
+            contentDescription = stringResource(R.string.action_add_station),
             onClick = { onExpandedChange(true) },
         )
         DropdownMenu(
@@ -259,7 +260,7 @@ private fun AddMenuButton(
             DropdownMenuItem(
                 text = {
                     Text(
-                        text = "Add manually",
+                        text = stringResource(R.string.action_add_manually),
                         color = RadioText,
                     )
                 },
@@ -278,7 +279,7 @@ private fun AddMenuButton(
             DropdownMenuItem(
                 text = {
                     Text(
-                        text = "Find online",
+                        text = stringResource(R.string.action_find_online),
                         color = RadioText,
                     )
                 },

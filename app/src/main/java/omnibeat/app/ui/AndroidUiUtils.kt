@@ -2,10 +2,13 @@ package omnibeat.app.ui
 
 import android.Manifest
 import android.app.Activity
+import android.app.LocaleManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.PackageManager
+import android.os.LocaleList
 import androidx.core.content.ContextCompat
+import omnibeat.app.model.AppLanguage
 
 tailrec fun Context.findActivity(): Activity? {
     return when (this) {
@@ -20,4 +23,25 @@ fun hasNotificationPermission(context: Context): Boolean {
         context,
         Manifest.permission.POST_NOTIFICATIONS,
     ) == PackageManager.PERMISSION_GRANTED
+}
+
+fun Context.applyAppLanguage(appLanguage: AppLanguage) {
+    val localeManager = getSystemService(LocaleManager::class.java)
+    val nextLocales = appLanguage.languageTag
+        ?.let(LocaleList::forLanguageTags)
+        ?: LocaleList.getEmptyLocaleList()
+    if (localeManager.applicationLocales != nextLocales) {
+        localeManager.applicationLocales = nextLocales
+    }
+}
+
+fun Context.currentAppLanguage(): AppLanguage {
+    val localeManager = getSystemService(LocaleManager::class.java)
+    val locales = localeManager.applicationLocales
+    if (locales.isEmpty) {
+        return AppLanguage.System
+    }
+    val languageTag = locales[0]?.toLanguageTag() ?: return AppLanguage.System
+    return AppLanguage.entries.firstOrNull { it.languageTag == languageTag || it.languageTag == locales[0]?.language }
+        ?: AppLanguage.System
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,38 +75,38 @@ fun DrawerContent(
                         .clip(CircleShape),
                 )
                 Text(
-                    text = "OmniBeat",
+                    text = stringResource(R.string.app_name),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(start = 16.dp, top = 14.dp),
                 )
                 Text(
-                    text = "Streaming audio player",
+                    text = stringResource(R.string.drawer_subtitle),
                     color = RadioTextMuted,
                     fontSize = 13.sp,
                     modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 12.dp),
                 )
                 DrawerDivider()
                 DrawerItem(
-                    text = "Stations",
+                    text = stringResource(R.string.page_stations),
                     iconRes = R.drawable.ic_list,
                     selected = selectedPage in MainPage.tabPages,
                     onClick = onStationsClick,
                 )
                 DrawerItem(
-                    text = "Export / Import",
+                    text = stringResource(R.string.page_export_import),
                     iconRes = R.drawable.ic_file_download,
                     selected = selectedPage == MainPage.ExportImport,
                     onClick = onExportImportClick,
                 )
                 DrawerItem(
-                    text = "Settings",
+                    text = stringResource(R.string.page_settings),
                     iconRes = R.drawable.ic_settings,
                     selected = selectedPage == MainPage.Settings,
                     onClick = onSettingsClick,
                 )
                 DrawerItem(
-                    text = "About",
+                    text = stringResource(R.string.page_about),
                     iconRes = R.drawable.ic_info,
                     selected = selectedPage == MainPage.About,
                     onClick = onAboutClick,
@@ -116,7 +117,7 @@ fun DrawerContent(
             }
             DrawerDivider()
             DrawerItem(
-                text = "Close app",
+                text = stringResource(R.string.drawer_close_app),
                 iconRes = R.drawable.ic_exit,
                 selected = false,
                 onClick = onExitClick,

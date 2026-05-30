@@ -17,10 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import omnibeat.app.R
 import omnibeat.app.data.StationImportMode
 
 @Composable
@@ -42,7 +44,7 @@ fun OmniConfirmDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                OmniSecondaryButton(text = "Cancel", onClick = onDismiss)
+                OmniSecondaryButton(text = stringResource(R.string.action_cancel), onClick = onDismiss)
                 if (destructive) {
                     OmniDangerButton(text = confirmText, onClick = onConfirm)
                 } else {
@@ -63,9 +65,10 @@ fun ErrorDialog(
     message: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    title: String = "Error",
+    title: String? = null,
 ) {
     val context = LocalContext.current
+    val dialogTitle = title ?: stringResource(R.string.dialog_error_title)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -79,7 +82,7 @@ fun ErrorDialog(
         textContentColor = RadioTextMuted,
         title = {
             Text(
-                text = title,
+                text = dialogTitle,
                 fontWeight = FontWeight.SemiBold,
             )
         },
@@ -95,14 +98,14 @@ fun ErrorDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                OmniSecondaryButton(text = "Close", onClick = onDismiss)
+                OmniSecondaryButton(text = stringResource(R.string.action_close), onClick = onDismiss)
                 Spacer(modifier = Modifier.weight(1f))
                 OmniPrimaryButton(
-                    text = "Copy",
+                    text = stringResource(R.string.action_copy),
                     onClick = {
                         val clipboard = context.getSystemService(ClipboardManager::class.java)
-                        clipboard.setPrimaryClip(ClipData.newPlainText(title, message))
-                        Toast.makeText(context, "Error copied", Toast.LENGTH_SHORT).show()
+                        clipboard.setPrimaryClip(ClipData.newPlainText(dialogTitle, message))
+                        Toast.makeText(context, context.getString(R.string.toast_error_copied), Toast.LENGTH_SHORT).show()
                     },
                 )
             }
@@ -128,14 +131,14 @@ fun ImportStationsDialog(
         containerColor = RadioSurface,
         title = {
             Text(
-                text = "Import stations",
+                text = stringResource(R.string.dialog_import_stations_title),
                 color = RadioText,
                 fontWeight = FontWeight.SemiBold,
             )
         },
         text = {
             Text(
-                text = "Import $stationCount stations?\nMerge keeps your current library and updates matching stream URLs.\nReplace clears the current library first.",
+                text = stringResource(R.string.dialog_import_stations_text, stationCount),
                 color = RadioTextMuted,
                 lineHeight = 20.sp,
             )
@@ -146,15 +149,15 @@ fun ImportStationsDialog(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 androidx.compose.material3.TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 androidx.compose.material3.TextButton(onClick = { onImport(StationImportMode.Replace) }) {
-                    Text("Replace")
+                    Text(stringResource(R.string.action_replace))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 androidx.compose.material3.TextButton(onClick = { onImport(StationImportMode.Merge) }) {
-                    Text("Merge")
+                    Text(stringResource(R.string.action_merge))
                 }
             }
         },

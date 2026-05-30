@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,13 +52,13 @@ fun ExportImportPage(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Library",
+                    text = stringResource(R.string.export_import_library_title),
                     color = RadioText,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "$stationCount stations, $favoriteCount favorites",
+                    text = stringResource(R.string.export_import_library_summary, stationCount, favoriteCount),
                     color = RadioTextMuted,
                     fontSize = 14.sp,
                     modifier = Modifier.padding(top = 6.dp),
@@ -66,7 +67,7 @@ fun ExportImportPage(
             IconButton(onClick = { confirmDeleteLibrary = true }) {
                 Icon(
                     painter = painterResource(R.drawable.ic_delete),
-                    contentDescription = "Delete entire library",
+                    contentDescription = stringResource(R.string.settings_delete_entire_library_content_description),
                     tint = RadioDanger,
                     modifier = Modifier.size(24.dp),
                 )
@@ -79,19 +80,19 @@ fun ExportImportPage(
         )
 
         FormatDescription(
-            title = "OmniBeat JSON",
-            text = "Complete OmniBeat backup with stations, favorites, sorting, and custom order.",
+            title = stringResource(R.string.export_import_json_title),
+            text = stringResource(R.string.export_import_json_description),
         )
         ExportImportActionRow(
             icon = R.drawable.ic_file_download,
-            title = "Export OmniBeat JSON",
-            subtitle = "Save an OmniBeat JSON backup",
+            title = stringResource(R.string.export_import_json_export_title),
+            subtitle = stringResource(R.string.export_import_json_export_subtitle),
             onClick = onExportStations,
         )
         ExportImportActionRow(
             icon = R.drawable.ic_file_upload,
-            title = "Import OmniBeat JSON",
-            subtitle = "Merge or replace from an OmniBeat JSON backup",
+            title = stringResource(R.string.export_import_json_import_title),
+            subtitle = stringResource(R.string.export_import_json_import_subtitle),
             onClick = onImportStations,
         )
 
@@ -101,28 +102,28 @@ fun ExportImportPage(
         )
 
         FormatDescription(
-            title = "Simple TXT",
-            text = "Plain-text format for manual editing. Write each station as separate lines: title, stream URL, and optional comma-separated tags on the third line. Separate stations with an empty line. Export TXT to get a sample file.",
+            title = stringResource(R.string.export_import_txt_title),
+            text = stringResource(R.string.export_import_txt_description),
         )
         ExportImportActionRow(
             icon = R.drawable.ic_file_download,
-            title = "Export simple TXT",
-            subtitle = "Save title, stream URL and tags",
+            title = stringResource(R.string.export_import_txt_export_title),
+            subtitle = stringResource(R.string.export_import_txt_export_subtitle),
             onClick = onExportSimpleText,
         )
         ExportImportActionRow(
             icon = R.drawable.ic_file_upload,
-            title = "Import simple TXT",
-            subtitle = "Read blocks with title, URL and optional tags",
+            title = stringResource(R.string.export_import_txt_import_title),
+            subtitle = stringResource(R.string.export_import_txt_import_subtitle),
             onClick = onImportStations,
         )
     }
 
     if (confirmDeleteLibrary) {
         OmniConfirmDialog(
-            title = "Delete entire library?",
-            text = "All stations, favorites, and custom order will be removed",
-            confirmText = "Delete",
+            title = stringResource(R.string.dialog_delete_entire_library_title),
+            text = stringResource(R.string.dialog_delete_entire_library_text),
+            confirmText = stringResource(R.string.action_delete),
             destructive = true,
             onDismiss = { confirmDeleteLibrary = false },
             onConfirm = {

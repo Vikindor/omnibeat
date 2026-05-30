@@ -14,11 +14,11 @@ data class Station(
     val dateAdded: String,
 )
 
-enum class StationSortMode(val label: String) {
-    DateAdded("Date added"),
-    StationTitle("Station title"),
-    FavoritesFirst("Favorites"),
-    Custom("Custom"),
+enum class StationSortMode {
+    DateAdded,
+    StationTitle,
+    FavoritesFirst,
+    Custom,
 }
 
 data class StationSortState(
@@ -26,13 +26,13 @@ data class StationSortState(
     val ascending: Boolean = false,
 )
 
-enum class MainPage(val title: String) {
-    Stations("Stations"),
-    Favorites("Favorites"),
-    ExportImport("Export / Import"),
-    FindOnline("Find online"),
-    Settings("Settings"),
-    About("About");
+enum class MainPage {
+    Stations,
+    Favorites,
+    ExportImport,
+    FindOnline,
+    Settings,
+    About;
 
     companion object {
         val tabPages = listOf(Stations, Favorites)

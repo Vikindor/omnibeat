@@ -4,8 +4,6 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 
-const val NO_INTERNET_MESSAGE = "No internet connection"
-
 object NetworkStatus {
     fun isOnline(context: Context): Boolean {
         val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
