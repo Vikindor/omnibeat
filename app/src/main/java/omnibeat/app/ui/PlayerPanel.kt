@@ -5,6 +5,12 @@ import omnibeat.app.R
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -85,6 +91,7 @@ fun PlayerPanel(
     onVolumeChange: (Float) -> Unit,
 ) {
     var showStreamInfo by remember { mutableStateOf(false) }
+    var panelCollapsed by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val displayTrackText = errorText ?: trackStatus?.let { trackStatusText(it) } ?: trackText
     val bitrateText = if (showBitrate) {
@@ -99,160 +106,195 @@ fun PlayerPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(RadioSurface)
             .navigationBarsPadding()
-            .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 16.dp),
+            .background(RadioSurface),
     ) {
-        Box(
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(DividerDefaults.Thickness)
-                .background(RadioOutline),
-        )
-        Column(
-            modifier = Modifier
-                .combinedClickable(
-                    enabled = station != null,
-                    onClick = {
-                        if (trackStatus == null && trackText.isNotBlank()) {
-                            copyTextToClipboard(
-                                context = context,
-                                label = context.getString(R.string.player_clipboard_track_label),
-                                text = trackText,
-                            )
-                            android.widget.Toast.makeText(
-                                context,
-                                context.getString(R.string.player_track_copied),
-                                android.widget.Toast.LENGTH_SHORT,
-                            ).show()
-                        }
-                    },
-                    onLongClick = { showStreamInfo = true },
-                )
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+                .height(34.dp)
+                .padding(start = 20.dp, top = 6.dp, end = 20.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = station?.title ?: stringResource(R.string.player_choose_station),
-                    color = RadioText,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                if (loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(start = 12.dp)
-                            .size(24.dp),
-                        strokeWidth = 2.dp,
-                        color = RadioPrimary,
-                    )
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(DividerDefaults.Thickness)
+                    .background(RadioOutline),
+            )
+            OmniIconButton(
+                painter = painterResource(
+                    if (panelCollapsed) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down,
+                ),
+                onClick = { panelCollapsed = !panelCollapsed },
+                tint = RadioTextMuted,
+                modifier = Modifier.size(36.dp),
+                iconModifier = Modifier.size(20.dp),
+            )
+        }
+        AnimatedVisibility(
+            visible = !panelCollapsed,
+            enter = slideInVertically(
+                animationSpec = tween(),
+                initialOffsetY = { it },
+            ) + expandVertically(animationSpec = tween(), expandFrom = Alignment.Bottom),
+            exit = slideOutVertically(
+                animationSpec = tween(),
+                targetOffsetY = { it },
+            ) + shrinkVertically(animationSpec = tween(), shrinkTowards = Alignment.Bottom),
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 2.dp),
+                    .background(RadioSurface)
+                    .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
             ) {
-                Text(
-                    text = displayTrackText,
-                    color = RadioTextMuted,
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = if (marqueeTrackTitle) TextOverflow.Clip else TextOverflow.Ellipsis,
-                    softWrap = false,
+                Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .then(
-                            if (marqueeTrackTitle) {
-                                Modifier.basicMarquee(
-                                    iterations = Int.MAX_VALUE,
-                                    repeatDelayMillis = 1_500,
-                                )
-                            } else {
-                                Modifier
+                        .combinedClickable(
+                            enabled = station != null,
+                            onClick = {
+                                if (trackStatus == null && trackText.isNotBlank()) {
+                                    copyTextToClipboard(
+                                        context = context,
+                                        label = context.getString(R.string.player_clipboard_track_label),
+                                        text = trackText,
+                                    )
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        context.getString(R.string.player_track_copied),
+                                        android.widget.Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
                             },
-                        ),
-                )
-                bitrateText?.let { bitrate ->
-                    Text(
-                        text = bitrate,
-                        color = RadioTextMuted,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        modifier = Modifier.padding(start = 12.dp),
+                            onLongClick = { showStreamInfo = true },
+                        )
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = station?.title ?: stringResource(R.string.player_choose_station),
+                            color = RadioText,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .padding(start = 12.dp)
+                                    .size(24.dp),
+                                strokeWidth = 2.dp,
+                                color = RadioPrimary,
+                            )
+                        }
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp),
+                    ) {
+                        Text(
+                            text = displayTrackText,
+                            color = RadioTextMuted,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = if (marqueeTrackTitle) TextOverflow.Clip else TextOverflow.Ellipsis,
+                            softWrap = false,
+                            modifier = Modifier
+                                .weight(1f)
+                                .then(
+                                    if (marqueeTrackTitle) {
+                                        Modifier.basicMarquee(
+                                            iterations = Int.MAX_VALUE,
+                                            repeatDelayMillis = 1_500,
+                                        )
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
+                        )
+                        bitrateText?.let { bitrate ->
+                            Text(
+                                text = bitrate,
+                                color = RadioTextMuted,
+                                fontSize = 13.sp,
+                                maxLines = 1,
+                                modifier = Modifier.padding(start = 12.dp),
+                            )
+                        }
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                ) {
+                    PlayerIconButton(
+                        enabled = canNavigateStations && !resolving,
+                        onClick = onRandomStation,
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .size(48.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_shuffle),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.align(Alignment.Center),
+                    ) {
+                        PlayerIconButton(
+                            enabled = canNavigateStations && !resolving,
+                            onClick = onPreviousStation,
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_skip_previous),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                        PlayerIconButton(
+                            enabled = canPlay,
+                            onClick = onPlayStop,
+                            modifier = Modifier.size(62.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(
+                                    if (hasActivePlaybackRequest) R.drawable.ic_stop else R.drawable.ic_play_arrow,
+                                ),
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp),
+                            )
+                        }
+                        PlayerIconButton(
+                            enabled = canNavigateStations && !resolving,
+                            onClick = onNextStation,
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_skip_next),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                    }
+                    VolumeButton(
+                        volume = appVolume,
+                        onVolumeChange = onVolumeChange,
+                        modifier = Modifier.align(Alignment.CenterEnd),
                     )
                 }
             }
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-        ) {
-            PlayerIconButton(
-                enabled = canNavigateStations && !resolving,
-                onClick = onRandomStation,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(48.dp),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_shuffle),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.align(Alignment.Center),
-            ) {
-                PlayerIconButton(
-                    enabled = canNavigateStations && !resolving,
-                    onClick = onPreviousStation,
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_skip_previous),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-                PlayerIconButton(
-                    enabled = canPlay,
-                    onClick = onPlayStop,
-                    modifier = Modifier.size(62.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            if (hasActivePlaybackRequest) R.drawable.ic_stop else R.drawable.ic_play_arrow,
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier.size(32.dp),
-                    )
-                }
-                PlayerIconButton(
-                    enabled = canNavigateStations && !resolving,
-                    onClick = onNextStation,
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_skip_next),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-            }
-            VolumeButton(
-                volume = appVolume,
-                onVolumeChange = onVolumeChange,
-                modifier = Modifier.align(Alignment.CenterEnd),
-            )
         }
     }
 

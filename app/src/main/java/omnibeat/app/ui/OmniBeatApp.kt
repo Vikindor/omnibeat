@@ -460,7 +460,7 @@ fun OmniBeatApp() {
                 .trim()
                 .let { if (removeTrackingParametersFromUrls) removeTrackingParameters(it) else it }
             return Station(
-                id = radioStation.stationUuid.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
+                id = radioStation.stationUuid.takeIf { it.isNotBlank() } ?: streamUrl,
                 title = radioStation.title.trim().take(STATION_TITLE_MAX_LENGTH)
                     .ifBlank { streamUrl.take(STATION_TITLE_MAX_LENGTH) },
                 streamUrl = streamUrl.take(STATION_STREAM_URL_MAX_LENGTH),
@@ -601,6 +601,9 @@ fun OmniBeatApp() {
         }
 
         fun navigationStations(): List<Station> {
+            if (selectedPage == MainPage.FindOnline) {
+                return onlineSearchResults.map(::stationFromOnlineResult)
+            }
             val navigationPage = activeNavigationPage()
             val pageStations = if (navigationPage == MainPage.Favorites) {
                 stations.filter { it.isFavorite }
@@ -632,6 +635,9 @@ fun OmniBeatApp() {
             val index = stations.indexOfFirst { it.id == station.id }
             if (index != -1) {
                 playStationAt(index)
+            } else {
+                if (!hasInternetOrToast()) return
+                PlaybackService.playPreview(context, station)
             }
         }
 
@@ -775,7 +781,7 @@ fun OmniBeatApp() {
             val pageStations = navigationStations()
             val hasActivePlaybackRequest = playbackState.isPlaying || playbackState.resolving || playbackState.buffering
             if (!hasActivePlaybackRequest && playbackState.selectedStation == null && pageStations.isNotEmpty()) {
-                val rememberedStation = if (rememberLastStation) {
+                val rememberedStation = if (rememberLastStation && selectedPage != MainPage.FindOnline) {
                     lastPlayedStationId
                         ?.let { stationId -> stations.firstOrNull { it.id == stationId } }
                 } else {
