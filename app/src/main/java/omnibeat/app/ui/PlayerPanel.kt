@@ -77,11 +77,8 @@ fun PlayerPanel(
     errorText: String?,
     streamInfo: PlaybackStreamInfo,
     loading: Boolean,
-    resolving: Boolean,
     isPlaying: Boolean,
-    canNavigateStations: Boolean,
     appVolume: Float,
-    canPlay: Boolean,
     showBitrate: Boolean,
     showUnavailableBitrate: Boolean,
     marqueeTrackTitle: Boolean,
@@ -246,7 +243,7 @@ fun PlayerPanel(
                         .padding(top = 12.dp),
                 ) {
                     PlayerIconButton(
-                        enabled = canNavigateStations && !resolving,
+                        enabled = true,
                         onClick = onRandomStation,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
@@ -264,7 +261,7 @@ fun PlayerPanel(
                         modifier = Modifier.align(Alignment.Center),
                     ) {
                         PlayerIconButton(
-                            enabled = canNavigateStations && !resolving,
+                            enabled = true,
                             onClick = onPreviousStation,
                             modifier = Modifier.size(48.dp),
                         ) {
@@ -275,7 +272,7 @@ fun PlayerPanel(
                             )
                         }
                         PlayerIconButton(
-                            enabled = canPlay,
+                            enabled = true,
                             onClick = onPlayStop,
                             modifier = Modifier.size(62.dp),
                         ) {
@@ -288,7 +285,7 @@ fun PlayerPanel(
                             )
                         }
                         PlayerIconButton(
-                            enabled = canNavigateStations && !resolving,
+                            enabled = true,
                             onClick = onNextStation,
                             modifier = Modifier.size(48.dp),
                         ) {

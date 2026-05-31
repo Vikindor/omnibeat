@@ -891,13 +891,14 @@ fun OmniBeatApp() {
                 },
                 bottomBar = {
                     if (selectedPage in visibleTabPages || selectedPage == MainPage.FindOnline) {
-                        val pageStations = navigationStations()
-                        PlaybackPanelHost(
-                            playbackState = playbackState,
-                            pageStations = pageStations,
-                            allStations = stations,
-                            rememberLastStation = rememberLastStation,
-                            lastPlayedStationId = lastPlayedStationId,
+                        PlayerPanel(
+                            station = playbackState.selectedStation,
+                            trackText = playbackState.trackText,
+                            trackStatus = playbackState.trackStatus,
+                            errorText = playbackState.errorText,
+                            streamInfo = playbackState.streamInfo,
+                            loading = playbackState.resolving || playbackState.buffering,
+                            isPlaying = playbackState.isPlaying,
                             appVolume = appVolume,
                             showBitrate = showBitrateInControlPanel,
                             showUnavailableBitrate = showUnavailableBitrate,
