@@ -51,18 +51,22 @@ import omnibeat.app.stream.StreamResolver
 import java.util.concurrent.CancellationException
 import kotlin.random.Random
 
-const val TRACK_TEXT_STOPPED = "No stream is playing"
-const val TRACK_TEXT_LOADING_STATIONS = "Loading stations..."
-const val TRACK_TEXT_RESOLVING = "Resolving stream..."
-const val TRACK_TEXT_WAITING_METADATA = "Waiting for metadata..."
-const val TRACK_TEXT_NO_METADATA = "No metadata"
 private const val PLAYER_USER_AGENT = "OmniBeat Android"
+
+enum class PlaybackTrackStatus {
+    Stopped,
+    LoadingStations,
+    Resolving,
+    WaitingMetadata,
+    NoMetadata,
+}
 
 data class PlaybackState(
     val selectedIndex: Int = -1,
     val selectedStation: Station? = null,
     val previewing: Boolean = false,
-    val trackText: String = TRACK_TEXT_STOPPED,
+    val trackText: String = "",
+    val trackStatus: PlaybackTrackStatus? = PlaybackTrackStatus.Stopped,
     val resolving: Boolean = false,
     val buffering: Boolean = false,
     val isPlaying: Boolean = false,
@@ -76,9 +80,6 @@ data class PlaybackStreamInfo(
     val sampleRateHz: Int? = null,
     val formatLabel: String? = null,
 ) {
-    val bitrateText: String?
-        get() = bitrateKbps?.let { "$it kbps" }
-
     val sampleRateText: String?
         get() = sampleRateHz?.takeIf { it > 0 }?.let { "${it / 1000} kHz" }
 }
@@ -99,6 +100,20 @@ class PlaybackService : Service() {
     private var lastPlayedStationId: String? = null
     private var rememberLastStation = true
     private var navigationQueueIds: List<String> = emptyList()
+
+    private fun trackText(status: PlaybackTrackStatus): String {
+        return when (status) {
+            PlaybackTrackStatus.Stopped -> getString(R.string.track_text_stopped)
+            PlaybackTrackStatus.LoadingStations -> getString(R.string.track_text_loading_stations)
+            PlaybackTrackStatus.Resolving -> getString(R.string.track_text_resolving)
+            PlaybackTrackStatus.WaitingMetadata -> getString(R.string.track_text_waiting_metadata)
+            PlaybackTrackStatus.NoMetadata -> getString(R.string.track_text_no_metadata)
+        }
+    }
+
+    private fun PlaybackState.withTrackStatus(status: PlaybackTrackStatus): PlaybackState {
+        return copy(trackText = trackText(status), trackStatus = status)
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -238,11 +253,10 @@ class PlaybackService : Service() {
                     selectedIndex = index,
                     selectedStation = null,
                     previewing = false,
-                    trackText = TRACK_TEXT_LOADING_STATIONS,
                     resolving = true,
                     buffering = false,
                     errorText = null,
-                )
+                ).withTrackStatus(PlaybackTrackStatus.LoadingStations)
             }
             startForeground(NOTIFICATION_ID, buildNotification())
             scope.launch {
@@ -281,13 +295,12 @@ class PlaybackService : Service() {
                     selectedIndex = index,
                     selectedStation = station,
                     previewing = previewing,
-                    trackText = TRACK_TEXT_STOPPED,
                     resolving = false,
                     buffering = false,
                     isPlaying = false,
                     errorText = getString(R.string.toast_no_internet),
                     streamInfo = PlaybackStreamInfo(),
-                )
+                ).withTrackStatus(PlaybackTrackStatus.Stopped)
             }
             updateNotification(immediate = true)
             return
@@ -297,12 +310,11 @@ class PlaybackService : Service() {
                 selectedIndex = index,
                 selectedStation = station,
                 previewing = previewing,
-                trackText = TRACK_TEXT_RESOLVING,
                 resolving = true,
                 buffering = false,
                 errorText = null,
                 streamInfo = PlaybackStreamInfo(),
-            )
+            ).withTrackStatus(PlaybackTrackStatus.Resolving)
         }
         startForeground(NOTIFICATION_ID, buildNotification())
 
@@ -315,12 +327,11 @@ class PlaybackService : Service() {
                 currentStreamIsHls = resolvedStream.playableUrl.lowercase().contains(".m3u8")
                 _state.update {
                     it.copy(
-                        trackText = TRACK_TEXT_WAITING_METADATA,
                         resolving = false,
                         streamInfo = PlaybackStreamInfo(
                             bitrateKbps = resolvedStream.bitrateKbps,
                         ),
-                    )
+                    ).withTrackStatus(PlaybackTrackStatus.WaitingMetadata)
                 }
                 player.setMediaItem(
                     MediaItem.Builder()
@@ -404,13 +415,12 @@ class PlaybackService : Service() {
                 selectedIndex = -1,
                 selectedStation = null,
                 previewing = false,
-                trackText = TRACK_TEXT_STOPPED,
                 resolving = false,
                 buffering = false,
                 isPlaying = false,
                 errorText = null,
                 streamInfo = PlaybackStreamInfo(),
-            )
+            ).withTrackStatus(PlaybackTrackStatus.Stopped)
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
@@ -467,7 +477,7 @@ class PlaybackService : Service() {
             }
             val nextTrackText = if (artist.isNotBlank()) "$artist - $title" else title
             _state.update {
-                it.copy(trackText = nextTrackText)
+                it.copy(trackText = nextTrackText, trackStatus = null)
             }
             refreshCurrentMediaMetadata()
             updateNotification()
@@ -477,7 +487,7 @@ class PlaybackService : Service() {
             repeat(metadata.length()) { index ->
                 val streamTitle = IcyMetadataParser.readStreamTitle(metadata[index].toString())
                 if (!streamTitle.isNullOrBlank()) {
-                    _state.update { it.copy(trackText = streamTitle) }
+                    _state.update { it.copy(trackText = streamTitle, trackStatus = null) }
                     refreshCurrentMediaMetadata()
                     updateNotification()
                     return
@@ -547,9 +557,9 @@ class PlaybackService : Service() {
             player.isPlaying &&
             !current.resolving &&
             !current.buffering &&
-            current.trackText == TRACK_TEXT_WAITING_METADATA
+            current.trackStatus == PlaybackTrackStatus.WaitingMetadata
         ) {
-            _state.update { it.copy(trackText = TRACK_TEXT_NO_METADATA) }
+            _state.update { it.withTrackStatus(PlaybackTrackStatus.NoMetadata) }
             refreshCurrentMediaMetadata()
         }
     }
@@ -598,12 +608,13 @@ class PlaybackService : Service() {
     private fun refreshCurrentMediaMetadata() {
         val current = state.value
         val station = current.selectedStation ?: return
-        val metadataKey = station.title to current.trackText
+        val publicTrackText = current.trackText.takeIf { current.trackStatus == null }
+        val metadataKey = station.title to publicTrackText
         if (lastSessionMetadata == metadataKey) {
             return
         }
         lastSessionMetadata = metadataKey
-        player.playlistMetadata = buildSessionMetadata(station, current.trackText)
+        player.playlistMetadata = buildSessionMetadata(station, publicTrackText)
     }
 
     private fun buildSessionMetadata(station: Station, trackText: String?): MediaMetadata {
@@ -627,7 +638,7 @@ class PlaybackService : Service() {
     }
 
     private fun String.isPublicTrackText(): Boolean {
-        return isNotBlank() && this !in SERVICE_TRACK_TEXTS
+        return isNotBlank()
     }
 
     private fun buildNotification(): Notification {
@@ -751,7 +762,10 @@ class PlaybackService : Service() {
         override fun getMediaMetadata(): MediaMetadata {
             val current = state.value
             val station = current.selectedStation ?: return super.mediaMetadata
-            return buildSessionMetadata(station, current.trackText)
+            return buildSessionMetadata(
+                station = station,
+                trackText = current.trackText.takeIf { current.trackStatus == null },
+            )
         }
 
         override fun isCurrentMediaItemLive(): Boolean = true
@@ -770,14 +784,6 @@ class PlaybackService : Service() {
         private const val EXTRA_PREVIEW_STREAM_URL = "preview_stream_url"
         private const val EXTRA_PREVIEW_TAGS = "preview_tags"
         private const val EXTRA_PREVIEW_IMAGE_URL = "preview_image_url"
-        private val SERVICE_TRACK_TEXTS = setOf(
-            TRACK_TEXT_STOPPED,
-            TRACK_TEXT_LOADING_STATIONS,
-            TRACK_TEXT_RESOLVING,
-            TRACK_TEXT_WAITING_METADATA,
-            TRACK_TEXT_NO_METADATA,
-        )
-
         private const val ACTION_PLAY_STATION = "omnibeat.app.action.PLAY_STATION"
         private const val ACTION_PLAY_PREVIEW = "omnibeat.app.action.PLAY_PREVIEW"
         private const val ACTION_PLAY_STOP = "omnibeat.app.action.PLAY_STOP"

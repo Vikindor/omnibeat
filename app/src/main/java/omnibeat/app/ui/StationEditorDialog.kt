@@ -85,7 +85,7 @@ fun StationEditorDialog(
                     IconButton(onClick = onSyncArtwork) {
                         Icon(
                             painter = painterResource(R.drawable.ic_image_search),
-                            contentDescription = stringResource(R.string.station_editor_sync_artwork),
+                            contentDescription = null,
                             tint = RadioPrimary,
                         )
                     }
@@ -102,7 +102,7 @@ fun StationEditorDialog(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_delete),
-                            contentDescription = stringResource(R.string.station_editor_delete_station),
+                            contentDescription = null,
                             tint = RadioDanger,
                         )
                     }
@@ -134,7 +134,7 @@ fun StationEditorDialog(
                     minLines = 1,
                     maxLines = 5,
                     label = { Text(stringResource(R.string.station_editor_stream_url_label)) },
-                    placeholder = { Text(stringResource(R.string.station_editor_url_placeholder)) },
+                    placeholder = { Text("https://...") },
                     isError = showUrlError && !hasValidStreamUrl,
                     supportingText = if (showUrlError && !hasValidStreamUrl) {
                         { Text(stringResource(R.string.station_editor_url_error)) }

@@ -207,9 +207,11 @@ private fun OnboardingPageContent(
             text = text,
             color = RadioTextMuted,
             fontSize = 16.sp,
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
             lineHeight = 23.sp,
-            modifier = Modifier.padding(top = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
         )
         Spacer(modifier = Modifier.weight(1f))
     }
@@ -230,8 +232,8 @@ private fun onboardingText(textType: OnboardingTextType): AnnotatedString {
                 appendSpace()
                 append(tapSuffix)
                 appendLineBreak()
+                appendLineBreak()
                 appendBold(pressAndHold)
-                appendSpace()
                 append(holdSuffix)
             }
         }
@@ -245,8 +247,8 @@ private fun onboardingText(textType: OnboardingTextType): AnnotatedString {
                 appendSpace()
                 append(tapSuffix)
                 appendLineBreak()
+                appendLineBreak()
                 appendBold(pressAndHold)
-                appendSpace()
                 append(holdSuffix)
             }
         }
@@ -277,7 +279,7 @@ fun NotificationPermissionIntro(
 
         Spacer(modifier = Modifier.weight(0.8f))
         Text(
-            text = stringResource(R.string.onboarding_enable_playback_controls),
+            text = stringResource(R.string.onboarding_playback_controls),
             color = RadioText,
             fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
@@ -317,11 +319,6 @@ fun NotificationPermissionIntro(
                     color = RadioText,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text = stringResource(R.string.onboarding_notifications_subtitle),
-                    color = RadioTextMuted,
-                    fontSize = 14.sp,
                 )
             }
             TextButton(onClick = onGrant) {

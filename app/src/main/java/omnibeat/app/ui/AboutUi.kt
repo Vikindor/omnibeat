@@ -49,7 +49,6 @@ fun AboutPage(modifier: Modifier = Modifier) {
     }
     val versionName = packageInfo.versionName.orEmpty()
     val versionCode = packageInfo.longVersionCode
-    val unknownText = stringResource(R.string.about_unknown)
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -62,11 +61,11 @@ fun AboutPage(modifier: Modifier = Modifier) {
             AboutDivider()
 
             AboutSectionHeader(stringResource(R.string.about_section_app))
-            AboutInfoRow(label = stringResource(R.string.about_version), value = versionName.ifBlank { unknownText })
+            AboutInfoRow(label = stringResource(R.string.about_version), value = versionName)
             AboutInfoRow(label = stringResource(R.string.about_build), value = versionCode.toString())
             AboutInfoRow(
                 label = stringResource(R.string.about_formats),
-                value = stringResource(R.string.about_formats_value),
+                value = "Direct stream, PLS, M3U, HLS, XSPF, ASX/WAX/WMX, DASH",
                 stacked = true,
             )
             AboutDivider()
@@ -79,11 +78,11 @@ fun AboutPage(modifier: Modifier = Modifier) {
             )
             AboutLinkRow(
                 label = stringResource(R.string.about_license),
-                value = stringResource(R.string.about_license_value),
+                value = "GNU GPL 3.0",
                 url = "https://github.com/Vikindor/omnibeat/blob/master/LICENSE",
             )
             AboutLinkRow(
-                label = stringResource(R.string.about_radio_browser),
+                label = "Radio Browser",
                 value = stringResource(R.string.about_radio_browser_value),
                 url = "https://www.radio-browser.info",
             )
@@ -91,13 +90,13 @@ fun AboutPage(modifier: Modifier = Modifier) {
 
             AboutSectionHeader(stringResource(R.string.about_section_author))
             AboutLinkRow(
-                label = stringResource(R.string.about_author_name),
-                value = stringResource(R.string.about_author_site),
+                label = "Vikindor",
+                value = "vikindor.github.io",
                 url = "https://vikindor.github.io",
             )
 
             Text(
-                text = stringResource(R.string.about_year),
+                text = "© 2026",
                 color = RadioTextMuted,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
@@ -226,7 +225,7 @@ private fun AboutLinkRow(
         if (enabled) {
             Icon(
                 painter = painterResource(R.drawable.ic_open_in_new),
-                contentDescription = stringResource(R.string.about_open_link, label),
+                contentDescription = null,
                 tint = RadioTextMuted,
                 modifier = Modifier.size(20.dp),
             )

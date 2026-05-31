@@ -1,13 +1,8 @@
 <resources>
-    <string name="app_name">OmniBeat</string>
+    <string name="app_name" translatable="false">OmniBeat</string>
 
-    <string name="action_add_station">Add station</string>
     <string name="action_add_manually">Add manually</string>
-    <string name="action_find_online">Find online</string>
-    <string name="action_open_drawer">Open drawer</string>
-    <string name="action_sort_stations">Sort stations</string>
-    <string name="action_cancel_reorder">Cancel reorder</string>
-    <string name="action_save_reorder">Save reorder</string>
+    <string name="action_search_online">Search online</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
     <string name="action_copy">Copy</string>
@@ -26,8 +21,6 @@
     <string name="sort_station_title">Station title</string>
     <string name="sort_favorites">Favorites</string>
     <string name="sort_custom">Custom</string>
-    <string name="sort_ascending">Ascending</string>
-    <string name="sort_descending">Descending</string>
 
     <string name="page_stations">Stations</string>
     <string name="page_favorites">Favorites</string>
@@ -38,11 +31,7 @@
     <string name="drawer_subtitle">Streaming audio player</string>
     <string name="drawer_close_app">Close app</string>
 
-    <string name="theme_system">System</string>
-    <string name="theme_dark">Dark</string>
-    <string name="theme_light">Light</string>
     <string name="language_system">System</string>
-    <string name="language_english">English</string>
 
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_theme_title">Theme</string>
@@ -51,7 +40,7 @@
     <string name="settings_theme_light">Use light theme</string>
     <string name="settings_language_title">Language</string>
     <string name="settings_language_system">Follow system language</string>
-    <string name="settings_language_english">Use English</string>
+    <string name="settings_language_selected">Use selected language</string>
     <string name="settings_section_playback">Playback</string>
     <string name="settings_notifications_title">Notifications</string>
     <string name="settings_notifications_granted">Media controls can appear in notifications</string>
@@ -64,7 +53,7 @@
     <string name="settings_station_covers_on">Station lists will show covers</string>
     <string name="settings_station_covers_off">Station lists will hide covers</string>
     <string name="settings_sync_artwork_title">Fetch artwork for stations</string>
-    <string name="settings_sync_artwork_subtitle">Look up covers for all stations online</string>
+    <string name="settings_sync_artwork_subtitle">Try to look up covers for all stations online</string>
     <string name="settings_section_library">Library</string>
     <string name="settings_show_empty_favorites_title">Show empty Favorites tab</string>
     <string name="settings_show_empty_favorites_on">Favorites tab will stay visible when empty</string>
@@ -84,23 +73,21 @@
     <string name="settings_marquee_track_title_off">Long track titles will be truncated</string>
     <string name="settings_section_online_search">Online search</string>
     <string name="settings_save_radio_browser_tags_title">Save Radio Browser tags</string>
-    <string name="settings_save_radio_browser_tags_on">Online search tags will be saved with new stations</string>
-    <string name="settings_save_radio_browser_tags_off">Online search tags will be ignored</string>
+    <string name="settings_save_radio_browser_tags_on">Stations from online search will be saved with tags</string>
+    <string name="settings_save_radio_browser_tags_off">Stations from online search will be saved without tags</string>
     <string name="settings_section_urls">URLs</string>
     <string name="settings_remove_tracking_title">Remove tracking from URLs</string>
     <string name="settings_remove_tracking_on">Tracking parameters will be cleaned for new stations</string>
     <string name="settings_remove_tracking_off">New station URLs will be saved unchanged</string>
     <string name="settings_section_danger_zone">Danger zone</string>
     <string name="settings_delete_all_stations_title">Delete all stations</string>
-    <string name="settings_delete_all_stations_subtitle">Remove all stations, favorites, and custom order</string>
-    <string name="settings_delete_entire_library_content_description">Delete entire library</string>
 
-    <string name="dialog_delete_entire_library_title">Delete entire library?</string>
+    <string name="dialog_delete_entire_library_title">Clear library?</string>
     <string name="dialog_delete_entire_library_text">All stations, favorites, and custom order will be removed</string>
     <string name="dialog_error_title">Error</string>
     <string name="toast_error_copied">Error copied</string>
     <string name="dialog_import_stations_title">Import stations</string>
-    <string name="dialog_import_stations_text">Import %1$d stations?\nMerge keeps your current library and updates matching stream URLs.\nReplace clears the current library first.</string>
+    <string name="dialog_import_stations_text">Import %1$d stations?\nMerge keeps your current library and updates stations with matching stream URLs.\nReplace clears the current library first.</string>
 
     <string name="toast_export_json">JSON exported</string>
     <string name="toast_export_txt">TXT exported</string>
@@ -119,32 +106,33 @@
     <string name="toast_artwork_sync_failed">Artwork sync failed: %1$s</string>
     <string name="toast_artwork_not_found">No artwork found</string>
     <string name="toast_artwork_synced">Artwork synced</string>
+    <string name="track_text_stopped">No stream is playing</string>
+    <string name="track_text_loading_stations">Loading stations...</string>
+    <string name="track_text_resolving">Resolving stream...</string>
+    <string name="track_text_waiting_metadata">Waiting for metadata...</string>
+    <string name="track_text_no_metadata">No metadata</string>
 
     <string name="export_import_library_title">Library</string>
-    <string name="export_import_library_summary">%1$d stations, %2$d favorites</string>
+    <string name="export_import_library_summary">stations: %1$d, favorites: %2$d</string>
     <string name="export_import_json_title">OmniBeat JSON</string>
-    <string name="export_import_json_description">Complete OmniBeat backup with stations, favorites, sorting, and custom order.</string>
+    <string name="export_import_json_description">Complete OmniBeat backup with stations, favorites, and sorting order.</string>
     <string name="export_import_json_export_title">Export OmniBeat JSON</string>
-    <string name="export_import_json_export_subtitle">Save an OmniBeat JSON backup</string>
+    <string name="export_import_json_export_subtitle">Save as a native JSON format with all fields</string>
     <string name="export_import_json_import_title">Import OmniBeat JSON</string>
-    <string name="export_import_json_import_subtitle">Merge or replace from an OmniBeat JSON backup</string>
+    <string name="export_import_json_import_subtitle">Merge or replace from a backup</string>
     <string name="export_import_txt_title">Simple TXT</string>
-    <string name="export_import_txt_description">Plain-text format for manual editing. Write each station as separate lines: title, stream URL, and optional comma-separated tags on the third line. Separate stations with an empty line. Export TXT to get a sample file.</string>
-    <string name="export_import_txt_export_title">Export simple TXT</string>
+    <string name="export_import_txt_description">Plain-text format for manual editing. Stations are written as separate lines: title, stream URL, and optional comma-separated tags. Stations are separated by an empty line. Export TXT to get an example.</string>
+    <string name="export_import_txt_export_title">Export TXT</string>
     <string name="export_import_txt_export_subtitle">Save title, stream URL and tags</string>
-    <string name="export_import_txt_import_title">Import simple TXT</string>
-    <string name="export_import_txt_import_subtitle">Read blocks with title, URL and optional tags</string>
+    <string name="export_import_txt_import_title">Import TXT</string>
+    <string name="export_import_txt_import_subtitle">Merge or replace from a backup</string>
 
-    <string name="empty_stations_prefix">No stations here yet. Tap</string>
-    <string name="empty_stations_suffix">to add some</string>
+    <string name="empty_stations_prefix">No stations here yet.</string>
+    <string name="empty_stations_suffix_start">Tap</string>
+    <string name="empty_stations_suffix_end">to add some</string>
     <string name="empty_favorites">No favorites yet</string>
-    <string name="station_drag_content_description">Drag station</string>
-    <string name="station_remove_from_favorites">Remove from favorites</string>
-    <string name="station_add_to_favorites">Add to favorites</string>
 
     <string name="online_search_options">Search options</string>
-    <string name="online_search_hide_options">Hide options</string>
-    <string name="online_search_show_options">Show options</string>
     <string name="online_search_by_title">Search by title</string>
     <string name="online_search_station_title_placeholder">Station title</string>
     <string name="online_search_by_tags">Search by tags</string>
@@ -158,9 +146,7 @@
     <string name="online_search_sort_in">Sort in</string>
     <string name="online_search_bitrate_min">Bitrate min</string>
     <string name="online_search_bitrate_max">Bitrate max</string>
-    <string name="online_search_max_placeholder">max</string>
     <string name="online_search_include_broken">Include stations marked as broken</string>
-    <string name="online_search_station_added">Station added</string>
     <string name="online_search_no_stations_found">No stations found</string>
     <string name="online_search_empty_title">Search Radio-Browser.info</string>
     <string name="online_search_try_different">Try a different search or filters</string>
@@ -169,18 +155,15 @@
     <string name="online_search_sort_ascending_order">Ascending order</string>
     <string name="radio_browser_sort_clicks">Clicks</string>
     <string name="radio_browser_sort_votes">Votes</string>
-    <string name="radio_browser_sort_name">Name</string>
+    <string name="radio_browser_sort_names">Names</string>
     <string name="radio_browser_sort_bitrate">Bitrate</string>
-    <string name="radio_browser_sort_country">Country</string>
+    <string name="radio_browser_sort_countries">Countries</string>
     <string name="radio_browser_sort_random">Random</string>
 
     <string name="station_editor_add_title">Add station</string>
     <string name="station_editor_edit_title">Edit station</string>
-    <string name="station_editor_sync_artwork">Sync station artwork</string>
-    <string name="station_editor_delete_station">Delete station</string>
     <string name="station_editor_title_label">Title</string>
     <string name="station_editor_stream_url_label">Stream URL</string>
-    <string name="station_editor_url_placeholder">https://...</string>
     <string name="station_editor_url_error">A valid http or https URL is required</string>
     <string name="station_editor_tags_label">Tags</string>
     <string name="station_editor_date_added_label">Date added</string>
@@ -188,15 +171,11 @@
     <string name="station_editor_delete_title">Delete station?</string>
     <string name="station_editor_delete_text">This station will be removed from your library</string>
 
+    <string name="player_bitrate_format">%1$d kbps</string>
     <string name="player_bitrate_unavailable">N/A kbps</string>
     <string name="player_clipboard_track_label">Track</string>
     <string name="player_track_copied">Track name copied</string>
     <string name="player_choose_station">Choose a station</string>
-    <string name="player_random_station">Random station</string>
-    <string name="player_previous_station">Previous station</string>
-    <string name="player_stop">Stop</string>
-    <string name="player_play">Play</string>
-    <string name="player_next_station">Next station</string>
     <string name="player_clipboard_stream_info_label">Stream info</string>
     <string name="player_stream_info_copied">Stream info copied</string>
     <string name="player_not_available">Not available</string>
@@ -206,8 +185,6 @@
     <string name="player_stream_info_bitrate">Bitrate</string>
     <string name="player_stream_info_sample_rate">Sample rate</string>
     <string name="player_stream_info_format">Format</string>
-    <string name="player_stream_info_copy_info">Copy info</string>
-    <string name="player_volume">Volume</string>
     <string name="player_stream_info_copy_station">Station: %1$s</string>
     <string name="player_stream_info_copy_track">Track / Metadata: %1$s</string>
     <string name="player_stream_info_copy_bitrate">Bitrate: %1$s</string>
@@ -215,43 +192,34 @@
     <string name="player_stream_info_copy_format">Format: %1$s</string>
 
     <string name="onboarding_build_title">Build your library</string>
-    <string name="onboarding_build_text">Add stations manually or search online</string>
+    <string name="onboarding_build_text">Add stations manually or search online.</string>
     <string name="onboarding_organize_title">Organize your library</string>
-    <string name="onboarding_organize_text">Sort stations and add to favorites for quick access</string>
+    <string name="onboarding_organize_text">Sort stations and add to favorites for quick access.</string>
     <string name="onboarding_manage_title">Manage stations</string>
     <string name="onboarding_tap">Tap</string>
-    <string name="onboarding_manage_tap_suffix">a station to start playback</string>
+    <string name="onboarding_manage_tap_suffix">a station to start playback.</string>
     <string name="onboarding_press_and_hold">Press and hold</string>
-    <string name="onboarding_manage_hold_suffix">to edit title, URL, tags, or delete the station</string>
+    <string name="onboarding_manage_hold_suffix">to edit title, URL, tags, or delete the station.</string>
     <string name="onboarding_stream_actions_title">Use stream actions</string>
-    <string name="onboarding_stream_tap_suffix">stream info to copy the current track name</string>
+    <string name="onboarding_stream_tap_suffix">stream info to copy the current track name.</string>
     <string name="onboarding_stream_hold_suffix">to open detailed stream information</string>
-    <string name="onboarding_enable_playback_controls">Enable playback controls</string>
+    <string name="onboarding_playback_controls">Playback controls</string>
     <string name="onboarding_notifications_description">OmniBeat does not send push notifications. This permission is only used to show the media notification with playback controls.</string>
     <string name="onboarding_settings_note">You can change this later in Settings.</string>
     <string name="onboarding_notifications_title">Notifications</string>
-    <string name="onboarding_notifications_subtitle">Required for media controls</string>
     <string name="onboarding_screenshot_placeholder">Screenshot placeholder</string>
 
+    <string name="about_tagline">Streaming audio, without the fuss</string>
+    <string name="about_description">Built to handle popular audio stream and playlist formats</string>
     <string name="about_section_app">App</string>
     <string name="about_version">Version</string>
     <string name="about_build">Build</string>
-    <string name="about_unknown">Unknown</string>
     <string name="about_formats">Formats</string>
-    <string name="about_formats_value">Direct streams, PLS, M3U, HLS, XSPF, ASX/WAX/WMX, DASH</string>
     <string name="about_section_project">Project</string>
     <string name="about_source_code">Source Code</string>
     <string name="about_source_code_value">Open-source repository</string>
     <string name="about_license">License</string>
-    <string name="about_license_value">GNU GPL 3.0</string>
-    <string name="about_radio_browser">Radio Browser</string>
     <string name="about_radio_browser_value">Online search data source</string>
     <string name="about_section_author">Author</string>
-    <string name="about_author_name">Vikindor</string>
-    <string name="about_author_site">vikindor.github.io</string>
-    <string name="about_year">© 2026</string>
-    <string name="about_tagline">Streaming audio, without the fuss</string>
-    <string name="about_description">Built to handle internet audio links, from direct streams to common playlist formats</string>
     <string name="toast_link_copied">Link copied</string>
-    <string name="about_open_link">Open %1$s in browser</string>
 </resources>

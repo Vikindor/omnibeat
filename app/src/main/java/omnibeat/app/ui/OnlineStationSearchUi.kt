@@ -26,6 +26,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -90,9 +93,9 @@ private fun RadioBrowserSort.labelRes(): Int {
     return when (this) {
         RadioBrowserSort.Clicks -> R.string.radio_browser_sort_clicks
         RadioBrowserSort.Votes -> R.string.radio_browser_sort_votes
-        RadioBrowserSort.Name -> R.string.radio_browser_sort_name
+        RadioBrowserSort.Name -> R.string.radio_browser_sort_names
         RadioBrowserSort.Bitrate -> R.string.radio_browser_sort_bitrate
-        RadioBrowserSort.Country -> R.string.radio_browser_sort_country
+        RadioBrowserSort.Country -> R.string.radio_browser_sort_countries
         RadioBrowserSort.Random -> R.string.radio_browser_sort_random
     }
 }
@@ -252,11 +255,7 @@ fun SearchOptionsTopBarControl(
                     painter = painterResource(
                         if (expanded) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down,
                     ),
-                    contentDescription = if (expanded) {
-                        stringResource(R.string.online_search_hide_options)
-                    } else {
-                        stringResource(R.string.online_search_show_options)
-                    },
+                    contentDescription = null,
                     tint = RadioText,
                     modifier = Modifier.size(24.dp),
                 )
@@ -404,7 +403,6 @@ private fun SearchOptionsContent(
             value = searchState.bitrateMin,
             onValueChange = { onSearchStateChange(searchState.copy(bitrateMin = it.digitsOnly())) },
             label = stringResource(R.string.online_search_bitrate_min),
-            placeholder = "0",
             imeAction = ImeAction.Next,
             keyboardType = KeyboardType.Number,
             onSearch = onSearch,
@@ -414,7 +412,6 @@ private fun SearchOptionsContent(
             value = searchState.bitrateMax,
             onValueChange = { onSearchStateChange(searchState.copy(bitrateMax = it.digitsOnly())) },
             label = stringResource(R.string.online_search_bitrate_max),
-            placeholder = stringResource(R.string.online_search_max_placeholder),
             imeAction = ImeAction.Search,
             keyboardType = KeyboardType.Number,
             onSearch = onSearch,
@@ -441,11 +438,11 @@ private fun SearchTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    placeholder: String,
     imeAction: ImeAction,
     keyboardType: KeyboardType,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
+    placeholder: String? = null,
 ) {
     OutlinedTextField(
         value = value,
@@ -454,7 +451,9 @@ private fun SearchTextField(
         minLines = 1,
         maxLines = 3,
         label = { Text(label) },
-        placeholder = { Text(placeholder) },
+        placeholder = placeholder?.let { placeholderText ->
+            { Text(placeholderText) }
+        },
         keyboardOptions = KeyboardOptions(imeAction = imeAction, keyboardType = keyboardType),
         keyboardActions = KeyboardActions(onSearch = { onSearch() }),
         colors = omniTextFieldColors(),
@@ -480,10 +479,13 @@ private fun <T> SearchDropdown(
         modifier = modifier.fillMaxWidth(),
     ) {
         OutlinedTextField(
-            value = selectedText,
+            value = TextFieldValue(
+                text = selectedText,
+                selection = TextRange.Zero,
+            ),
             onValueChange = {},
             readOnly = true,
-            singleLine = false,
+            singleLine = true,
             minLines = 1,
             maxLines = 1,
             label = { Text(label) },
@@ -570,11 +572,6 @@ private fun OnlineStationResultItem(
         trailingContent = {
             OmniListActionIconButton(
                 painter = painterResource(if (added) R.drawable.ic_check else R.drawable.ic_add_circle_outline),
-                contentDescription = if (added) {
-                    stringResource(R.string.online_search_station_added)
-                } else {
-                    stringResource(R.string.action_add_station)
-                },
                 enabled = !added,
                 onClick = onAddStation,
                 tint = if (added) RadioPrimary else RadioText,
@@ -592,7 +589,7 @@ private fun EmptyOnlineSearchState(
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier,
+        modifier = modifier.padding(horizontal = 20.dp),
     ) {
         Text(
             text = if (hasQuery) {
@@ -603,6 +600,7 @@ private fun EmptyOnlineSearchState(
             color = RadioText,
             fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
         )
         Text(
             text = if (hasQuery) {
@@ -612,6 +610,7 @@ private fun EmptyOnlineSearchState(
             },
             color = RadioTextMuted,
             fontSize = 15.sp,
+            textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 6.dp),
         )
     }

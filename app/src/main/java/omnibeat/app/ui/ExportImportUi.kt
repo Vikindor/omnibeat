@@ -67,7 +67,7 @@ fun ExportImportPage(
             IconButton(onClick = { confirmDeleteLibrary = true }) {
                 Icon(
                     painter = painterResource(R.drawable.ic_delete),
-                    contentDescription = stringResource(R.string.settings_delete_entire_library_content_description),
+                    contentDescription = null,
                     tint = RadioDanger,
                     modifier = Modifier.size(24.dp),
                 )

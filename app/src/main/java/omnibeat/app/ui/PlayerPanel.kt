@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import omnibeat.app.model.Station
+import omnibeat.app.playback.PlaybackTrackStatus
 import omnibeat.app.playback.PlaybackStreamInfo
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -65,6 +66,7 @@ import androidx.compose.ui.window.PopupProperties
 fun PlayerPanel(
     station: Station?,
     trackText: String,
+    trackStatus: PlaybackTrackStatus?,
     errorText: String?,
     streamInfo: PlaybackStreamInfo,
     loading: Boolean,
@@ -84,9 +86,11 @@ fun PlayerPanel(
 ) {
     var showStreamInfo by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val displayTrackText = errorText ?: trackText
+    val displayTrackText = errorText ?: trackStatus?.let { trackStatusText(it) } ?: trackText
     val bitrateText = if (showBitrate) {
-        streamInfo.bitrateText ?: stringResource(R.string.player_bitrate_unavailable).takeIf { showUnavailableBitrate }
+        streamInfo.bitrateKbps?.let { bitrate ->
+            stringResource(R.string.player_bitrate_format, bitrate)
+        } ?: stringResource(R.string.player_bitrate_unavailable).takeIf { showUnavailableBitrate }
     } else {
         null
     }
@@ -110,8 +114,18 @@ fun PlayerPanel(
                 .combinedClickable(
                     enabled = station != null,
                     onClick = {
-                        copyTextToClipboard(context, label = context.getString(R.string.player_clipboard_track_label), text = trackText)
-                        android.widget.Toast.makeText(context, context.getString(R.string.player_track_copied), android.widget.Toast.LENGTH_SHORT).show()
+                        if (trackStatus == null && trackText.isNotBlank()) {
+                            copyTextToClipboard(
+                                context = context,
+                                label = context.getString(R.string.player_clipboard_track_label),
+                                text = trackText,
+                            )
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.player_track_copied),
+                                android.widget.Toast.LENGTH_SHORT,
+                            ).show()
+                        }
                     },
                     onLongClick = { showStreamInfo = true },
                 )
@@ -189,7 +203,7 @@ fun PlayerPanel(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_shuffle),
-                    contentDescription = stringResource(R.string.player_random_station),
+                    contentDescription = null,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -205,7 +219,7 @@ fun PlayerPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_skip_previous),
-                        contentDescription = stringResource(R.string.player_previous_station),
+                        contentDescription = null,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -218,11 +232,7 @@ fun PlayerPanel(
                         painter = painterResource(
                             if (hasActivePlaybackRequest) R.drawable.ic_stop else R.drawable.ic_play_arrow,
                         ),
-                        contentDescription = if (hasActivePlaybackRequest) {
-                            stringResource(R.string.player_stop)
-                        } else {
-                            stringResource(R.string.player_play)
-                        },
+                        contentDescription = null,
                         modifier = Modifier.size(32.dp),
                     )
                 }
@@ -233,7 +243,7 @@ fun PlayerPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_skip_next),
-                        contentDescription = stringResource(R.string.player_next_station),
+                        contentDescription = null,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -249,7 +259,7 @@ fun PlayerPanel(
     if (showStreamInfo) {
         StreamInfoDialog(
             stationTitle = station?.title.orEmpty(),
-            trackText = trackText,
+            trackText = displayTrackText,
             streamInfo = streamInfo,
             onDismiss = { showStreamInfo = false },
             onCopyInfo = { info ->
@@ -257,6 +267,17 @@ fun PlayerPanel(
                 android.widget.Toast.makeText(context, context.getString(R.string.player_stream_info_copied), android.widget.Toast.LENGTH_SHORT).show()
             },
         )
+    }
+}
+
+@Composable
+private fun trackStatusText(trackStatus: PlaybackTrackStatus): String {
+    return when (trackStatus) {
+        PlaybackTrackStatus.Stopped -> stringResource(R.string.track_text_stopped)
+        PlaybackTrackStatus.LoadingStations -> stringResource(R.string.track_text_loading_stations)
+        PlaybackTrackStatus.Resolving -> stringResource(R.string.track_text_resolving)
+        PlaybackTrackStatus.WaitingMetadata -> stringResource(R.string.track_text_waiting_metadata)
+        PlaybackTrackStatus.NoMetadata -> stringResource(R.string.track_text_no_metadata)
     }
 }
 
@@ -270,7 +291,7 @@ private fun StreamInfoDialog(
 ) {
     val textFieldColors = omniDisabledTextFieldColors()
     val notAvailable = stringResource(R.string.player_not_available)
-    val bitrate = streamInfo.bitrateText ?: notAvailable
+    val bitrate = streamInfo.bitrateKbps?.let { stringResource(R.string.player_bitrate_format, it) } ?: notAvailable
     val sampleRate = streamInfo.sampleRateText ?: notAvailable
     val format = streamInfo.formatLabel ?: notAvailable
     val copyText = listOf(
@@ -329,7 +350,7 @@ private fun StreamInfoDialog(
                 OmniSecondaryButton(text = stringResource(R.string.action_close), onClick = onDismiss)
                 Spacer(Modifier.weight(1f))
                 OmniPrimaryButton(
-                    text = stringResource(R.string.player_stream_info_copy_info),
+                    text = stringResource(R.string.action_copy),
                     onClick = { onCopyInfo(copyText) },
                 )
             }
@@ -396,7 +417,7 @@ private fun VolumeButton(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_volume_up),
-                contentDescription = stringResource(R.string.player_volume),
+                contentDescription = null,
                 modifier = Modifier.size(24.dp),
             )
         }

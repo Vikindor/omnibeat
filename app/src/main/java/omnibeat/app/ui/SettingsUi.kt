@@ -94,7 +94,7 @@ fun ThemeModeSegmentedControl(
                 ) {
                     Icon(
                         painter = painterResource(themeModeIcon(option)),
-                        contentDescription = stringResource(themeModeLabel(option)),
+                        contentDescription = null,
                         tint = if (selected) RadioText else RadioTextMuted,
                         modifier = Modifier.size(24.dp),
                     )
@@ -112,18 +112,11 @@ private fun themeModeIcon(themeMode: ThemeMode): Int {
     }
 }
 
-private fun themeModeLabel(themeMode: ThemeMode): Int {
-    return when (themeMode) {
-        ThemeMode.System -> R.string.theme_system
-        ThemeMode.Light -> R.string.theme_light
-        ThemeMode.Dark -> R.string.theme_dark
-    }
-}
-
-private fun appLanguageLabel(appLanguage: AppLanguage): Int {
+@Composable
+private fun appLanguageLabel(appLanguage: AppLanguage): String {
     return when (appLanguage) {
-        AppLanguage.System -> R.string.language_system
-        AppLanguage.English -> R.string.language_english
+        AppLanguage.System -> stringResource(R.string.language_system)
+        else -> appLanguage.displayName.orEmpty()
     }
 }
 
@@ -183,7 +176,7 @@ fun SettingsPage(
                 title = stringResource(R.string.settings_language_title),
                 subtitle = when (appLanguage) {
                     AppLanguage.System -> stringResource(R.string.settings_language_system)
-                    AppLanguage.English -> stringResource(R.string.settings_language_english)
+                    else -> stringResource(R.string.settings_language_selected)
                 },
                 appLanguage = appLanguage,
                 onAppLanguageChange = onAppLanguageChange,
@@ -323,7 +316,6 @@ fun SettingsPage(
             SettingsSectionHeader(title = stringResource(R.string.settings_section_danger_zone), color = RadioDanger)
             SettingsDangerRow(
                 title = stringResource(R.string.settings_delete_all_stations_title),
-                subtitle = stringResource(R.string.settings_delete_all_stations_subtitle),
                 onClick = { confirmDeleteLibrary = true },
             )
         }
@@ -385,7 +377,7 @@ private fun SettingsLanguageRow(
         Box {
             TextButton(onClick = { expanded = true }) {
                 Text(
-                    text = stringResource(appLanguageLabel(appLanguage)),
+                    text = appLanguageLabel(appLanguage),
                     color = RadioPrimary,
                 )
             }
@@ -399,7 +391,7 @@ private fun SettingsLanguageRow(
                     DropdownMenuItem(
                         text = {
                             Text(
-                                text = stringResource(appLanguageLabel(option)),
+                                text = appLanguageLabel(option),
                                 color = RadioText,
                             )
                         },
@@ -533,7 +525,6 @@ private fun SettingsSwitchRow(
 @Composable
 private fun SettingsDangerRow(
     title: String,
-    subtitle: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -553,16 +544,11 @@ private fun SettingsDangerRow(
                 color = RadioDanger,
                 fontSize = 16.sp,
             )
-            Text(
-                text = subtitle,
-                color = RadioTextMuted,
-                fontSize = 14.sp,
-            )
         }
         IconButton(onClick = onClick) {
             Icon(
                 painter = painterResource(R.drawable.ic_delete),
-                contentDescription = stringResource(R.string.settings_delete_entire_library_content_description),
+                contentDescription = null,
                 tint = RadioDanger,
                 modifier = Modifier.size(24.dp),
             )
@@ -624,7 +610,7 @@ private fun SettingsActionRow(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_sync),
-                    contentDescription = title,
+                    contentDescription = null,
                     tint = if (syncing || !enabled) RadioTextMuted else RadioPrimary,
                     modifier = Modifier
                         .size(24.dp)

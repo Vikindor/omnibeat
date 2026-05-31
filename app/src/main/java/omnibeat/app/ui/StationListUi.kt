@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,29 +53,51 @@ import java.net.URL
 
 @Composable
 fun EmptyStationsState(modifier: Modifier = Modifier) {
-    Box(contentAlignment = Alignment.Center, modifier = modifier) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier.padding(horizontal = 20.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(stringResource(R.string.empty_stations_prefix), color = RadioTextMuted, fontSize = 16.sp)
-            Icon(
-                painter = painterResource(R.drawable.ic_add_circle_outline),
-                contentDescription = stringResource(R.string.action_add_station),
-                tint = RadioTextMuted,
-                modifier = Modifier
-                    .padding(horizontal = 6.dp)
-                    .size(18.dp),
+            Text(
+                text = stringResource(R.string.empty_stations_prefix),
+                color = RadioTextMuted,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
             )
-            Text(stringResource(R.string.empty_stations_suffix), color = RadioTextMuted, fontSize = 16.sp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Text(stringResource(R.string.empty_stations_suffix_start), color = RadioTextMuted, fontSize = 16.sp)
+                Icon(
+                    painter = painterResource(R.drawable.ic_add_circle_outline),
+                    contentDescription = null,
+                    tint = RadioTextMuted,
+                    modifier = Modifier
+                        .padding(horizontal = 6.dp)
+                        .size(18.dp),
+                )
+                Text(stringResource(R.string.empty_stations_suffix_end), color = RadioTextMuted, fontSize = 16.sp)
+            }
         }
     }
 }
 
 @Composable
 fun EmptyFavoritesState(modifier: Modifier = Modifier) {
-    Box(contentAlignment = Alignment.Center, modifier = modifier) {
-        Text(stringResource(R.string.empty_favorites), color = RadioTextMuted, fontSize = 16.sp)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier.padding(horizontal = 20.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.empty_favorites),
+            color = RadioTextMuted,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -365,7 +388,7 @@ private fun StationRow(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_drag_indicator),
-                    contentDescription = stringResource(R.string.station_drag_content_description),
+                    contentDescription = null,
                     tint = if (dragging) RadioPrimary else RadioTextMuted,
                     modifier = Modifier.size(24.dp),
                 )
@@ -379,11 +402,6 @@ private fun StationRow(
                 painter = painterResource(
                     if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
                 ),
-                contentDescription = if (station.isFavorite) {
-                    stringResource(R.string.station_remove_from_favorites)
-                } else {
-                    stringResource(R.string.station_add_to_favorites)
-                },
                 enabled = enabled && !reordering,
                 onClick = onFavoriteClick,
                 tint = if (station.isFavorite) RadioPrimary else RadioText,

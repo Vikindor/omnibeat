@@ -109,7 +109,6 @@ fun OmniDangerButton(
 @Composable
 fun OmniTopBarIconButton(
     painter: Painter,
-    contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     tint: Color? = null,
@@ -118,7 +117,7 @@ fun OmniTopBarIconButton(
     IconButton(onClick = onClick, modifier = modifier) {
         Icon(
             painter = painter,
-            contentDescription = contentDescription,
+            contentDescription = null,
             tint = resolvedTint,
             modifier = Modifier.height(28.dp),
         )
@@ -128,7 +127,6 @@ fun OmniTopBarIconButton(
 @Composable
 fun OmniListActionIconButton(
     painter: Painter,
-    contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -142,7 +140,7 @@ fun OmniListActionIconButton(
     ) {
         Icon(
             painter = painter,
-            contentDescription = contentDescription,
+            contentDescription = null,
             tint = resolvedTint,
             modifier = Modifier.size(24.dp),
         )

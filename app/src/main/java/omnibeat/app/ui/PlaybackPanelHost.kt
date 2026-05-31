@@ -29,6 +29,7 @@ fun PlaybackPanelHost(
     PlayerPanel(
         station = playbackState.selectedStation,
         trackText = playbackState.trackText,
+        trackStatus = playbackState.trackStatus,
         errorText = playbackState.errorText,
         streamInfo = playbackState.streamInfo,
         loading = playbackState.resolving || playbackState.buffering,
