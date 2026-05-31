@@ -217,7 +217,12 @@ fun StationListItem(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .padding(start = startPadding, end = 20.dp, top = 14.dp, bottom = 14.dp),
+            .padding(
+                start = startPadding,
+                end = if (trailingContent == null) 20.dp else 8.dp,
+                top = 14.dp,
+                bottom = 14.dp,
+            ),
     ) {
         leadingContent?.invoke()
         if (showArtwork) {
@@ -398,7 +403,7 @@ private fun StationRow(
             null
         },
         trailingContent = {
-            OmniListActionIconButton(
+            OmniIconButton(
                 painter = painterResource(
                     if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
                 ),

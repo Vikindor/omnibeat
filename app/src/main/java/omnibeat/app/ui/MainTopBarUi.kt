@@ -15,7 +15,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -68,18 +67,15 @@ fun MainTopBar(
             .height(52.dp)
             .padding(start = 4.dp, end = 8.dp),
     ) {
-        IconButton(onClick = onOpenDrawer) {
-            Icon(
-                painter = painterResource(R.drawable.ic_menu),
-                contentDescription = null,
-                tint = RadioText,
-            )
-        }
+        OmniIconButton(
+            painter = painterResource(R.drawable.ic_menu),
+            onClick = onOpenDrawer,
+        )
         if (selectedPage == MainPage.FindOnline && onlineSearchControl != null) {
             onlineSearchControl(
                 Modifier
                     .weight(1f)
-                    .padding(start = 8.dp, end = 8.dp),
+                    .padding(start = 8.dp, end = 12.dp),
             )
         } else {
             Row(
@@ -134,12 +130,12 @@ fun MainTopBar(
         }
         if (selectedPage in tabPages) {
             if (reordering) {
-                OmniTopBarIconButton(
+                OmniIconButton(
                     painter = painterResource(R.drawable.ic_close),
                     onClick = onCancelReorder,
                     tint = Color(0xFFFF5C6C),
                 )
-                OmniTopBarIconButton(
+                OmniIconButton(
                     painter = painterResource(R.drawable.ic_check),
                     onClick = onConfirmReorder,
                     tint = Color(0xFF66D17A),
@@ -170,7 +166,7 @@ private fun SortMenuButton(
     onSortModeSelected: (StationSortMode) -> Unit,
 ) {
     Box {
-        OmniTopBarIconButton(
+        OmniIconButton(
             painter = painterResource(R.drawable.ic_filter_list),
             onClick = { onExpandedChange(true) },
         )
@@ -237,7 +233,7 @@ private fun AddMenuButton(
     onFindOnline: () -> Unit,
 ) {
     Box {
-        OmniTopBarIconButton(
+        OmniIconButton(
             painter = painterResource(R.drawable.ic_add_circle_outline),
             onClick = { onExpandedChange(true) },
         )

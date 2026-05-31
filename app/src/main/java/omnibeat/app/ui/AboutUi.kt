@@ -55,7 +55,8 @@ fun AboutPage(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(bottom = 22.dp),
+                .padding(horizontal = 20.dp)
+                .padding(top = 14.dp, bottom = 20.dp),
         ) {
             AboutHeader()
             AboutDivider()
@@ -102,7 +103,7 @@ fun AboutPage(modifier: Modifier = Modifier) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 22.dp, vertical = 18.dp),
+                    .padding(vertical = 18.dp),
             )
         }
         OmniScrollIndicator(
@@ -121,8 +122,7 @@ private fun AboutHeader(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp)
-            .padding(top = 4.dp, bottom = 18.dp),
+            .padding(bottom = 18.dp),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_launcher_foreground),
@@ -163,8 +163,7 @@ private fun AboutSectionHeader(title: String, modifier: Modifier = Modifier) {
         fontSize = 14.sp,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp)
-            .padding(top = 14.dp, bottom = 8.dp),
+            .padding(top = 10.dp, bottom = 8.dp),
     )
 }
 
@@ -172,7 +171,7 @@ private fun AboutSectionHeader(title: String, modifier: Modifier = Modifier) {
 private fun AboutDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
         color = RadioOutline.copy(alpha = 0.65f),
-        modifier = modifier.padding(top = 14.dp),
+        modifier = modifier.padding(top = 14.dp, bottom = 8.dp),
     )
 }
 
@@ -203,7 +202,7 @@ private fun AboutLinkRow(
                     }
                 },
             )
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(vertical = 10.dp),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -250,7 +249,7 @@ private fun AboutInfoRow(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = modifier
                 .fillMaxWidth()
-                .padding(horizontal = 22.dp, vertical = 10.dp),
+                .padding(vertical = 10.dp),
         ) {
             Text(
                 text = label,
@@ -272,7 +271,7 @@ private fun AboutInfoRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(vertical = 10.dp),
     ) {
         Text(
             text = label,

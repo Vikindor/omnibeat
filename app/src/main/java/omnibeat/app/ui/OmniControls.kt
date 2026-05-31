@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -107,42 +106,25 @@ fun OmniDangerButton(
 }
 
 @Composable
-fun OmniTopBarIconButton(
+fun OmniIconButton(
     painter: Painter,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tint: Color? = null,
-) {
-    val resolvedTint = tint ?: RadioText
-    IconButton(onClick = onClick, modifier = modifier) {
-        Icon(
-            painter = painter,
-            contentDescription = null,
-            tint = resolvedTint,
-            modifier = Modifier.height(28.dp),
-        )
-    }
-}
-
-@Composable
-fun OmniListActionIconButton(
-    painter: Painter,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    iconModifier: Modifier = Modifier,
     enabled: Boolean = true,
-    tint: Color? = null,
+    tint: Color = RadioText,
+    disabledTint: Color = RadioTextMuted,
 ) {
-    val resolvedTint = tint ?: RadioText
     IconButton(
         enabled = enabled,
         onClick = onClick,
-        modifier = modifier.size(40.dp),
+        modifier = modifier,
     ) {
         Icon(
             painter = painter,
             contentDescription = null,
-            tint = resolvedTint,
-            modifier = Modifier.size(24.dp),
+            tint = if (enabled) tint else disabledTint,
+            modifier = iconModifier.size(24.dp),
         )
     }
 }

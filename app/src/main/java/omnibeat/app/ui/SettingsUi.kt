@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Switch
@@ -159,6 +158,8 @@ fun SettingsPage(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
+                .padding(horizontal = 20.dp)
+                .padding(top = 14.dp)
                 .padding(bottom = 20.dp),
         ) {
             SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
@@ -357,7 +358,7 @@ private fun SettingsLanguageRow(
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(vertical = 10.dp),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -418,8 +419,7 @@ private fun SettingsSectionHeader(
         fontSize = 14.sp,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp)
-            .padding(top = 14.dp, bottom = 8.dp),
+            .padding(top = 10.dp, bottom = 8.dp),
     )
 }
 
@@ -427,7 +427,7 @@ private fun SettingsSectionHeader(
 private fun SettingsDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
         color = RadioOutline.copy(alpha = 0.65f),
-        modifier = modifier.padding(top = 14.dp),
+        modifier = modifier.padding(top = 14.dp, bottom = 8.dp),
     )
 }
 
@@ -444,7 +444,7 @@ private fun SettingsThemeRow(
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(vertical = 10.dp),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -485,7 +485,7 @@ private fun SettingsSwitchRow(
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(vertical = 10.dp),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -533,7 +533,7 @@ private fun SettingsDangerRow(
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(vertical = 10.dp),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -545,14 +545,11 @@ private fun SettingsDangerRow(
                 fontSize = 16.sp,
             )
         }
-        IconButton(onClick = onClick) {
-            Icon(
-                painter = painterResource(R.drawable.ic_delete),
-                contentDescription = null,
-                tint = RadioDanger,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        OmniIconButton(
+            painter = painterResource(R.drawable.ic_delete),
+            onClick = onClick,
+            tint = RadioDanger,
+        )
     }
 }
 
@@ -586,7 +583,7 @@ private fun SettingsActionRow(
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(vertical = 10.dp),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -604,19 +601,13 @@ private fun SettingsActionRow(
             )
         }
         if (actionText == null) {
-            IconButton(
+            OmniIconButton(
+                painter = painterResource(R.drawable.ic_sync),
                 onClick = onClick,
                 enabled = enabled && !syncing,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_sync),
-                    contentDescription = null,
-                    tint = if (syncing || !enabled) RadioTextMuted else RadioPrimary,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .rotate(rotation),
-                )
-            }
+                tint = if (syncing || !enabled) RadioTextMuted else RadioPrimary,
+                iconModifier = Modifier.rotate(rotation),
+            )
         } else {
             TextButton(
                 onClick = onClick,

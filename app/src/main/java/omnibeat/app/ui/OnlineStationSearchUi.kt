@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -296,7 +295,7 @@ private fun SearchOptionsOverlay(
                 onSearch = onSearch,
                 modifier = Modifier
                     .verticalScroll(scrollState)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
             )
             SearchOptionsScrollIndicator(
                 scrollIndicatorState = scrollState.scrollIndicatorState,
@@ -570,11 +569,12 @@ private fun OnlineStationResultItem(
         enabled = true,
         onClick = onPreviewStation,
         trailingContent = {
-            OmniListActionIconButton(
+            OmniIconButton(
                 painter = painterResource(if (added) R.drawable.ic_check else R.drawable.ic_add_circle_outline),
                 enabled = !added,
                 onClick = onAddStation,
                 tint = if (added) RadioPrimary else RadioText,
+                disabledTint = if (added) RadioPrimary else RadioTextMuted,
                 modifier = Modifier.padding(start = 12.dp),
             )
         },

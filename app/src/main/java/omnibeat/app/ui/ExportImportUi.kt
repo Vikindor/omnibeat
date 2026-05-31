@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,7 +41,7 @@ fun ExportImportPage(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 20.dp)
             .padding(top = 14.dp, bottom = 20.dp),
     ) {
         Row(
@@ -64,14 +63,11 @@ fun ExportImportPage(
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
-            IconButton(onClick = { confirmDeleteLibrary = true }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_delete),
-                    contentDescription = null,
-                    tint = RadioDanger,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
+            OmniIconButton(
+                painter = painterResource(R.drawable.ic_delete),
+                onClick = { confirmDeleteLibrary = true },
+                tint = RadioDanger,
+            )
         }
 
         HorizontalDivider(

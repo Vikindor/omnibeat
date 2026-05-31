@@ -99,7 +99,7 @@ fun OnboardingFlow(
             .fillMaxSize()
             .background(RadioBackground)
             .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(horizontal = 24.dp, vertical = 22.dp),
+            .padding(horizontal = 20.dp, vertical = 22.dp),
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -266,7 +266,7 @@ fun NotificationPermissionIntro(
             .fillMaxSize()
             .background(RadioBackground)
             .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(horizontal = 24.dp, vertical = 22.dp),
+            .padding(horizontal = 20.dp, vertical = 22.dp),
     ) {
         Row(
             horizontalArrangement = Arrangement.End,

@@ -23,8 +23,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -82,16 +80,15 @@ fun StationEditorDialog(
                     modifier = Modifier.weight(1f),
                 )
                 if (onSyncArtwork != null) {
-                    IconButton(onClick = onSyncArtwork) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_image_search),
-                            contentDescription = null,
-                            tint = RadioPrimary,
-                        )
-                    }
+                    OmniIconButton(
+                        painter = painterResource(R.drawable.ic_image_search),
+                        onClick = onSyncArtwork,
+                        tint = RadioPrimary,
+                    )
                 }
                 if (showDelete) {
-                    IconButton(
+                    OmniIconButton(
+                        painter = painterResource(R.drawable.ic_delete),
                         onClick = {
                             if (confirmStationDeletion) {
                                 confirmDelete = true
@@ -99,13 +96,8 @@ fun StationEditorDialog(
                                 onDelete()
                             }
                         },
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_delete),
-                            contentDescription = null,
-                            tint = RadioDanger,
-                        )
-                    }
+                        tint = RadioDanger,
+                    )
                 }
             }
         },
