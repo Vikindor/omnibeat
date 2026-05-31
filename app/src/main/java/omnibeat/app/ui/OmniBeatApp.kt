@@ -161,11 +161,14 @@ fun OmniBeatApp() {
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var showStationArtwork by remember { mutableStateOf(true) }
         var addRadioBrowserTags by remember { mutableStateOf(true) }
-        var removeTrackingParametersFromUrls by remember { mutableStateOf(false) }
+        var removeTrackingParametersFromUrls by remember { mutableStateOf(true) }
         var rememberLastStation by remember { mutableStateOf(true) }
         var showBitrateInControlPanel by remember { mutableStateOf(true) }
         var showUnavailableBitrate by remember { mutableStateOf(false) }
         var marqueeTrackTitle by remember { mutableStateOf(true) }
+        var playerPanelCollapsed by remember { mutableStateOf(false) }
+        var autoExpandPlayerPanelOnPlayback by remember { mutableStateOf(true) }
+        var collapsePlayerPanelInSearch by remember { mutableStateOf(true) }
         var showEmptyFavoritesTab by remember { mutableStateOf(true) }
         var confirmStationDeletion by remember { mutableStateOf(true) }
         var syncingStationArtwork by remember { mutableStateOf(false) }
@@ -211,6 +214,9 @@ fun OmniBeatApp() {
             onShowBitrateInControlPanelChange = { showBitrateInControlPanel = it },
             onShowUnavailableBitrateChange = { showUnavailableBitrate = it },
             onMarqueeTrackTitleChange = { marqueeTrackTitle = it },
+            onPlayerPanelCollapsedChange = { playerPanelCollapsed = it },
+            onAutoExpandPlayerPanelOnPlaybackChange = { autoExpandPlayerPanelOnPlayback = it },
+            onCollapsePlayerPanelInSearchChange = { collapsePlayerPanelInSearch = it },
             onShowEmptyFavoritesTabChange = { showEmptyFavoritesTab = it },
             onConfirmStationDeletionChange = { confirmStationDeletion = it },
             onLastMainPageChange = { lastMainPage = it },
@@ -340,6 +346,13 @@ fun OmniBeatApp() {
             val tabIndex = visibleTabPages.indexOf(selectedPage)
             if (tabIndex >= 0 && pagerState.currentPage != tabIndex) {
                 pagerState.animateScrollToPage(tabIndex)
+            }
+        }
+
+        LaunchedEffect(selectedPage, collapsePlayerPanelInSearch) {
+            if (selectedPage == MainPage.FindOnline && collapsePlayerPanelInSearch && !playerPanelCollapsed) {
+                playerPanelCollapsed = true
+                repository.savePlayerPanelCollapsed(true)
             }
         }
 
@@ -889,6 +902,12 @@ fun OmniBeatApp() {
                             showBitrate = showBitrateInControlPanel,
                             showUnavailableBitrate = showUnavailableBitrate,
                             marqueeTrackTitle = marqueeTrackTitle,
+                            collapsed = playerPanelCollapsed,
+                            autoExpandOnPlayback = autoExpandPlayerPanelOnPlayback,
+                            onCollapsedChange = { collapsed ->
+                                playerPanelCollapsed = collapsed
+                                scope.launch { repository.savePlayerPanelCollapsed(collapsed) }
+                            },
                             onPlayStop = { playOrStop() },
                             onPreviousStation = { playAdjacentStation(-1) },
                             onNextStation = { playAdjacentStation(1) },
@@ -979,6 +998,8 @@ fun OmniBeatApp() {
                                 showBitrateInControlPanel = showBitrateInControlPanel,
                                 showUnavailableBitrate = showUnavailableBitrate,
                                 marqueeTrackTitle = marqueeTrackTitle,
+                                autoExpandPlayerPanelOnPlayback = autoExpandPlayerPanelOnPlayback,
+                                collapsePlayerPanelInSearch = collapsePlayerPanelInSearch,
                                 showEmptyFavoritesTab = showEmptyFavoritesTab,
                                 confirmStationDeletion = confirmStationDeletion,
                                 notificationPermissionGranted = notificationPermissionGranted,
@@ -1010,6 +1031,14 @@ fun OmniBeatApp() {
                                 onMarqueeTrackTitleChange = { marquee ->
                                     marqueeTrackTitle = marquee
                                     scope.launch { repository.saveMarqueeTrackTitle(marquee) }
+                                },
+                                onAutoExpandPlayerPanelOnPlaybackChange = { autoExpand ->
+                                    autoExpandPlayerPanelOnPlayback = autoExpand
+                                    scope.launch { repository.saveAutoExpandPlayerPanelOnPlayback(autoExpand) }
+                                },
+                                onCollapsePlayerPanelInSearchChange = { collapse ->
+                                    collapsePlayerPanelInSearch = collapse
+                                    scope.launch { repository.saveCollapsePlayerPanelInSearch(collapse) }
                                 },
                                 onShowEmptyFavoritesTabChange = { show ->
                                     showEmptyFavoritesTab = show

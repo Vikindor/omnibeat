@@ -71,6 +71,12 @@
     <string name="settings_marquee_track_title_title">Marquee track title</string>
     <string name="settings_marquee_track_title_on">Long track titles will scroll</string>
     <string name="settings_marquee_track_title_off">Long track titles will be truncated</string>
+    <string name="settings_auto_expand_player_panel_title">Expand panel on playback</string>
+    <string name="settings_auto_expand_player_panel_on">Control panel will open when playback starts</string>
+    <string name="settings_auto_expand_player_panel_off">Control panel will stay as you left it</string>
+    <string name="settings_collapse_player_panel_search_title">Collapse panel in online search</string>
+    <string name="settings_collapse_player_panel_search_on">Online search will open with the control panel collapsed</string>
+    <string name="settings_collapse_player_panel_search_off">Online search will keep the saved panel state</string>
     <string name="settings_section_online_search">Online search</string>
     <string name="settings_save_radio_browser_tags_title">Save Radio Browser tags</string>
     <string name="settings_save_radio_browser_tags_on">Stations from online search will be saved with tags</string>

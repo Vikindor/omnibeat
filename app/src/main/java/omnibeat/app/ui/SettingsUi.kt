@@ -130,6 +130,8 @@ fun SettingsPage(
     showBitrateInControlPanel: Boolean,
     showUnavailableBitrate: Boolean,
     marqueeTrackTitle: Boolean,
+    autoExpandPlayerPanelOnPlayback: Boolean,
+    collapsePlayerPanelInSearch: Boolean,
     showEmptyFavoritesTab: Boolean,
     confirmStationDeletion: Boolean,
     notificationPermissionGranted: Boolean,
@@ -141,6 +143,8 @@ fun SettingsPage(
     onShowBitrateInControlPanelChange: (Boolean) -> Unit,
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
+    onAutoExpandPlayerPanelOnPlaybackChange: (Boolean) -> Unit,
+    onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
     onConfirmStationDeletionChange: (Boolean) -> Unit,
     onGrantNotificationPermission: () -> Unit,
@@ -285,6 +289,26 @@ fun SettingsPage(
                 },
                 checked = marqueeTrackTitle,
                 onCheckedChange = onMarqueeTrackTitleChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_auto_expand_player_panel_title),
+                subtitle = if (autoExpandPlayerPanelOnPlayback) {
+                    stringResource(R.string.settings_auto_expand_player_panel_on)
+                } else {
+                    stringResource(R.string.settings_auto_expand_player_panel_off)
+                },
+                checked = autoExpandPlayerPanelOnPlayback,
+                onCheckedChange = onAutoExpandPlayerPanelOnPlaybackChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_collapse_player_panel_search_title),
+                subtitle = if (collapsePlayerPanelInSearch) {
+                    stringResource(R.string.settings_collapse_player_panel_search_on)
+                } else {
+                    stringResource(R.string.settings_collapse_player_panel_search_off)
+                },
+                checked = collapsePlayerPanelInSearch,
+                onCheckedChange = onCollapsePlayerPanelInSearchChange,
             )
             SettingsDivider()
 

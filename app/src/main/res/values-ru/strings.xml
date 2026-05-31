@@ -69,6 +69,12 @@
     <string name="settings_marquee_track_title_title">Прокручивать название трека</string>
     <string name="settings_marquee_track_title_on">Длинные названия треков будут прокручиваться</string>
     <string name="settings_marquee_track_title_off">Длинные названия треков будут обрезаться</string>
+    <string name="settings_auto_expand_player_panel_title">Разворачивать панель при запуске</string>
+    <string name="settings_auto_expand_player_panel_on">Панель управления будет открываться при начале воспроизведения</string>
+    <string name="settings_auto_expand_player_panel_off">Панель управления останется в сохранённом состоянии</string>
+    <string name="settings_collapse_player_panel_search_title">Сворачивать панель в онлайн-поиске</string>
+    <string name="settings_collapse_player_panel_search_on">Онлайн-поиск будет открываться со свёрнутой панелью управления</string>
+    <string name="settings_collapse_player_panel_search_off">Онлайн-поиск будет сохранять текущее состояние панели</string>
     <string name="settings_section_online_search">Онлайн-поиск</string>
     <string name="settings_save_radio_browser_tags_title">Сохранять теги Radio Browser</string>
     <string name="settings_save_radio_browser_tags_on">Станции из онлайн-поиска будут сохраняться с тегами</string>

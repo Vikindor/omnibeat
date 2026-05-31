@@ -27,6 +27,9 @@ private val rememberLastStationKey = booleanPreferencesKey("remember_last_statio
 private val showBitrateInControlPanelKey = booleanPreferencesKey("show_bitrate_in_control_panel")
 private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_bitrate")
 private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
+private val playerPanelCollapsedKey = booleanPreferencesKey("player_panel_collapsed")
+private val autoExpandPlayerPanelOnPlaybackKey = booleanPreferencesKey("auto_expand_player_panel_on_playback")
+private val collapsePlayerPanelInSearchKey = booleanPreferencesKey("collapse_player_panel_in_search")
 private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
 private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
 private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
@@ -50,7 +53,7 @@ class StationRepository(private val context: Context) {
         .map { preferences -> preferences[addRadioBrowserTagsKey] ?: true }
 
     val removeTrackingParameters: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[removeTrackingParametersKey] ?: false }
+        .map { preferences -> preferences[removeTrackingParametersKey] ?: true }
 
     val rememberLastStation: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[rememberLastStationKey] ?: true }
@@ -63,6 +66,15 @@ class StationRepository(private val context: Context) {
 
     val marqueeTrackTitle: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[marqueeTrackTitleKey] ?: true }
+
+    val playerPanelCollapsed: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[playerPanelCollapsedKey] ?: false }
+
+    val autoExpandPlayerPanelOnPlayback: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[autoExpandPlayerPanelOnPlaybackKey] ?: true }
+
+    val collapsePlayerPanelInSearch: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[collapsePlayerPanelInSearchKey] ?: true }
 
     val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
@@ -148,6 +160,24 @@ class StationRepository(private val context: Context) {
     suspend fun saveMarqueeTrackTitle(marquee: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[marqueeTrackTitleKey] = marquee
+        }
+    }
+
+    suspend fun savePlayerPanelCollapsed(collapsed: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[playerPanelCollapsedKey] = collapsed
+        }
+    }
+
+    suspend fun saveAutoExpandPlayerPanelOnPlayback(autoExpand: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[autoExpandPlayerPanelOnPlaybackKey] = autoExpand
+        }
+    }
+
+    suspend fun saveCollapsePlayerPanelInSearch(collapse: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[collapsePlayerPanelInSearchKey] = collapse
         }
     }
 

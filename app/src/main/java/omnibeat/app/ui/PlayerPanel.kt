@@ -40,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,6 +85,9 @@ fun PlayerPanel(
     showBitrate: Boolean,
     showUnavailableBitrate: Boolean,
     marqueeTrackTitle: Boolean,
+    collapsed: Boolean,
+    autoExpandOnPlayback: Boolean,
+    onCollapsedChange: (Boolean) -> Unit,
     onPlayStop: () -> Unit,
     onPreviousStation: () -> Unit,
     onNextStation: () -> Unit,
@@ -91,7 +95,7 @@ fun PlayerPanel(
     onVolumeChange: (Float) -> Unit,
 ) {
     var showStreamInfo by remember { mutableStateOf(false) }
-    var panelCollapsed by remember { mutableStateOf(false) }
+    var hadActivePlaybackRequest by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val displayTrackText = errorText ?: trackStatus?.let { trackStatusText(it) } ?: trackText
     val bitrateText = if (showBitrate) {
@@ -103,11 +107,18 @@ fun PlayerPanel(
     }
     val hasActivePlaybackRequest = isPlaying || loading
 
+    LaunchedEffect(hasActivePlaybackRequest, autoExpandOnPlayback) {
+        if (hasActivePlaybackRequest && !hadActivePlaybackRequest && autoExpandOnPlayback && collapsed) {
+            onCollapsedChange(false)
+        }
+        hadActivePlaybackRequest = hasActivePlaybackRequest
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .background(RadioSurface),
+            .background(RadioSurface)
+            .navigationBarsPadding(),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -124,16 +135,16 @@ fun PlayerPanel(
             )
             OmniIconButton(
                 painter = painterResource(
-                    if (panelCollapsed) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down,
+                    if (collapsed) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down,
                 ),
-                onClick = { panelCollapsed = !panelCollapsed },
+                onClick = { onCollapsedChange(!collapsed) },
                 tint = RadioTextMuted,
                 modifier = Modifier.size(36.dp),
                 iconModifier = Modifier.size(20.dp),
             )
         }
         AnimatedVisibility(
-            visible = !panelCollapsed,
+            visible = !collapsed,
             enter = slideInVertically(
                 animationSpec = tween(),
                 initialOffsetY = { it },

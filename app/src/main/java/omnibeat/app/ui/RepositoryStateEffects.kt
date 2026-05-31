@@ -21,6 +21,9 @@ fun RepositoryStateEffects(
     onShowBitrateInControlPanelChange: (Boolean) -> Unit,
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
+    onPlayerPanelCollapsedChange: (Boolean) -> Unit,
+    onAutoExpandPlayerPanelOnPlaybackChange: (Boolean) -> Unit,
+    onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
     onConfirmStationDeletionChange: (Boolean) -> Unit,
     onLastMainPageChange: (MainPage) -> Unit,
@@ -81,6 +84,24 @@ fun RepositoryStateEffects(
     LaunchedEffect(repository) {
         repository.marqueeTrackTitle.collect { savedMarqueeTrackTitle ->
             onMarqueeTrackTitleChange(savedMarqueeTrackTitle)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.playerPanelCollapsed.collect { savedPlayerPanelCollapsed ->
+            onPlayerPanelCollapsedChange(savedPlayerPanelCollapsed)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.autoExpandPlayerPanelOnPlayback.collect { savedAutoExpand ->
+            onAutoExpandPlayerPanelOnPlaybackChange(savedAutoExpand)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.collapsePlayerPanelInSearch.collect { savedCollapseInSearch ->
+            onCollapsePlayerPanelInSearchChange(savedCollapseInSearch)
         }
     }
 
