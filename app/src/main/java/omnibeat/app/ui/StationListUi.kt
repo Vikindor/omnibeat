@@ -73,7 +73,7 @@ fun EmptyStationsState(modifier: Modifier = Modifier) {
             ) {
                 Text(stringResource(R.string.empty_stations_suffix_start), color = RadioTextMuted, fontSize = 16.sp)
                 Icon(
-                    painter = painterResource(R.drawable.ic_add_circle_outline),
+                    painter = painterResource(R.drawable.ic_add),
                     contentDescription = null,
                     tint = RadioTextMuted,
                     modifier = Modifier

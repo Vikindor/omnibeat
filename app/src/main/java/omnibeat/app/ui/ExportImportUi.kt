@@ -80,13 +80,13 @@ fun ExportImportPage(
             text = stringResource(R.string.export_import_json_description),
         )
         ExportImportActionRow(
-            icon = R.drawable.ic_file_download,
+            icon = R.drawable.ic_file_export,
             title = stringResource(R.string.export_import_json_export_title),
             subtitle = stringResource(R.string.export_import_json_export_subtitle),
             onClick = onExportStations,
         )
         ExportImportActionRow(
-            icon = R.drawable.ic_file_upload,
+            icon = R.drawable.ic_file_import,
             title = stringResource(R.string.export_import_json_import_title),
             subtitle = stringResource(R.string.export_import_json_import_subtitle),
             onClick = onImportStations,
@@ -102,13 +102,13 @@ fun ExportImportPage(
             text = stringResource(R.string.export_import_txt_description),
         )
         ExportImportActionRow(
-            icon = R.drawable.ic_file_download,
+            icon = R.drawable.ic_file_export,
             title = stringResource(R.string.export_import_txt_export_title),
             subtitle = stringResource(R.string.export_import_txt_export_subtitle),
             onClick = onExportSimpleText,
         )
         ExportImportActionRow(
-            icon = R.drawable.ic_file_upload,
+            icon = R.drawable.ic_file_import,
             title = stringResource(R.string.export_import_txt_import_title),
             subtitle = stringResource(R.string.export_import_txt_import_subtitle),
             onClick = onImportStations,

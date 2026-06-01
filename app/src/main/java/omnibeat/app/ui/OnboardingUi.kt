@@ -306,9 +306,9 @@ fun NotificationPermissionIntro(
             horizontalArrangement = Arrangement.spacedBy(18.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
+                .clip(RoundedCornerShape(14.dp))
                 .background(RadioSurface)
-                .padding(horizontal = 18.dp, vertical = 16.dp),
+                .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),

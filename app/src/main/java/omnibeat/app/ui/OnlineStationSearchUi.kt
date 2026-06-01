@@ -570,7 +570,7 @@ private fun OnlineStationResultItem(
         onClick = onPreviewStation,
         trailingContent = {
             OmniIconButton(
-                painter = painterResource(if (added) R.drawable.ic_check else R.drawable.ic_add_circle_outline),
+                painter = painterResource(if (added) R.drawable.ic_check else R.drawable.ic_add),
                 enabled = !added,
                 onClick = onAddStation,
                 tint = if (added) RadioPrimary else RadioText,

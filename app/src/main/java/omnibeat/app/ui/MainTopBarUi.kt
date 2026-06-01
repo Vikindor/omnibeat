@@ -175,7 +175,7 @@ private fun SortMenuButton(
 ) {
     Box {
         OmniIconButton(
-            painter = painterResource(R.drawable.ic_filter_list),
+            painter = painterResource(R.drawable.ic_sort),
             onClick = { onExpandedChange(true) },
         )
         DropdownMenu(
@@ -242,7 +242,7 @@ private fun AddMenuButton(
 ) {
     Box {
         OmniIconButton(
-            painter = painterResource(R.drawable.ic_add_circle_outline),
+            painter = painterResource(R.drawable.ic_add),
             onClick = { onExpandedChange(true) },
         )
         DropdownMenu(
@@ -265,7 +265,7 @@ private fun AddMenuButton(
                 },
                 leadingIcon = {
                     Icon(
-                        painter = painterResource(R.drawable.ic_add_circle_outline),
+                        painter = painterResource(R.drawable.ic_add_manually),
                         contentDescription = null,
                         tint = RadioText,
                     )

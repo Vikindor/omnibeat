@@ -95,7 +95,7 @@ fun DrawerContent(
                 )
                 DrawerItem(
                     text = stringResource(R.string.page_export_import),
-                    iconRes = R.drawable.ic_file_download,
+                    iconRes = R.drawable.ic_file_export,
                     selected = selectedPage == MainPage.ExportImport,
                     onClick = onExportImportClick,
                 )

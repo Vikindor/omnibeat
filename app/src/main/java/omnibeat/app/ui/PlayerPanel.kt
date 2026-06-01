@@ -466,7 +466,7 @@ private fun VolumeButton(
             modifier = Modifier.size(48.dp),
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_volume_up),
+                painter = painterResource(R.drawable.ic_volume),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
             )

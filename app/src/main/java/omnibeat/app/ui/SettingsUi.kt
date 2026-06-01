@@ -105,9 +105,9 @@ fun ThemeModeSegmentedControl(
 
 private fun themeModeIcon(themeMode: ThemeMode): Int {
     return when (themeMode) {
-        ThemeMode.System -> R.drawable.ic_routine
-        ThemeMode.Light -> R.drawable.ic_light_mode
-        ThemeMode.Dark -> R.drawable.ic_dark_mode
+        ThemeMode.System -> R.drawable.ic_theme_system
+        ThemeMode.Light -> R.drawable.ic_theme_light
+        ThemeMode.Dark -> R.drawable.ic_theme_dark
     }
 }
 
