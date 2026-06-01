@@ -50,6 +50,7 @@ fun MainTopBar(
     onCancelReorder: () -> Unit,
     onConfirmReorder: () -> Unit,
     onOpenDrawer: () -> Unit,
+    onNavigateBack: () -> Unit,
     onAddStation: () -> Unit,
     onSearchOnline: () -> Unit,
     onlineSearchControl: (@Composable (Modifier) -> Unit)? = null,
@@ -67,10 +68,17 @@ fun MainTopBar(
             .height(52.dp)
             .padding(start = 4.dp, end = 8.dp),
     ) {
-        OmniIconButton(
-            painter = painterResource(R.drawable.ic_menu),
-            onClick = onOpenDrawer,
-        )
+        if (selectedPage in tabPages) {
+            OmniIconButton(
+                painter = painterResource(R.drawable.ic_menu),
+                onClick = onOpenDrawer,
+            )
+        } else {
+            OmniIconButton(
+                painter = painterResource(R.drawable.ic_arrow_back),
+                onClick = onNavigateBack,
+            )
+        }
         if (selectedPage == MainPage.SearchOnline && onlineSearchControl != null) {
             onlineSearchControl(
                 Modifier

@@ -863,6 +863,7 @@ fun OmniBeatApp() {
                         onCancelReorder = ::cancelReorder,
                         onConfirmReorder = ::confirmReorder,
                         onOpenDrawer = { scope.launch { drawerState.open() } },
+                        onNavigateBack = { selectedPage = lastMainPage },
                         onAddStation = {
                             editorState = StationEditorState(
                                 stationIndex = null,
