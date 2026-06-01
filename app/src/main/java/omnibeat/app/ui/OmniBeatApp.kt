@@ -632,8 +632,15 @@ fun OmniBeatApp() {
             )
         }
 
+        fun expandPlayerPanelForUserPlaybackRequest() {
+            if (!autoExpandPlayerPanelOnPlayback || !playerPanelCollapsed) return
+            playerPanelCollapsed = false
+            scope.launch { repository.savePlayerPanelCollapsed(false) }
+        }
+
         fun playStationAt(index: Int) {
             if (!hasInternetOrToast()) return
+            expandPlayerPanelForUserPlaybackRequest()
             scope.launch { drawerState.close() }
             scrollToStationId = stations.getOrNull(index)?.id
             scrollToSelectedRequest += 1
@@ -650,6 +657,7 @@ fun OmniBeatApp() {
                 playStationAt(index)
             } else {
                 if (!hasInternetOrToast()) return
+                expandPlayerPanelForUserPlaybackRequest()
                 PlaybackService.playPreview(context, station)
             }
         }
@@ -905,7 +913,6 @@ fun OmniBeatApp() {
                             showUnavailableBitrate = showUnavailableBitrate,
                             marqueeTrackTitle = marqueeTrackTitle,
                             collapsed = playerPanelCollapsed,
-                            autoExpandOnPlayback = autoExpandPlayerPanelOnPlayback,
                             onCollapsedChange = { collapsed ->
                                 playerPanelCollapsed = collapsed
                                 scope.launch { repository.savePlayerPanelCollapsed(collapsed) }

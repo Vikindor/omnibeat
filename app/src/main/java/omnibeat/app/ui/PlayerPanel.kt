@@ -40,7 +40,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,7 +82,6 @@ fun PlayerPanel(
     showUnavailableBitrate: Boolean,
     marqueeTrackTitle: Boolean,
     collapsed: Boolean,
-    autoExpandOnPlayback: Boolean,
     onCollapsedChange: (Boolean) -> Unit,
     onPlayStop: () -> Unit,
     onPreviousStation: () -> Unit,
@@ -92,7 +90,6 @@ fun PlayerPanel(
     onVolumeChange: (Float) -> Unit,
 ) {
     var showStreamInfo by remember { mutableStateOf(false) }
-    var hadActivePlaybackRequest by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val displayTrackText = errorText ?: trackStatus?.let { trackStatusText(it) } ?: trackText
     val bitrateText = if (showBitrate) {
@@ -103,13 +100,6 @@ fun PlayerPanel(
         null
     }
     val hasActivePlaybackRequest = isPlaying || loading
-
-    LaunchedEffect(hasActivePlaybackRequest, autoExpandOnPlayback) {
-        if (hasActivePlaybackRequest && !hadActivePlaybackRequest && autoExpandOnPlayback && collapsed) {
-            onCollapsedChange(false)
-        }
-        hadActivePlaybackRequest = hasActivePlaybackRequest
-    }
 
     Column(
         modifier = Modifier
