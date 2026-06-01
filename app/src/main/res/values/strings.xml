@@ -7,8 +7,6 @@
     <string name="action_close">Close</string>
     <string name="action_copy">Copy</string>
     <string name="action_delete">Delete</string>
-    <string name="action_grant">Grant</string>
-    <string name="action_granted">Granted</string>
     <string name="action_replace">Replace</string>
     <string name="action_merge">Merge</string>
     <string name="action_search">Search</string>
@@ -42,9 +40,6 @@
     <string name="settings_language_system">Follow system language</string>
     <string name="settings_language_selected">Use selected language</string>
     <string name="settings_section_playback">Playback</string>
-    <string name="settings_notifications_title">Notifications</string>
-    <string name="settings_notifications_granted">Media controls can appear in notifications</string>
-    <string name="settings_notifications_not_granted">Grant permission to show media controls</string>
     <string name="settings_remember_last_station_title">Remember last station</string>
     <string name="settings_remember_last_station_on">Play will start the last played station</string>
     <string name="settings_remember_last_station_off">Play will start the first station in the list</string>
@@ -209,10 +204,6 @@
     <string name="onboarding_stream_actions_title">Use stream actions</string>
     <string name="onboarding_stream_tap_suffix">stream info to copy the current track name.</string>
     <string name="onboarding_stream_hold_suffix">to open detailed stream information</string>
-    <string name="onboarding_playback_controls">Playback controls</string>
-    <string name="onboarding_notifications_description">OmniBeat does not send push notifications. This permission is only used to show the media notification with playback controls.</string>
-    <string name="onboarding_settings_note">You can change this later in Settings.</string>
-    <string name="onboarding_notifications_title">Notifications</string>
     <string name="onboarding_screenshot_placeholder">Screenshot placeholder</string>
 
     <string name="about_tagline">Streaming audio, without the fuss</string>

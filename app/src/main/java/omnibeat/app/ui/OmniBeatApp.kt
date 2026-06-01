@@ -9,7 +9,6 @@ import omnibeat.app.radio.RadioBrowserClient
 import omnibeat.app.radio.RadioBrowserFilterOption
 import omnibeat.app.radio.RadioBrowserSearchParams
 
-import android.Manifest
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -104,20 +103,8 @@ fun OmniBeatApp() {
 
         val scope = rememberCoroutineScope()
         val onboardingCompleted by repository.onboardingCompleted.collectAsState(initial = null)
-        val notificationPermissionPromptCompleted by repository.notificationPermissionPromptCompleted.collectAsState(
-            initial = null,
-        )
-        var notificationPermissionGranted by remember {
-            mutableStateOf(hasNotificationPermission(context))
-        }
-        val notificationPermissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission(),
-        ) { granted ->
-            notificationPermissionGranted = granted
-            scope.launch { repository.saveNotificationPermissionPromptCompleted(true) }
-        }
 
-        if (onboardingCompleted == null || notificationPermissionPromptCompleted == null) {
+        if (onboardingCompleted == null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -134,19 +121,6 @@ fun OmniBeatApp() {
                 themeMode = themeMode,
                 onThemeModeChange = { nextThemeMode ->
                     scope.launch { repository.saveThemeMode(nextThemeMode) }
-                },
-                modifier = Modifier.fillMaxSize(),
-            )
-            return@OmniBeatTheme
-        }
-
-        if (!notificationPermissionGranted && notificationPermissionPromptCompleted == false) {
-            NotificationPermissionIntro(
-                onGrant = {
-                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                },
-                onSkip = {
-                    scope.launch { repository.saveNotificationPermissionPromptCompleted(true) }
                 },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -1012,7 +986,6 @@ fun OmniBeatApp() {
                                 collapsePlayerPanelInSearch = collapsePlayerPanelInSearch,
                                 showEmptyFavoritesTab = showEmptyFavoritesTab,
                                 confirmStationDeletion = confirmStationDeletion,
-                                notificationPermissionGranted = notificationPermissionGranted,
                                 syncingStationArtwork = syncingStationArtwork,
                                 onShowStationArtworkChange = { show ->
                                     showStationArtwork = show
@@ -1057,9 +1030,6 @@ fun OmniBeatApp() {
                                 onConfirmStationDeletionChange = { confirm ->
                                     confirmStationDeletion = confirm
                                     scope.launch { repository.saveConfirmStationDeletion(confirm) }
-                                },
-                                onGrantNotificationPermission = {
-                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 },
                                 onSyncStationArtwork = { syncStationArtwork() },
                                 onClearLibrary = { clearLibrary() },

@@ -5,8 +5,6 @@
     <string name="action_close">Закрыть</string>
     <string name="action_copy">Копировать</string>
     <string name="action_delete">Удалить</string>
-    <string name="action_grant">Разрешить</string>
-    <string name="action_granted">Разрешено</string>
     <string name="action_replace">Заменить</string>
     <string name="action_merge">Объединить</string>
     <string name="action_search">Поиск</string>
@@ -40,9 +38,6 @@
     <string name="settings_language_system">Использовать язык системы</string>
     <string name="settings_language_selected">Использовать выбранный язык</string>
     <string name="settings_section_playback">Воспроизведение</string>
-    <string name="settings_notifications_title">Уведомления</string>
-    <string name="settings_notifications_granted">Элементы управления воспроизведением будут доступны в уведомлениях</string>
-    <string name="settings_notifications_not_granted">Разрешите уведомления, чтобы управлять воспроизведением из панели уведомлений</string>
     <string name="settings_remember_last_station_title">Запоминать последнюю станцию</string>
     <string name="settings_remember_last_station_on">Воспроизведение начнётся с последней станции</string>
     <string name="settings_remember_last_station_off">Воспроизведение начнётся с первой станции из списка</string>
@@ -207,10 +202,6 @@
     <string name="onboarding_stream_actions_title">Действия со стримом</string>
     <string name="onboarding_stream_tap_suffix">на информацию о стриме, чтобы скопировать название текущего трека.</string>
     <string name="onboarding_stream_hold_suffix">, чтобы открыть подробную информацию о стриме.</string>
-    <string name="onboarding_playback_controls">Управление воспроизведением</string>
-    <string name="onboarding_notifications_description">OmniBeat не отправляет push-уведомления. Это разрешение нужно только для уведомления с кнопками управления воспроизведением.</string>
-    <string name="onboarding_settings_note">Это позже можно изменить в настройках.</string>
-    <string name="onboarding_notifications_title">Уведомления</string>
     <string name="onboarding_screenshot_placeholder">Здесь будет скриншот</string>
 
     <string name="about_tagline">Интернет-радио без заморочек</string>

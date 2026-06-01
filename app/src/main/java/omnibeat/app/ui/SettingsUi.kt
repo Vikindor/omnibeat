@@ -134,7 +134,6 @@ fun SettingsPage(
     collapsePlayerPanelInSearch: Boolean,
     showEmptyFavoritesTab: Boolean,
     confirmStationDeletion: Boolean,
-    notificationPermissionGranted: Boolean,
     syncingStationArtwork: Boolean,
     onShowStationArtworkChange: (Boolean) -> Unit,
     onAddRadioBrowserTagsChange: (Boolean) -> Unit,
@@ -147,7 +146,6 @@ fun SettingsPage(
     onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
     onConfirmStationDeletionChange: (Boolean) -> Unit,
-    onGrantNotificationPermission: () -> Unit,
     onSyncStationArtwork: () -> Unit,
     onClearLibrary: () -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
@@ -189,21 +187,6 @@ fun SettingsPage(
             SettingsDivider()
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_playback))
-            SettingsActionRow(
-                title = stringResource(R.string.settings_notifications_title),
-                subtitle = if (notificationPermissionGranted) {
-                    stringResource(R.string.settings_notifications_granted)
-                } else {
-                    stringResource(R.string.settings_notifications_not_granted)
-                },
-                actionText = if (notificationPermissionGranted) {
-                    stringResource(R.string.action_granted)
-                } else {
-                    stringResource(R.string.action_grant)
-                },
-                enabled = !notificationPermissionGranted,
-                onClick = onGrantNotificationPermission,
-            )
             SettingsSwitchRow(
                 title = stringResource(R.string.settings_remember_last_station_title),
                 subtitle = if (rememberLastStation) {

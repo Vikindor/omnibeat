@@ -1,13 +1,10 @@
 package omnibeat.app.ui
 
-import android.Manifest
 import android.app.Activity
 import android.app.LocaleManager
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.pm.PackageManager
 import android.os.LocaleList
-import androidx.core.content.ContextCompat
 import omnibeat.app.model.AppLanguage
 
 tailrec fun Context.findActivity(): Activity? {
@@ -16,13 +13,6 @@ tailrec fun Context.findActivity(): Activity? {
         is ContextWrapper -> baseContext.findActivity()
         else -> null
     }
-}
-
-fun hasNotificationPermission(context: Context): Boolean {
-    return ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.POST_NOTIFICATIONS,
-    ) == PackageManager.PERMISSION_GRANTED
 }
 
 fun Context.applyAppLanguage(appLanguage: AppLanguage) {
