@@ -305,7 +305,7 @@ fun OmniBeatApp() {
         }
 
         LaunchedEffect(selectedPage) {
-            if (selectedPage == MainPage.FindOnline) {
+            if (selectedPage == MainPage.SearchOnline) {
                 onlineOptionsExpanded = true
                 if (onlineCountries.isEmpty()) {
                     scope.launch {
@@ -350,7 +350,7 @@ fun OmniBeatApp() {
         }
 
         LaunchedEffect(selectedPage, collapsePlayerPanelInSearch) {
-            if (selectedPage == MainPage.FindOnline && collapsePlayerPanelInSearch && !playerPanelCollapsed) {
+            if (selectedPage == MainPage.SearchOnline && collapsePlayerPanelInSearch && !playerPanelCollapsed) {
                 playerPanelCollapsed = true
                 repository.savePlayerPanelCollapsed(true)
             }
@@ -420,7 +420,7 @@ fun OmniBeatApp() {
             }
         }
 
-        fun deleteEntireLibrary() {
+        fun clearLibrary() {
             PlaybackService.stop(context)
             stations = emptyList()
             customStationOrder = emptyList()
@@ -614,7 +614,7 @@ fun OmniBeatApp() {
         }
 
         fun navigationStations(): List<Station> {
-            if (selectedPage == MainPage.FindOnline) {
+            if (selectedPage == MainPage.SearchOnline) {
                 return onlineSearchResults.map(::stationFromOnlineResult)
             }
             val navigationPage = activeNavigationPage()
@@ -794,7 +794,7 @@ fun OmniBeatApp() {
             val pageStations = navigationStations()
             val hasActivePlaybackRequest = playbackState.isPlaying || playbackState.resolving || playbackState.buffering
             if (!hasActivePlaybackRequest && playbackState.selectedStation == null && pageStations.isNotEmpty()) {
-                val rememberedStation = if (rememberLastStation && selectedPage != MainPage.FindOnline) {
+                val rememberedStation = if (rememberLastStation && selectedPage != MainPage.SearchOnline) {
                     lastPlayedStationId
                         ?.let { stationId -> stations.firstOrNull { it.id == stationId } }
                 } else {
@@ -872,10 +872,10 @@ fun OmniBeatApp() {
                                 dateAdded = null,
                             )
                         },
-                        onFindOnline = {
-                            selectedPage = MainPage.FindOnline
+                        onSearchOnline = {
+                            selectedPage = MainPage.SearchOnline
                         },
-                        onlineSearchControl = if (selectedPage == MainPage.FindOnline) {
+                        onlineSearchControl = if (selectedPage == MainPage.SearchOnline) {
                             { controlModifier ->
                                 SearchOptionsTopBarControl(
                                     expanded = onlineOptionsExpanded,
@@ -890,7 +890,7 @@ fun OmniBeatApp() {
                     )
                 },
                 bottomBar = {
-                    if (selectedPage in visibleTabPages || selectedPage == MainPage.FindOnline) {
+                    if (selectedPage in visibleTabPages || selectedPage == MainPage.SearchOnline) {
                         PlayerPanel(
                             station = playbackState.selectedStation,
                             trackText = playbackState.trackText,
@@ -959,12 +959,12 @@ fun OmniBeatApp() {
                                 onImportStations = {
                                     importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
                                 },
-                                onDeleteLibrary = { deleteEntireLibrary() },
+                                onClearLibrary = { clearLibrary() },
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
 
-                        MainPage.FindOnline -> {
+                        MainPage.SearchOnline -> {
                             OnlineStationSearchPage(
                                 searchState = onlineSearchState,
                                 countries = onlineCountries,
@@ -1053,7 +1053,7 @@ fun OmniBeatApp() {
                                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 },
                                 onSyncStationArtwork = { syncStationArtwork() },
-                                onDeleteLibrary = { deleteEntireLibrary() },
+                                onClearLibrary = { clearLibrary() },
                                 onThemeModeChange = { nextThemeMode ->
                                     scope.launch { repository.saveThemeMode(nextThemeMode) }
                                 },

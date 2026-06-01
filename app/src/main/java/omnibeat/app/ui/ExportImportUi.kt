@@ -33,10 +33,10 @@ fun ExportImportPage(
     onExportStations: () -> Unit,
     onExportSimpleText: () -> Unit,
     onImportStations: () -> Unit,
-    onDeleteLibrary: () -> Unit,
+    onClearLibrary: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var confirmDeleteLibrary by remember { mutableStateOf(false) }
+    var confirmClearLibrary by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -65,7 +65,7 @@ fun ExportImportPage(
             }
             OmniIconButton(
                 painter = painterResource(R.drawable.ic_delete),
-                onClick = { confirmDeleteLibrary = true },
+                onClick = { confirmClearLibrary = true },
                 tint = RadioDanger,
             )
         }
@@ -115,16 +115,16 @@ fun ExportImportPage(
         )
     }
 
-    if (confirmDeleteLibrary) {
+    if (confirmClearLibrary) {
         OmniConfirmDialog(
-            title = stringResource(R.string.dialog_delete_entire_library_title),
-            text = stringResource(R.string.dialog_delete_entire_library_text),
+            title = stringResource(R.string.dialog_clear_library_title),
+            text = stringResource(R.string.dialog_clear_library_text),
             confirmText = stringResource(R.string.action_delete),
             destructive = true,
-            onDismiss = { confirmDeleteLibrary = false },
+            onDismiss = { confirmClearLibrary = false },
             onConfirm = {
-                confirmDeleteLibrary = false
-                onDeleteLibrary()
+                confirmClearLibrary = false
+                onClearLibrary()
             },
         )
     }

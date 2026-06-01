@@ -30,7 +30,7 @@ enum class MainPage {
     Stations,
     Favorites,
     ExportImport,
-    FindOnline,
+    SearchOnline,
     Settings,
     About;
 

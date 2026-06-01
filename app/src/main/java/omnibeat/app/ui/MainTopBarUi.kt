@@ -51,7 +51,7 @@ fun MainTopBar(
     onConfirmReorder: () -> Unit,
     onOpenDrawer: () -> Unit,
     onAddStation: () -> Unit,
-    onFindOnline: () -> Unit,
+    onSearchOnline: () -> Unit,
     onlineSearchControl: (@Composable (Modifier) -> Unit)? = null,
 ) {
     val density = LocalDensity.current
@@ -71,7 +71,7 @@ fun MainTopBar(
             painter = painterResource(R.drawable.ic_menu),
             onClick = onOpenDrawer,
         )
-        if (selectedPage == MainPage.FindOnline && onlineSearchControl != null) {
+        if (selectedPage == MainPage.SearchOnline && onlineSearchControl != null) {
             onlineSearchControl(
                 Modifier
                     .weight(1f)
@@ -151,7 +151,7 @@ fun MainTopBar(
                     expanded = addMenuExpanded,
                     onExpandedChange = { addMenuExpanded = it },
                     onAddStation = onAddStation,
-                    onFindOnline = onFindOnline,
+                    onSearchOnline = onSearchOnline,
                 )
             }
         }
@@ -230,7 +230,7 @@ private fun AddMenuButton(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     onAddStation: () -> Unit,
-    onFindOnline: () -> Unit,
+    onSearchOnline: () -> Unit,
 ) {
     Box {
         OmniIconButton(
@@ -272,7 +272,7 @@ private fun AddMenuButton(
                 },
                 onClick = {
                     onExpandedChange(false)
-                    onFindOnline()
+                    onSearchOnline()
                 },
                 leadingIcon = {
                     Icon(

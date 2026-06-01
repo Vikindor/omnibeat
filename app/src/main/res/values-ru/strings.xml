@@ -84,10 +84,10 @@
     <string name="settings_remove_tracking_on">Из URL новых станций будут удаляться метки трекеров</string>
     <string name="settings_remove_tracking_off">URL новых станций будут сохраняться без изменений</string>
     <string name="settings_section_danger_zone">Опасная зона</string>
-    <string name="settings_delete_all_stations_title">Удалить все станции</string>
+    <string name="settings_clear_library_title">Очистить библиотеку</string>
 
-    <string name="dialog_delete_entire_library_title">Очистить библиотеку?</string>
-    <string name="dialog_delete_entire_library_text">Все станции, избранное и сортировка будут удалены</string>
+    <string name="dialog_clear_library_title">Очистить библиотеку?</string>
+    <string name="dialog_clear_library_text">Все станции, избранное и сортировка будут удалены</string>
     <string name="dialog_error_title">Ошибка</string>
     <string name="toast_error_copied">Ошибка скопирована</string>
     <string name="dialog_import_stations_title">Импорт станций</string>

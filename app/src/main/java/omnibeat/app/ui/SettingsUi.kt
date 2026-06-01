@@ -149,13 +149,13 @@ fun SettingsPage(
     onConfirmStationDeletionChange: (Boolean) -> Unit,
     onGrantNotificationPermission: () -> Unit,
     onSyncStationArtwork: () -> Unit,
-    onDeleteLibrary: () -> Unit,
+    onClearLibrary: () -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
     onAppLanguageChange: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
-    var confirmDeleteLibrary by remember { mutableStateOf(false) }
+    var confirmClearLibrary by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -340,8 +340,8 @@ fun SettingsPage(
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_danger_zone), color = RadioDanger)
             SettingsDangerRow(
-                title = stringResource(R.string.settings_delete_all_stations_title),
-                onClick = { confirmDeleteLibrary = true },
+                title = stringResource(R.string.settings_clear_library_title),
+                onClick = { confirmClearLibrary = true },
             )
         }
         OmniScrollIndicator(
@@ -352,16 +352,16 @@ fun SettingsPage(
         )
     }
 
-    if (confirmDeleteLibrary) {
+    if (confirmClearLibrary) {
         OmniConfirmDialog(
-            title = stringResource(R.string.dialog_delete_entire_library_title),
-            text = stringResource(R.string.dialog_delete_entire_library_text),
+            title = stringResource(R.string.dialog_clear_library_title),
+            text = stringResource(R.string.dialog_clear_library_text),
             confirmText = stringResource(R.string.action_delete),
             destructive = true,
-            onDismiss = { confirmDeleteLibrary = false },
+            onDismiss = { confirmClearLibrary = false },
             onConfirm = {
-                confirmDeleteLibrary = false
-                onDeleteLibrary()
+                confirmClearLibrary = false
+                onClearLibrary()
             },
         )
     }

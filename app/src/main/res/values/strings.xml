@@ -86,10 +86,10 @@
     <string name="settings_remove_tracking_on">Tracking parameters will be cleaned for new stations</string>
     <string name="settings_remove_tracking_off">New station URLs will be saved unchanged</string>
     <string name="settings_section_danger_zone">Danger zone</string>
-    <string name="settings_delete_all_stations_title">Delete all stations</string>
+    <string name="settings_clear_library_title">Clear library</string>
 
-    <string name="dialog_delete_entire_library_title">Clear library?</string>
-    <string name="dialog_delete_entire_library_text">All stations, favorites, and custom order will be removed</string>
+    <string name="dialog_clear_library_title">Clear library?</string>
+    <string name="dialog_clear_library_text">All stations, favorites, and custom order will be removed</string>
     <string name="dialog_error_title">Error</string>
     <string name="toast_error_copied">Error copied</string>
     <string name="dialog_import_stations_title">Import stations</string>

@@ -11,7 +11,7 @@ fun MainPage.titleRes(): Int {
         MainPage.Stations -> R.string.page_stations
         MainPage.Favorites -> R.string.page_favorites
         MainPage.ExportImport -> R.string.page_export_import
-        MainPage.FindOnline -> R.string.action_search_online
+        MainPage.SearchOnline -> R.string.action_search_online
         MainPage.Settings -> R.string.page_settings
         MainPage.About -> R.string.page_about
     }
