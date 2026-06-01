@@ -484,9 +484,16 @@ fun OmniBeatApp() {
             )
         }
 
+        fun expandPlayerPanelForUserPlaybackRequest() {
+            if (!autoExpandPlayerPanelOnPlayback || !playerPanelCollapsed) return
+            playerPanelCollapsed = false
+            scope.launch { repository.savePlayerPanelCollapsed(false) }
+        }
+
         fun previewOnlineStation(radioStation: RadioBrowserStation) {
             if (radioStation.streamUrl.isBlank()) return
             if (!hasInternetOrToast()) return
+            expandPlayerPanelForUserPlaybackRequest()
             PlaybackService.playPreview(context, stationFromOnlineResult(radioStation))
         }
 
@@ -630,12 +637,6 @@ fun OmniBeatApp() {
                 customStationOrder = customStationOrder,
                 customFavoriteOrder = customFavoriteOrder,
             )
-        }
-
-        fun expandPlayerPanelForUserPlaybackRequest() {
-            if (!autoExpandPlayerPanelOnPlayback || !playerPanelCollapsed) return
-            playerPanelCollapsed = false
-            scope.launch { repository.savePlayerPanelCollapsed(false) }
         }
 
         fun playStationAt(index: Int) {
