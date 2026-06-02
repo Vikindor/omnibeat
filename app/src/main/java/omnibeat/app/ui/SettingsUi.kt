@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import omnibeat.app.R
+import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
 import omnibeat.app.model.AppLanguage
 import omnibeat.app.model.ThemeMode
 
@@ -120,6 +121,15 @@ private fun appLanguageLabel(appLanguage: AppLanguage): String {
 }
 
 @Composable
+private fun pauseTimeoutLabel(minutes: Int): String {
+    return if (minutes == STOP_SERVICE_AFTER_PAUSE_NEVER) {
+        stringResource(R.string.settings_stop_service_after_pause_never)
+    } else {
+        stringResource(R.string.settings_stop_service_after_pause_minutes, minutes)
+    }
+}
+
+@Composable
 fun SettingsPage(
     themeMode: ThemeMode,
     appLanguage: AppLanguage,
@@ -130,6 +140,7 @@ fun SettingsPage(
     showBitrateInControlPanel: Boolean,
     showUnavailableBitrate: Boolean,
     marqueeTrackTitle: Boolean,
+    stopServiceAfterPauseMinutes: Int,
     autoExpandPlayerPanelOnPlayback: Boolean,
     collapsePlayerPanelInSearch: Boolean,
     showEmptyFavoritesTab: Boolean,
@@ -142,6 +153,7 @@ fun SettingsPage(
     onShowBitrateInControlPanelChange: (Boolean) -> Unit,
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
+    onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
     onAutoExpandPlayerPanelOnPlaybackChange: (Boolean) -> Unit,
     onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
@@ -196,6 +208,16 @@ fun SettingsPage(
                 },
                 checked = rememberLastStation,
                 onCheckedChange = onRememberLastStationChange,
+            )
+            SettingsPauseTimeoutRow(
+                title = stringResource(R.string.settings_stop_service_after_pause_title),
+                subtitle = if (stopServiceAfterPauseMinutes == STOP_SERVICE_AFTER_PAUSE_NEVER) {
+                    stringResource(R.string.settings_stop_service_after_pause_never_subtitle)
+                } else {
+                    stringResource(R.string.settings_stop_service_after_pause_subtitle, stopServiceAfterPauseMinutes)
+                },
+                selectedMinutes = stopServiceAfterPauseMinutes,
+                onSelectedMinutesChange = onStopServiceAfterPauseMinutesChange,
             )
             SettingsDivider()
 
@@ -406,6 +428,71 @@ private fun SettingsLanguageRow(
                         onClick = {
                             expanded = false
                             onAppLanguageChange(option)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsPauseTimeoutRow(
+    title: String,
+    subtitle: String,
+    selectedMinutes: Int,
+    onSelectedMinutesChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val options = listOf(STOP_SERVICE_AFTER_PAUSE_NEVER, 1, 5, 10, 30)
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = title,
+                color = RadioText,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = subtitle,
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+            )
+        }
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(
+                    text = pauseTimeoutLabel(selectedMinutes),
+                    color = RadioPrimary,
+                )
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                containerColor = RadioSurface,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+            ) {
+                options.forEach { minutes ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = pauseTimeoutLabel(minutes),
+                                color = RadioText,
+                            )
+                        },
+                        onClick = {
+                            expanded = false
+                            onSelectedMinutesChange(minutes)
                         },
                     )
                 }

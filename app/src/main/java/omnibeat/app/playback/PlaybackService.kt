@@ -43,7 +43,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import omnibeat.app.MainActivity
+import omnibeat.app.data.DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES
 import omnibeat.app.data.StationRepository
+import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
 import omnibeat.app.model.Station
 import omnibeat.app.network.NetworkStatus
 import omnibeat.app.stream.IcyMetadataParser
@@ -55,6 +57,7 @@ private const val PLAYER_USER_AGENT = "OmniBeat Android"
 
 enum class PlaybackTrackStatus {
     Stopped,
+    Paused,
     LoadingStations,
     Resolving,
     WaitingMetadata,
@@ -95,15 +98,19 @@ class PlaybackService : Service() {
     private var stations: List<Station> = emptyList()
     private var resolveJob: Job? = null
     private var notificationUpdateJob: Job? = null
+    private var noMetadataJob: Job? = null
     private var lastSessionMetadata: Pair<String, String?>? = null
     private var currentStreamIsHls = false
     private var lastPlayedStationId: String? = null
     private var rememberLastStation = true
+    private var stopServiceAfterPauseMinutes = DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES
     private var navigationQueueIds: List<String> = emptyList()
+    private var stopAfterPauseJob: Job? = null
 
     private fun trackText(status: PlaybackTrackStatus): String {
         return when (status) {
             PlaybackTrackStatus.Stopped -> getString(R.string.track_text_stopped)
+            PlaybackTrackStatus.Paused -> getString(R.string.track_text_paused)
             PlaybackTrackStatus.LoadingStations -> getString(R.string.track_text_loading_stations)
             PlaybackTrackStatus.Resolving -> getString(R.string.track_text_resolving)
             PlaybackTrackStatus.WaitingMetadata -> getString(R.string.track_text_waiting_metadata)
@@ -117,6 +124,7 @@ class PlaybackService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        trace("service.onCreate")
         repository = StationRepository(applicationContext)
         player = buildPlayer()
         sessionPlayer = OmniBeatSessionPlayer(player)
@@ -167,16 +175,22 @@ class PlaybackService : Service() {
                 rememberLastStation = remember
             }
         }
+        scope.launch {
+            repository.stopServiceAfterPauseMinutes.collect { minutes ->
+                stopServiceAfterPauseMinutes = minutes
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        trace("service.onStartCommand action=${intent?.action}")
         when (intent?.action) {
             ACTION_PLAY_STATION -> playStationAt(
                 index = intent.getIntExtra(EXTRA_INDEX, -1),
                 queueIds = intent.getStringArrayListExtra(EXTRA_QUEUE_IDS).orEmpty(),
             )
             ACTION_PLAY_PREVIEW -> playPreviewStation(intent.toPreviewStation())
-            ACTION_PLAY_STOP -> playOrStop()
+            ACTION_PLAY_PAUSE -> playOrPause()
             ACTION_PREVIOUS -> playAdjacentStation(-1)
             ACTION_NEXT -> playAdjacentStation(1)
             ACTION_RANDOM -> playRandomStation()
@@ -191,8 +205,11 @@ class PlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        trace("service.onDestroy")
         resolveJob?.cancel()
         notificationUpdateJob?.cancel()
+        noMetadataJob?.cancel()
+        stopAfterPauseJob?.cancel()
         player.removeAnalyticsListener(analyticsListener)
         player.removeListener(playerListener)
         mediaSession?.release()
@@ -201,20 +218,34 @@ class PlaybackService : Service() {
         super.onDestroy()
     }
 
-    private fun playOrStop() {
+    private fun playOrPause() {
         val current = state.value
-        when {
-            player.isPlaying || current.resolving || current.buffering -> {
-                stopPlayback()
-                stopSelf()
-            }
-            current.selectedStation == null -> playLastOrFirstStation()
-            else -> player.play()
+        trace("playOrPause entry")
+        if (player.isPlaying || current.resolving || current.buffering) {
+            pausePlayback()
+        } else {
+            playFromCurrentState()
         }
         updateNotification(immediate = true)
     }
 
+    private fun playFromCurrentState() {
+        val current = state.value
+        trace("playFromCurrentState selected=${current.selectedStation?.title} status=${current.trackStatus}")
+        if (player.isPlaying || current.resolving || (current.buffering && current.trackStatus != PlaybackTrackStatus.Paused)) return
+        if (current.selectedStation == null) {
+            playLastOrFirstStation()
+        } else {
+            playStation(
+                station = current.selectedStation,
+                index = current.selectedIndex,
+                previewing = current.previewing,
+            )
+        }
+    }
+
     private fun playLastOrFirstStation() {
+        trace("playLastOrFirstStation entry")
         scope.launch {
             if (stations.isEmpty()) {
                 stations = repository.stations.first()
@@ -227,6 +258,7 @@ class PlaybackService : Service() {
             } else {
                 0
             }
+            trace("playLastOrFirstStation resolvedIndex=$nextIndex rememberLastStation=$rememberLastStation")
             playStationAt(nextIndex)
         }
     }
@@ -245,6 +277,7 @@ class PlaybackService : Service() {
         index: Int,
         queueIds: List<String> = navigationQueueIds,
     ) {
+        trace("playStationAt index=$index queueSize=${queueIds.size}")
         navigationQueueIds = queueIds
         val station = stations.getOrNull(index)
         if (station == null) {
@@ -277,6 +310,7 @@ class PlaybackService : Service() {
 
     private fun playPreviewStation(station: Station?) {
         if (station == null) return
+        trace("playPreviewStation title=${station.title}")
         playStation(station = station, index = -1, previewing = true)
     }
 
@@ -285,11 +319,15 @@ class PlaybackService : Service() {
         index: Int,
         previewing: Boolean,
     ) {
+        trace("playStation start title=${station.title} index=$index previewing=$previewing url=${station.streamUrl}")
         resolveJob?.cancel()
+        stopAfterPauseJob?.cancel()
+        noMetadataJob?.cancel()
         player.stop()
         lastSessionMetadata = null
         currentStreamIsHls = false
         if (!NetworkStatus.isOnline(this)) {
+            trace("playStation noInternet title=${station.title}")
             _state.update {
                 it.copy(
                     selectedIndex = index,
@@ -320,10 +358,12 @@ class PlaybackService : Service() {
 
         resolveJob = scope.launch {
             runCatching {
+                trace("resolve start title=${station.title}")
                 withContext(Dispatchers.IO) {
                     StreamResolver.resolveStream(station.streamUrl)
                 }
             }.onSuccess { resolvedStream ->
+                trace("resolve success playableUrl=${resolvedStream.playableUrl} bitrate=${resolvedStream.bitrateKbps}")
                 currentStreamIsHls = resolvedStream.playableUrl.lowercase().contains(".m3u8")
                 _state.update {
                     it.copy(
@@ -340,13 +380,17 @@ class PlaybackService : Service() {
                         .setLiveConfiguration(MediaItem.LiveConfiguration.Builder().build())
                         .build(),
                 )
+                trace("player.prepare title=${station.title}")
                 player.prepare()
+                trace("player.play title=${station.title}")
                 player.play()
                 updateNotification()
             }.onFailure { error ->
                 if (error is CancellationException) {
+                    trace("resolve cancelled title=${station.title}")
                     return@onFailure
                 }
+                trace("resolve failure title=${station.title} error=${error.message}")
                 _state.update {
                     it.copy(
                         errorText = "Could not resolve stream: ${error.message}",
@@ -360,6 +404,7 @@ class PlaybackService : Service() {
     }
 
     private fun playAdjacentStation(direction: Int) {
+        trace("playAdjacentStation direction=$direction")
         val navigationStations = navigationStations()
         if (navigationStations.isEmpty()) return
         val currentStationId = state.value.selectedStation?.id
@@ -377,6 +422,7 @@ class PlaybackService : Service() {
     }
 
     private fun playRandomStation() {
+        trace("playRandomStation")
         val navigationStations = navigationStations()
         if (navigationStations.isEmpty()) return
         val currentStationId = state.value.selectedStation?.id
@@ -404,8 +450,11 @@ class PlaybackService : Service() {
     }
 
     private fun stopPlayback() {
+        trace("stopPlayback")
         resolveJob?.cancel()
         notificationUpdateJob?.cancel()
+        noMetadataJob?.cancel()
+        stopAfterPauseJob?.cancel()
         lastSessionMetadata = null
         currentStreamIsHls = false
         navigationQueueIds = emptyList()
@@ -425,21 +474,57 @@ class PlaybackService : Service() {
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
+    private fun pausePlayback() {
+        trace("pausePlayback")
+        resolveJob?.cancel()
+        notificationUpdateJob?.cancel()
+        noMetadataJob?.cancel()
+        currentStreamIsHls = false
+        player.stop()
+        player.clearMediaItems()
+        _state.update {
+            it.copy(
+                resolving = false,
+                buffering = false,
+                isPlaying = false,
+                errorText = null,
+            ).withTrackStatus(PlaybackTrackStatus.Paused)
+        }
+        updateNotification(immediate = true)
+        scheduleStopAfterPause()
+    }
+
+    private fun scheduleStopAfterPause() {
+        stopAfterPauseJob?.cancel()
+        val minutes = stopServiceAfterPauseMinutes
+        if (minutes == STOP_SERVICE_AFTER_PAUSE_NEVER) return
+        stopAfterPauseJob = scope.launch {
+            delay(minutes * 60_000L)
+            val current = state.value
+            if (!current.isPlaying && !current.resolving && !current.buffering && current.trackStatus == PlaybackTrackStatus.Paused) {
+                stopPlayback()
+                stopSelf()
+            }
+        }
+    }
+
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
+            trace("listener.onPlaybackStateChanged playbackState=$playbackState")
             _state.update {
                 it.copy(
                     buffering = playbackState == Player.STATE_BUFFERING,
                     isPlaying = player.isPlaying,
                 )
             }
-            showNoMetadataIfPlaybackStarted()
+            scheduleNoMetadataIfPlaybackStarted()
             updateNotification()
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            trace("listener.onIsPlayingChanged isPlaying=$isPlaying")
             _state.update { it.copy(isPlaying = isPlaying) }
-            showNoMetadataIfPlaybackStarted()
+            scheduleNoMetadataIfPlaybackStarted()
             updateNotification(immediate = true)
         }
 
@@ -466,6 +551,9 @@ class PlaybackService : Service() {
         }
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            trace(
+                "listener.onMediaMetadataChanged title=${mediaMetadata.title} artist=${mediaMetadata.artist} artwork=${mediaMetadata.artworkUri}",
+            )
             mediaMetadata.artworkUri?.toString()?.takeIf { it.isNotBlank() }?.let { imageUrl ->
                 saveCurrentStationImageUrl(imageUrl)
             }
@@ -476,17 +564,19 @@ class PlaybackService : Service() {
                 return
             }
             val nextTrackText = if (artist.isNotBlank()) "$artist - $title" else title
-            _state.update {
-                it.copy(trackText = nextTrackText, trackStatus = null)
-            }
+            noMetadataJob?.cancel()
+            _state.update { it.copy(trackText = nextTrackText, trackStatus = null) }
             refreshCurrentMediaMetadata()
             updateNotification()
         }
 
         override fun onMetadata(metadata: Metadata) {
+            trace("listener.onMetadata entries=${metadata.length()}")
             repeat(metadata.length()) { index ->
                 val streamTitle = IcyMetadataParser.readStreamTitle(metadata[index].toString())
                 if (!streamTitle.isNullOrBlank()) {
+                    trace("listener.onMetadata streamTitle=$streamTitle")
+                    noMetadataJob?.cancel()
                     _state.update { it.copy(trackText = streamTitle, trackStatus = null) }
                     refreshCurrentMediaMetadata()
                     updateNotification()
@@ -496,8 +586,10 @@ class PlaybackService : Service() {
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            trace("listener.onPlayerError message=${error.message}")
             resolveJob?.cancel()
             notificationUpdateJob?.cancel()
+            noMetadataJob?.cancel()
             lastSessionMetadata = null
             currentStreamIsHls = false
             player.stop()
@@ -518,6 +610,9 @@ class PlaybackService : Service() {
     private val analyticsListener = object : AnalyticsListener {
         override fun onDownstreamFormatChanged(eventTime: AnalyticsListener.EventTime, mediaLoadData: MediaLoadData) {
             mediaLoadData.trackFormat?.let { format ->
+                trace(
+                    "analytics.onDownstreamFormatChanged bitrate=${format.bitrate} sampleRate=${format.sampleRate} mime=${format.sampleMimeType}",
+                )
                 val codecLabel = format.sampleMimeType?.audioCodecLabel()
                 if (currentStreamIsHls && format.sampleRate <= 0 && codecLabel == null) {
                     return
@@ -551,16 +646,34 @@ class PlaybackService : Service() {
         return bitrate.takeIf { it > 0 }?.let { it / 1000 }
     }
 
-    private fun showNoMetadataIfPlaybackStarted() {
+    private fun scheduleNoMetadataIfPlaybackStarted() {
         val current = state.value
-        if (
-            player.isPlaying &&
-            !current.resolving &&
-            !current.buffering &&
-            current.trackStatus == PlaybackTrackStatus.WaitingMetadata
-        ) {
-            _state.update { it.withTrackStatus(PlaybackTrackStatus.NoMetadata) }
-            refreshCurrentMediaMetadata()
+        if (!player.isPlaying || current.resolving || current.buffering || current.trackStatus != PlaybackTrackStatus.WaitingMetadata) return
+        if (noMetadataJob?.isActive == true) return
+        trace("scheduleNoMetadataIfPlaybackStarted")
+        noMetadataJob = scope.launch {
+            delay(METADATA_WAIT_TIMEOUT_MS)
+            val latest = state.value
+            if (
+                player.isPlaying &&
+                !latest.resolving &&
+                !latest.buffering &&
+                latest.trackStatus == PlaybackTrackStatus.WaitingMetadata
+            ) {
+                trace("metadata timeout -> NoMetadata")
+                _state.update { it.withTrackStatus(PlaybackTrackStatus.NoMetadata) }
+                refreshCurrentMediaMetadata()
+                updateNotification()
+            }
+            noMetadataJob = null
+        }
+    }
+
+    private fun trace(message: String) {
+        val current = state.value
+        val stateText = "state(selected=${current.selectedStation?.title}, status=${current.trackStatus}, resolving=${current.resolving}, buffering=${current.buffering}, isPlaying=${current.isPlaying}, playerIsPlaying=${if (::player.isInitialized) player.isPlaying else false})"
+        scope.launch(Dispatchers.IO) {
+            PlaybackDebugTrace.append(applicationContext, "$message | $stateText")
         }
     }
 
@@ -643,10 +756,10 @@ class PlaybackService : Service() {
 
     private fun buildNotification(): Notification {
         val current = state.value
-        val playStopAction = if (current.isPlaying || current.resolving || current.buffering) {
-            notificationAction(R.drawable.ic_stop, "Stop", ACTION_PLAY_STOP)
+        val playPauseAction = if (current.isPlaying || current.resolving || current.buffering) {
+            notificationAction(R.drawable.ic_pause, "Pause", ACTION_PLAY_PAUSE)
         } else {
-            notificationAction(R.drawable.ic_play_arrow, "Play", ACTION_PLAY_STOP)
+            notificationAction(R.drawable.ic_play_arrow, "Play", ACTION_PLAY_PAUSE)
         }
 
         return Notification.Builder(this, CHANNEL_ID)
@@ -659,7 +772,7 @@ class PlaybackService : Service() {
             .setShowWhen(false)
             .setColor(0xFF8F5CFF.toInt())
             .addAction(notificationAction(R.drawable.ic_skip_previous, "Previous", ACTION_PREVIOUS))
-            .addAction(playStopAction)
+            .addAction(playPauseAction)
             .addAction(notificationAction(R.drawable.ic_skip_next, "Next", ACTION_NEXT))
             .setStyle(
                 Notification.MediaStyle()
@@ -731,32 +844,33 @@ class PlaybackService : Service() {
         }
 
         override fun seekToPrevious() {
+            trace("session.seekToPrevious")
             playAdjacentStation(-1)
         }
 
         override fun seekToPreviousMediaItem() {
+            trace("session.seekToPreviousMediaItem")
             playAdjacentStation(-1)
         }
 
         override fun seekToNext() {
+            trace("session.seekToNext")
             playAdjacentStation(1)
         }
 
         override fun seekToNextMediaItem() {
+            trace("session.seekToNextMediaItem")
             playAdjacentStation(1)
         }
 
         override fun play() {
-            if (state.value.selectedStation == null) {
-                playLastOrFirstStation()
-            } else {
-                super.play()
-            }
+            trace("session.play")
+            playFromCurrentState()
         }
 
         override fun pause() {
-            stopPlayback()
-            stopSelf()
+            trace("session.pause")
+            pausePlayback()
         }
 
         override fun getMediaMetadata(): MediaMetadata {
@@ -777,6 +891,7 @@ class PlaybackService : Service() {
         private const val CHANNEL_ID = "playback"
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_UPDATE_DELAY_MS = 500L
+        private const val METADATA_WAIT_TIMEOUT_MS = 15_000L
         private const val EXTRA_INDEX = "index"
         private const val EXTRA_QUEUE_IDS = "queue_ids"
         private const val EXTRA_PREVIEW_ID = "preview_id"
@@ -786,7 +901,7 @@ class PlaybackService : Service() {
         private const val EXTRA_PREVIEW_IMAGE_URL = "preview_image_url"
         private const val ACTION_PLAY_STATION = "omnibeat.app.action.PLAY_STATION"
         private const val ACTION_PLAY_PREVIEW = "omnibeat.app.action.PLAY_PREVIEW"
-        private const val ACTION_PLAY_STOP = "omnibeat.app.action.PLAY_STOP"
+        private const val ACTION_PLAY_PAUSE = "omnibeat.app.action.PLAY_PAUSE"
         private const val ACTION_PREVIOUS = "omnibeat.app.action.PREVIOUS"
         private const val ACTION_NEXT = "omnibeat.app.action.NEXT"
         private const val ACTION_RANDOM = "omnibeat.app.action.RANDOM"
@@ -820,10 +935,10 @@ class PlaybackService : Service() {
             )
         }
 
-        fun playOrStop(context: Context) {
+        fun playOrPause(context: Context) {
             context.startService(
                 Intent(context, PlaybackService::class.java)
-                    .setAction(ACTION_PLAY_STOP),
+                    .setAction(ACTION_PLAY_PAUSE),
             )
         }
 

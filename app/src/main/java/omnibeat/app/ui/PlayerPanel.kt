@@ -33,19 +33,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -83,7 +87,8 @@ fun PlayerPanel(
     marqueeTrackTitle: Boolean,
     collapsed: Boolean,
     onCollapsedChange: (Boolean) -> Unit,
-    onPlayStop: () -> Unit,
+    onPlayPause: () -> Unit,
+    onStop: () -> Unit,
     onPreviousStation: () -> Unit,
     onNextStation: () -> Unit,
     onRandomStation: () -> Unit,
@@ -91,6 +96,10 @@ fun PlayerPanel(
 ) {
     var showStreamInfo by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val trackClipboardLabel = stringResource(R.string.player_clipboard_track_label)
+    val trackCopiedText = stringResource(R.string.player_track_copied)
+    val streamInfoClipboardLabel = stringResource(R.string.player_clipboard_stream_info_label)
+    val streamInfoCopiedText = stringResource(R.string.player_stream_info_copied)
     val displayTrackText = errorText ?: trackStatus?.let { trackStatusText(it) } ?: trackText
     val bitrateText = if (showBitrate) {
         streamInfo.bitrateKbps?.let { bitrate ->
@@ -155,12 +164,12 @@ fun PlayerPanel(
                                 if (trackStatus == null && trackText.isNotBlank()) {
                                     copyTextToClipboard(
                                         context = context,
-                                        label = context.getString(R.string.player_clipboard_track_label),
+                                        label = trackClipboardLabel,
                                         text = trackText,
                                     )
                                     android.widget.Toast.makeText(
                                         context,
-                                        context.getString(R.string.player_track_copied),
+                                        trackCopiedText,
                                         android.widget.Toast.LENGTH_SHORT,
                                     ).show()
                                 }
@@ -263,12 +272,13 @@ fun PlayerPanel(
                         }
                         PlayerIconButton(
                             enabled = true,
-                            onClick = onPlayStop,
+                            onClick = onPlayPause,
+                            onLongClick = onStop,
                             modifier = Modifier.size(62.dp),
                         ) {
                             Icon(
                                 painter = painterResource(
-                                    if (hasActivePlaybackRequest) R.drawable.ic_stop else R.drawable.ic_play_arrow,
+                                    if (hasActivePlaybackRequest) R.drawable.ic_pause else R.drawable.ic_play_arrow,
                                 ),
                                 contentDescription = null,
                                 modifier = Modifier.size(32.dp),
@@ -303,8 +313,8 @@ fun PlayerPanel(
             streamInfo = streamInfo,
             onDismiss = { showStreamInfo = false },
             onCopyInfo = { info ->
-                copyTextToClipboard(context, label = context.getString(R.string.player_clipboard_stream_info_label), text = info)
-                android.widget.Toast.makeText(context, context.getString(R.string.player_stream_info_copied), android.widget.Toast.LENGTH_SHORT).show()
+                copyTextToClipboard(context, label = streamInfoClipboardLabel, text = info)
+                android.widget.Toast.makeText(context, streamInfoCopiedText, android.widget.Toast.LENGTH_SHORT).show()
             },
         )
     }
@@ -314,6 +324,7 @@ fun PlayerPanel(
 private fun trackStatusText(trackStatus: PlaybackTrackStatus): String {
     return when (trackStatus) {
         PlaybackTrackStatus.Stopped -> stringResource(R.string.track_text_stopped)
+        PlaybackTrackStatus.Paused -> stringResource(R.string.track_text_paused)
         PlaybackTrackStatus.LoadingStations -> stringResource(R.string.track_text_loading_stations)
         PlaybackTrackStatus.Resolving -> stringResource(R.string.track_text_resolving)
         PlaybackTrackStatus.WaitingMetadata -> stringResource(R.string.track_text_waiting_metadata)
@@ -424,8 +435,28 @@ private fun PlayerIconButton(
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
+    if (onLongClick != null) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = modifier
+                .clip(CircleShape)
+                .background(if (enabled) RadioSurfaceHigh else RadioSurfaceHigh)
+                .combinedClickable(
+                    enabled = enabled,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                ),
+        ) {
+            CompositionLocalProvider(LocalContentColor provides if (enabled) RadioPrimary else RadioTextMuted) {
+                content()
+            }
+        }
+        return
+    }
+
     OmniFilledIconButton(
         enabled = enabled,
         onClick = onClick,

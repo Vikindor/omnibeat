@@ -41,6 +41,11 @@
     <string name="settings_remember_last_station_title">Запоминать последнюю станцию</string>
     <string name="settings_remember_last_station_on">Воспроизведение начнётся с последней станции</string>
     <string name="settings_remember_last_station_off">Воспроизведение начнётся с первой станции из списка</string>
+    <string name="settings_stop_service_after_pause_title">Остановить сервис после паузы</string>
+    <string name="settings_stop_service_after_pause_subtitle">Уведомление останется на %1$d мин после паузы</string>
+    <string name="settings_stop_service_after_pause_never_subtitle">Уведомление останется, пока вы не остановите приложение</string>
+    <string name="settings_stop_service_after_pause_never">Никогда</string>
+    <string name="settings_stop_service_after_pause_minutes">%1$d мин</string>
     <string name="settings_section_artwork">Обложки</string>
     <string name="settings_station_covers_title">Обложки станций</string>
     <string name="settings_station_covers_on">В списке станций будут отображаться обложки</string>
@@ -100,12 +105,13 @@
     <string name="toast_search_default_error">Не удалось найти станции</string>
     <string name="toast_load_more_default_error">Не удалось загрузить больше станций</string>
     <string name="toast_station_added">Станция добавлена</string>
-    <string name="toast_artwork_searching">Поиск обложек…</string>
+    <string name="toast_artwork_searching">Поиск обложек...</string>
     <string name="toast_artwork_synced_count">Обложек обновлено: %1$d</string>
     <string name="toast_artwork_sync_failed">Не удалось обновить обложки: %1$s</string>
     <string name="toast_artwork_not_found">Обложки не найдены</string>
     <string name="toast_artwork_synced">Обложки обновлены</string>
     <string name="track_text_stopped">Стрим не воспроизводится</string>
+    <string name="track_text_paused">Пауза</string>
     <string name="track_text_loading_stations">Загрузка станций...</string>
     <string name="track_text_resolving">Подготовка стрима...</string>
     <string name="track_text_waiting_metadata">Ожидание метаданных...</string>

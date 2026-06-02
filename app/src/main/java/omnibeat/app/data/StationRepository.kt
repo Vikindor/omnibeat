@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,8 @@ import java.util.UUID
 
 private val Context.stationDataStore by preferencesDataStore(name = "stations")
 private const val DEFAULT_APP_VOLUME = 0.75f
+const val STOP_SERVICE_AFTER_PAUSE_NEVER = 0
+const val DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES = 5
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
 private val addRadioBrowserTagsKey = booleanPreferencesKey("add_radio_browser_tags")
@@ -27,6 +30,7 @@ private val rememberLastStationKey = booleanPreferencesKey("remember_last_statio
 private val showBitrateInControlPanelKey = booleanPreferencesKey("show_bitrate_in_control_panel")
 private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_bitrate")
 private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
+private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
 private val playerPanelCollapsedKey = booleanPreferencesKey("player_panel_collapsed")
 private val autoExpandPlayerPanelOnPlaybackKey = booleanPreferencesKey("auto_expand_player_panel_on_playback")
 private val collapsePlayerPanelInSearchKey = booleanPreferencesKey("collapse_player_panel_in_search")
@@ -65,6 +69,9 @@ class StationRepository(private val context: Context) {
 
     val marqueeTrackTitle: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[marqueeTrackTitleKey] ?: true }
+
+    val stopServiceAfterPauseMinutes: Flow<Int> = context.stationDataStore.data
+        .map { preferences -> preferences[stopServiceAfterPauseMinutesKey] ?: DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES }
 
     val playerPanelCollapsed: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[playerPanelCollapsedKey] ?: false }
@@ -156,6 +163,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveMarqueeTrackTitle(marquee: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[marqueeTrackTitleKey] = marquee
+        }
+    }
+
+    suspend fun saveStopServiceAfterPauseMinutes(minutes: Int) {
+        context.stationDataStore.edit { preferences ->
+            preferences[stopServiceAfterPauseMinutesKey] = minutes
         }
     }
 

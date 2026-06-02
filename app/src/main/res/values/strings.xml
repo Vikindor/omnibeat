@@ -43,6 +43,11 @@
     <string name="settings_remember_last_station_title">Remember last station</string>
     <string name="settings_remember_last_station_on">Play will start the last played station</string>
     <string name="settings_remember_last_station_off">Play will start the first station in the list</string>
+    <string name="settings_stop_service_after_pause_title">Stop service after pause</string>
+    <string name="settings_stop_service_after_pause_subtitle">Notification will stay for %1$d min after pause</string>
+    <string name="settings_stop_service_after_pause_never_subtitle">Notification will stay until you stop the app</string>
+    <string name="settings_stop_service_after_pause_never">Never</string>
+    <string name="settings_stop_service_after_pause_minutes">%1$d min</string>
     <string name="settings_section_artwork">Artwork</string>
     <string name="settings_station_covers_title">Covers for stations</string>
     <string name="settings_station_covers_on">Station lists will show covers</string>
@@ -108,6 +113,7 @@
     <string name="toast_artwork_not_found">No artwork found</string>
     <string name="toast_artwork_synced">Artwork synced</string>
     <string name="track_text_stopped">No stream is playing</string>
+    <string name="track_text_paused">Paused</string>
     <string name="track_text_loading_stations">Loading stations...</string>
     <string name="track_text_resolving">Resolving stream...</string>
     <string name="track_text_waiting_metadata">Waiting for metadata...</string>

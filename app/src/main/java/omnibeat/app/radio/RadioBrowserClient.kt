@@ -52,7 +52,7 @@ data class RadioBrowserSearchParams(
     val reverse: Boolean,
     val includeBroken: Boolean,
     val offset: Int = 0,
-    val limit: Int = RadioBrowserSearchParams.DEFAULT_LIMIT,
+    val limit: Int = DEFAULT_LIMIT,
 ) {
     companion object {
         const val DEFAULT_LIMIT = 50
