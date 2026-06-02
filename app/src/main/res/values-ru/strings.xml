@@ -12,6 +12,7 @@
     <string name="action_back">Назад</string>
     <string name="action_next">Далее</string>
     <string name="action_continue">Продолжить</string>
+    <string name="action_finish">Готово</string>
 
     <string name="sort_date_added">Дата добавления</string>
     <string name="sort_station_title">Название станции</string>
@@ -202,11 +203,16 @@
     <string name="onboarding_organize_text">Сортируйте станции и добавляйте любимые в избранное для быстрого доступа.</string>
     <string name="onboarding_manage_title">Управляйте станциями</string>
     <string name="onboarding_tap">Нажмите</string>
-    <string name="onboarding_manage_tap_suffix">на станцию, чтобы начать воспроизведение.</string>
+    <string name="onboarding_manage_tap_suffix">\u0020на станцию, чтобы начать воспроизведение.</string>
     <string name="onboarding_press_and_hold">Нажмите и удерживайте</string>
     <string name="onboarding_manage_hold_suffix">, чтобы изменить название, ссылку, теги или удалить её.</string>
+    <string name="onboarding_controls_title">Управляйте воспроизведением</string>
+    <string name="onboarding_controls_tap_suffix">\u0020Play, чтобы запустить последнюю станцию или первую станцию в списке — зависит от настройки.</string>
+    <string name="onboarding_tap_again">Нажмите ещё раз</string>
+    <string name="onboarding_controls_tap_again_suffix">, чтобы поставить воспроизведение на паузу и оставить медиа-контролы доступными.</string>
+    <string name="onboarding_controls_hold_suffix">, чтобы полностью остановить воспроизведение.</string>
     <string name="onboarding_stream_actions_title">Действия со стримом</string>
-    <string name="onboarding_stream_tap_suffix">на информацию о стриме, чтобы скопировать название текущего трека.</string>
+    <string name="onboarding_stream_tap_suffix">\u0020на информацию о стриме, чтобы скопировать название текущего трека.</string>
     <string name="onboarding_stream_hold_suffix">, чтобы открыть подробную информацию о стриме.</string>
     <string name="onboarding_screenshot_placeholder">Здесь будет скриншот</string>
 

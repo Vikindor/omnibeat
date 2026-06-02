@@ -10,7 +10,7 @@ datastore = "1.2.1"
 activityCompose = "1.13.0"
 composeBom = "2026.03.01"
 coroutines = "1.10.2"
-kotlin = "2.2.10"
+kotlin = "2.3.10"
 reorderable = "3.1.0"
 
 [libraries]

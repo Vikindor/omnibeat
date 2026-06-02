@@ -55,6 +55,7 @@ private enum class OnboardingTextType {
     Build,
     Organize,
     Manage,
+    Controls,
     StreamActions,
 }
 
@@ -73,6 +74,10 @@ private val OnboardingPages = listOf(
         titleRes = R.string.onboarding_manage_title,
         textType = OnboardingTextType.Manage,
         imageRes = R.drawable.onboarding_manage_stations,
+    ),
+    OnboardingPage(
+        titleRes = R.string.onboarding_controls_title,
+        textType = OnboardingTextType.Controls,
     ),
     OnboardingPage(
         titleRes = R.string.onboarding_stream_actions_title,
@@ -146,7 +151,7 @@ fun OnboardingFlow(
             }
             OmniPrimaryButton(
                 text = if (isLastPage) {
-                    stringResource(R.string.action_continue)
+                    stringResource(R.string.action_finish)
                 } else {
                     stringResource(R.string.action_next)
                 },
@@ -229,7 +234,6 @@ private fun onboardingText(textType: OnboardingTextType): AnnotatedString {
             val holdSuffix = stringResource(R.string.onboarding_manage_hold_suffix)
             onboardingText {
                 appendBold(tap)
-                appendSpace()
                 append(tapSuffix)
                 appendLineBreak()
                 appendLineBreak()
@@ -244,8 +248,27 @@ private fun onboardingText(textType: OnboardingTextType): AnnotatedString {
             val holdSuffix = stringResource(R.string.onboarding_stream_hold_suffix)
             onboardingText {
                 appendBold(tap)
-                appendSpace()
                 append(tapSuffix)
+                appendLineBreak()
+                appendLineBreak()
+                appendBold(pressAndHold)
+                append(holdSuffix)
+            }
+        }
+        OnboardingTextType.Controls -> {
+            val tap = stringResource(R.string.onboarding_tap)
+            val tapSuffix = stringResource(R.string.onboarding_controls_tap_suffix)
+            val tapAgain = stringResource(R.string.onboarding_tap_again)
+            val tapAgainSuffix = stringResource(R.string.onboarding_controls_tap_again_suffix)
+            val pressAndHold = stringResource(R.string.onboarding_press_and_hold)
+            val holdSuffix = stringResource(R.string.onboarding_controls_hold_suffix)
+            onboardingText {
+                appendBold(tap)
+                append(tapSuffix)
+                appendLineBreak()
+                appendLineBreak()
+                appendBold(tapAgain)
+                append(tapAgainSuffix)
                 appendLineBreak()
                 appendLineBreak()
                 appendBold(pressAndHold)

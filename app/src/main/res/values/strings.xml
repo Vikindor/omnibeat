@@ -14,6 +14,7 @@
     <string name="action_back">Back</string>
     <string name="action_next">Next</string>
     <string name="action_continue">Continue</string>
+    <string name="action_finish">Finish</string>
 
     <string name="sort_date_added">Date added</string>
     <string name="sort_station_title">Station title</string>
@@ -204,12 +205,17 @@
     <string name="onboarding_organize_text">Sort stations and add to favorites for quick access.</string>
     <string name="onboarding_manage_title">Manage stations</string>
     <string name="onboarding_tap">Tap</string>
-    <string name="onboarding_manage_tap_suffix">a station to start playback.</string>
+    <string name="onboarding_manage_tap_suffix">\u0020a station to start playback.</string>
     <string name="onboarding_press_and_hold">Press and hold</string>
-    <string name="onboarding_manage_hold_suffix">to edit title, URL, tags, or delete the station.</string>
+    <string name="onboarding_manage_hold_suffix">\u0020to edit title, URL, tags, or delete the station.</string>
+    <string name="onboarding_controls_title">Control playback</string>
+    <string name="onboarding_controls_tap_suffix">\u0020Play to start the last station or the first station in the list, depending on your setting.</string>
+    <string name="onboarding_tap_again">Tap again</string>
+    <string name="onboarding_controls_tap_again_suffix">\u0020to Pause playback and keep media controls available.</string>
+    <string name="onboarding_controls_hold_suffix">\u0020to Stop playback completely.</string>
     <string name="onboarding_stream_actions_title">Use stream actions</string>
-    <string name="onboarding_stream_tap_suffix">stream info to copy the current track name.</string>
-    <string name="onboarding_stream_hold_suffix">to open detailed stream information</string>
+    <string name="onboarding_stream_tap_suffix">\u0020stream info to copy the current track name.</string>
+    <string name="onboarding_stream_hold_suffix">\u0020to open detailed stream information.</string>
     <string name="onboarding_screenshot_placeholder">Screenshot placeholder</string>
 
     <string name="about_tagline">Streaming audio, without the fuss</string>
