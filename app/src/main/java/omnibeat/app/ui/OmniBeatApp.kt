@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -38,7 +39,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -176,6 +176,15 @@ fun OmniBeatApp() {
             listOf(MainPage.Stations)
         }
         val pagerState = rememberPagerState(pageCount = { visibleTabPages.size })
+        val visualSelectedPage by remember(pagerState, visibleTabPages, selectedPage) {
+            derivedStateOf {
+                if (selectedPage in visibleTabPages) {
+                    visibleTabPages.getOrNull(pagerState.currentPage) ?: selectedPage
+                } else {
+                    selectedPage
+                }
+            }
+        }
 
         RepositoryStateEffects(
             repository = repository,
@@ -319,13 +328,6 @@ fun OmniBeatApp() {
             }
         }
 
-        LaunchedEffect(selectedPage) {
-            val tabIndex = visibleTabPages.indexOf(selectedPage)
-            if (tabIndex >= 0 && pagerState.currentPage != tabIndex) {
-                pagerState.animateScrollToPage(tabIndex)
-            }
-        }
-
         LaunchedEffect(selectedPage, collapsePlayerPanelInSearch) {
             if (selectedPage == MainPage.SearchOnline && collapsePlayerPanelInSearch && !playerPanelCollapsed) {
                 playerPanelCollapsed = true
@@ -333,12 +335,13 @@ fun OmniBeatApp() {
             }
         }
 
-        LaunchedEffect(pagerState, visibleTabPages) {
-            snapshotFlow { pagerState.currentPage }.collect { pageIndex ->
-                val page = visibleTabPages.getOrNull(pageIndex) ?: return@collect
-                if (selectedPage in visibleTabPages && selectedPage != page) {
-                    selectMainPage(page)
-                }
+        SyncPagerWithSelectedPage(
+            pagerState = pagerState,
+            pages = visibleTabPages,
+            selectedPage = selectedPage,
+        ) { page ->
+            if (selectedPage in visibleTabPages && selectedPage != page) {
+                selectMainPage(page)
             }
         }
 
@@ -837,6 +840,7 @@ fun OmniBeatApp() {
                 topBar = {
                     MainTopBar(
                         selectedPage = selectedPage,
+                        visualSelectedPage = visualSelectedPage,
                         tabPages = visibleTabPages,
                         sortState = sortState,
                         reordering = reorderDraft != null,

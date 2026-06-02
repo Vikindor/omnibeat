@@ -42,6 +42,7 @@ import omnibeat.app.model.StationSortState
 @Composable
 fun MainTopBar(
     selectedPage: MainPage,
+    visualSelectedPage: MainPage = selectedPage,
     tabPages: List<MainPage>,
     sortState: StationSortState,
     reordering: Boolean,
@@ -96,7 +97,7 @@ fun MainTopBar(
                         Column(
                             modifier = Modifier
                                 .selectable(
-                                    selected = selectedPage == tab,
+                                    selected = visualSelectedPage == tab,
                                     enabled = !reordering,
                                     role = Role.Tab,
                                     onClick = { onPageSelected(tab) },
@@ -105,9 +106,9 @@ fun MainTopBar(
                         ) {
                             Text(
                                 text = stringResource(tab.titleRes()),
-                                color = if (selectedPage == tab) RadioText else RadioTextMuted,
+                                color = if (visualSelectedPage == tab) RadioText else RadioTextMuted,
                                 fontSize = 18.sp,
-                                fontWeight = if (selectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
+                                fontWeight = if (visualSelectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.onSizeChanged { size ->
@@ -119,7 +120,7 @@ fun MainTopBar(
                                     .padding(top = 6.dp)
                                     .width(tabTextWidth)
                                     .height(2.dp)
-                                    .background(if (selectedPage == tab) RadioPrimary else RadioOutline),
+                                    .background(if (visualSelectedPage == tab) RadioPrimary else RadioOutline),
                             )
                         }
                     }
