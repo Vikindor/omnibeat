@@ -19,6 +19,10 @@ android {
         versionName = providers.gradleProperty("app.versionName").get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            debugSymbolLevel = "SYMBOL_TABLE"
+        }
     }
 
     buildTypes {

@@ -2,9 +2,7 @@
   <img src="media/icon.png" alt="OmniBeat icon" height="26px" /> OmniBeat
 </h1>
 
-OmniBeat is an Android internet radio player that aims to support all modern internet radio formats.
-
-Add direct streams, playlist links, and modern streaming formats, then organize your favorite stations in a clean local library.
+OmniBeat is an Android internet radio player that aims to support all modern streaming formats.  
 Streaming audio, without the fuss.
 
 ## ✨ What You Can Do
