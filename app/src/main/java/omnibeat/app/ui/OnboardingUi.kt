@@ -63,12 +63,12 @@ private val OnboardingPages = listOf(
     OnboardingPage(
         titleRes = R.string.onboarding_build_title,
         textType = OnboardingTextType.Build,
-        imageRes = R.drawable.onboarding_build_library,
+        imageRes = R.drawable.onboarding_build_your_library,
     ),
     OnboardingPage(
         titleRes = R.string.onboarding_organize_title,
         textType = OnboardingTextType.Organize,
-        imageRes = R.drawable.onboarding_organize_library,
+        imageRes = R.drawable.onboarding_organize_your_library,
     ),
     OnboardingPage(
         titleRes = R.string.onboarding_manage_title,
@@ -78,11 +78,12 @@ private val OnboardingPages = listOf(
     OnboardingPage(
         titleRes = R.string.onboarding_controls_title,
         textType = OnboardingTextType.Controls,
+        imageRes = R.drawable.onboarding_control_playback,
     ),
     OnboardingPage(
         titleRes = R.string.onboarding_stream_actions_title,
         textType = OnboardingTextType.StreamActions,
-        imageRes = R.drawable.onboarding_stream_actions,
+        imageRes = R.drawable.onboarding_use_stream_actions,
     ),
 )
 
@@ -176,10 +177,6 @@ private fun AnnotatedString.Builder.appendBold(text: String) {
     pushStyle(SpanStyle(fontWeight = FontWeight.SemiBold))
     append(text)
     pop()
-}
-
-private fun AnnotatedString.Builder.appendSpace() {
-    append(" ")
 }
 
 private fun AnnotatedString.Builder.appendLineBreak() {
@@ -304,7 +301,7 @@ private fun OnboardingScreenshot(
             .height(300.dp)
             .clip(frameShape)
             .background(RadioSurface)
-            .border(width = 1.dp, color = RadioText.copy(alpha = 0.32f), shape = frameShape),
+            .border(width = 1.dp, color = RadioTextMuted, shape = frameShape),
     ) {
         if (imageRes != null) {
             Image(
