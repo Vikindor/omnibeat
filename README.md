@@ -68,11 +68,11 @@ https://icecast.walmradio.com:8443/classic
 mp3, 320 kbps
 ```
 
-## ⬇️ Downloads
+## 🚀 Installation
 
-APK builds will be published on the [Releases](https://github.com/Vikindor/omnibeat/releases) page soon.
+Download the latest APK from the [Releases](https://github.com/Vikindor/omnibeat/releases) page and install it directly on your Android device.
 
-OmniBeat requires Android 14 or newer.
+Requires Android 14 or newer.
 
 ## 🌍 Translations
 
