@@ -12,7 +12,7 @@ Build your own radio library, discover new stations online, and play streams fro
 
 ## ✨ Features
 
-- **Open-source and privacy-friendly.** No ads, trackers, or analytics.
+- **Open-source and privacy-friendly.** No ads, no trackers, no analytics.
 - **Create your own radio library.** Collect your favorite stations in one place and keep them always within reach.
 - **Discover new stations online.** Use flexible search and detailed filters to explore a large station database, preview results, and save your favorites.
 - **Play modern internet radio formats.** Open direct stream URLs, playlists, HLS, DASH, and other common formats used by online stations.
