@@ -3,7 +3,10 @@ package omnibeat.app.ui
 import omnibeat.app.R
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,81 +40,91 @@ fun ExportImportPage(
     modifier: Modifier = Modifier,
 ) {
     var confirmClearLibrary by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp)
-            .padding(top = 14.dp, bottom = 20.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth(),
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 20.dp)
+                .padding(top = 14.dp, bottom = 20.dp),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.export_import_library_title),
-                    color = RadioText,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = stringResource(R.string.export_import_library_summary, stationCount, favoriteCount),
-                    color = RadioTextMuted,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(top = 6.dp),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.export_import_library_title),
+                        color = RadioText,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = stringResource(R.string.export_import_library_summary, stationCount, favoriteCount),
+                        color = RadioTextMuted,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+                OmniIconButton(
+                    painter = painterResource(R.drawable.ic_delete),
+                    onClick = { confirmClearLibrary = true },
+                    tint = RadioDanger,
                 )
             }
-            OmniIconButton(
-                painter = painterResource(R.drawable.ic_delete),
-                onClick = { confirmClearLibrary = true },
-                tint = RadioDanger,
+
+            HorizontalDivider(
+                color = RadioOutline.copy(alpha = 0.65f),
+                modifier = Modifier.padding(top = 22.dp, bottom = 8.dp),
+            )
+
+            FormatDescription(
+                title = stringResource(R.string.export_import_json_title),
+                text = stringResource(R.string.export_import_json_description),
+            )
+            ExportImportActionRow(
+                icon = R.drawable.ic_file_export,
+                title = stringResource(R.string.export_import_json_export_title),
+                subtitle = stringResource(R.string.export_import_json_export_subtitle),
+                onClick = onExportStations,
+            )
+            ExportImportActionRow(
+                icon = R.drawable.ic_file_import,
+                title = stringResource(R.string.export_import_json_import_title),
+                subtitle = stringResource(R.string.export_import_json_import_subtitle),
+                onClick = onImportStations,
+            )
+
+            HorizontalDivider(
+                color = RadioOutline.copy(alpha = 0.65f),
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+            )
+
+            FormatDescription(
+                title = stringResource(R.string.export_import_txt_title),
+                text = stringResource(R.string.export_import_txt_description),
+            )
+            ExportImportActionRow(
+                icon = R.drawable.ic_file_export,
+                title = stringResource(R.string.export_import_txt_export_title),
+                subtitle = stringResource(R.string.export_import_txt_export_subtitle),
+                onClick = onExportSimpleText,
+            )
+            ExportImportActionRow(
+                icon = R.drawable.ic_file_import,
+                title = stringResource(R.string.export_import_txt_import_title),
+                subtitle = stringResource(R.string.export_import_txt_import_subtitle),
+                onClick = onImportStations,
             )
         }
-
-        HorizontalDivider(
-            color = RadioOutline.copy(alpha = 0.65f),
-            modifier = Modifier.padding(top = 22.dp, bottom = 8.dp),
-        )
-
-        FormatDescription(
-            title = stringResource(R.string.export_import_json_title),
-            text = stringResource(R.string.export_import_json_description),
-        )
-        ExportImportActionRow(
-            icon = R.drawable.ic_file_export,
-            title = stringResource(R.string.export_import_json_export_title),
-            subtitle = stringResource(R.string.export_import_json_export_subtitle),
-            onClick = onExportStations,
-        )
-        ExportImportActionRow(
-            icon = R.drawable.ic_file_import,
-            title = stringResource(R.string.export_import_json_import_title),
-            subtitle = stringResource(R.string.export_import_json_import_subtitle),
-            onClick = onImportStations,
-        )
-
-        HorizontalDivider(
-            color = RadioOutline.copy(alpha = 0.65f),
-            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
-        )
-
-        FormatDescription(
-            title = stringResource(R.string.export_import_txt_title),
-            text = stringResource(R.string.export_import_txt_description),
-        )
-        ExportImportActionRow(
-            icon = R.drawable.ic_file_export,
-            title = stringResource(R.string.export_import_txt_export_title),
-            subtitle = stringResource(R.string.export_import_txt_export_subtitle),
-            onClick = onExportSimpleText,
-        )
-        ExportImportActionRow(
-            icon = R.drawable.ic_file_import,
-            title = stringResource(R.string.export_import_txt_import_title),
-            subtitle = stringResource(R.string.export_import_txt_import_subtitle),
-            onClick = onImportStations,
+        OmniScrollIndicator(
+            scrollIndicatorState = scrollState.scrollIndicatorState,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 4.dp),
         )
     }
 
