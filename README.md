@@ -25,10 +25,10 @@ Build your own radio library, discover new stations online, and play streams fro
 ## 🖼 Screenshots
 
 <p align="center">
-  <img src="media/main_screen_light_and_dark_themes.jpg" alt="Main screen - Light & Dark themes screenshot" title="Main screen - Light & Dark themes" width="24%" />
-  <img src="media/online_search_fields.jpg" alt="Online search fields screenshot" title="Online search fields" width="24%" />
-  <img src="media/export_import_screen.jpg" alt="Export and Import screenshot" title="Export and Import screen" width="24%" />
-  <img src="media/settings_screen.jpg" alt="Settings screenshot" title="Settings screen" width="24%" />  
+  <img src="media/phone_main_screen_light_and_dark_themes.jpg" alt="Main screen - Light & Dark themes screenshot" title="Main screen - Light & Dark themes" width="24%" />
+  <img src="media/phone_online_search_fields.jpg" alt="Online search fields screenshot" title="Online search fields" width="24%" />
+  <img src="media/phone_export_import_screen.jpg" alt="Export and Import screenshot" title="Export and Import screen" width="24%" />
+  <img src="media/phone_settings_screen.jpg" alt="Settings screenshot" title="Settings screen" width="24%" />  
 </p>
 
 ## 📡 Supported Stream Formats
