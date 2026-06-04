@@ -2,6 +2,10 @@
   <img src="media/icon.png" alt="OmniBeat icon" height="26px" /> OmniBeat
 </h1>
 
+<p align="center">
+  <img src="media/feature_graphic.png" alt="Feature graphic" width="100%" />  
+</p>
+
 OmniBeat is an open-source Android internet radio player for modern online stations.
 
 Build your own radio library, discover new stations online, and play streams from a wide range of internet radio links. OmniBeat itself contains no ads, trackers, or analytics.
