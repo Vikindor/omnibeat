@@ -6,8 +6,11 @@ import omnibeat.app.model.ThemeMode
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -189,33 +192,53 @@ private fun OnboardingPageContent(
     modifier: Modifier = Modifier,
 ) {
     val text = onboardingText(page.textType)
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.fillMaxSize(),
-    ) {
-        Spacer(modifier = Modifier.height(26.dp))
-        OnboardingScreenshot(imageRes = page.imageRes)
-        Spacer(modifier = Modifier.height(34.dp))
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val scale = (maxHeight.value / 640f).coerceIn(0.78f, 1f)
+        val bodyScrollState = rememberScrollState()
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Spacer(modifier = Modifier.height((26f * scale).dp))
+            OnboardingScreenshot(
+                imageRes = page.imageRes,
+                height = (300f * scale).dp,
+            )
+            Spacer(modifier = Modifier.height((34f * scale).dp))
 
-        Text(
-            text = stringResource(page.titleRes),
-            color = RadioText,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            lineHeight = 34.sp,
-        )
-        Text(
-            text = text,
-            color = RadioTextMuted,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Start,
-            lineHeight = 23.sp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-        )
-        Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(page.titleRes),
+                color = RadioText,
+                fontSize = (28f * scale).sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                lineHeight = (34f * scale).sp,
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = (12f * scale).dp)
+                    .weight(1f),
+            ) {
+                Text(
+                    text = text,
+                    color = RadioTextMuted,
+                    fontSize = (16f * scale).sp,
+                    textAlign = TextAlign.Start,
+                    lineHeight = (23f * scale).sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(bodyScrollState)
+                        .padding(end = 10.dp),
+                )
+                OmniScrollIndicator(
+                    scrollIndicatorState = bodyScrollState.scrollIndicatorState,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 1.dp),
+                )
+            }
+        }
     }
 }
 
@@ -292,13 +315,14 @@ private fun Modifier.onboardingPagerFade(
 private fun OnboardingScreenshot(
     imageRes: Int?,
     modifier: Modifier = Modifier,
+    height: androidx.compose.ui.unit.Dp = 300.dp,
 ) {
     val frameShape = RoundedCornerShape(28.dp)
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
-            .height(300.dp)
+            .height(height)
             .clip(frameShape)
             .background(RadioSurface)
             .border(width = 1.dp, color = RadioTextMuted, shape = frameShape),
