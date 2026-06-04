@@ -2,17 +2,20 @@
   <img src="media/icon.png" alt="OmniBeat icon" height="26px" /> OmniBeat
 </h1>
 
-OmniBeat is an Android internet radio player that aims to support all modern streaming formats.  
-Streaming audio, without the fuss.
+OmniBeat is an open-source Android internet radio player for modern online stations.
 
-## ✨ What You Can Do
+Build your own radio library, discover new stations online, and play streams from a wide range of internet radio links. OmniBeat itself contains no ads, trackers, or analytics.
 
+## ✨ Features
+
+- **Open-source and privacy-friendly.** No ads, trackers, or analytics.
 - **Create your own radio library.** Collect your favorite stations in one place and keep them always within reach.
 - **Discover new stations online.** Use flexible search and detailed filters to explore a large station database, preview results, and save your favorites.
-- **Play from anywhere on your device.** Control playback inside the app, from Android notifications, on the lock screen, or through the system media panel.
+- **Play modern internet radio formats.** Open direct stream URLs, playlists, HLS, DASH, and other common formats used by online stations.
+- **Control playback from anywhere on your device.** Use the app, Android notifications, the lock screen, or the system media panel.
 - **Keep your library organized.** Use favorites, tags, and custom sorting to make large libraries easier to scan.
 - **Choose how playback behaves.** Start the last played station or the first station in the current list, pause with media controls available, or stop playback completely.
-- **Make the app feel right.** Switch between light, dark, and system themes. Choose your preferred app language; English and Russian are available now, with more languages planned.
+- **Customize the experience.** Switch between light, dark, and system themes. Choose your preferred app language, with more translations planned.
 - **Keep your library portable.** Back up, restore, or move your stations using a full JSON backup or a simple TXT format that can be edited by hand.
 
 ## 🖼 Screenshots
@@ -24,7 +27,7 @@ Streaming audio, without the fuss.
   <img src="media/settings_screen.jpg" alt="Settings screenshot" title="Settings screen" width="24%" />  
 </p>
 
-## 📡 Stream Support
+## 📡 Supported Stream Formats
 
 OmniBeat is designed to work with the link types commonly used by internet radio stations, including:
 
@@ -42,7 +45,7 @@ Online station search is powered by [Radio Browser](https://www.radio-browser.in
 
 Use flexible search and detailed filters to explore a large station database, preview stations before adding them, and build a local library that stays under your control.
 
-## 📦 Import And Export
+## 📦 Import and Export
 
 OmniBeat supports two export formats:
 
@@ -66,6 +69,12 @@ mp3, 320 kbps
 APK builds will be published on the [Releases](https://github.com/Vikindor/omnibeat/releases) page soon.
 
 OmniBeat requires Android 14 or newer.
+
+## 🌍 Translations
+
+Want to help translate OmniBeat into your language? Please get in touch through my website.
+
+[Get in touch](https://vikindor.github.io/)
 
 ## 🛠 Tech Stack
 
