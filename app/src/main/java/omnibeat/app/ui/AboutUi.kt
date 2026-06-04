@@ -97,6 +97,16 @@ fun AboutPage(modifier: Modifier = Modifier) {
             )
 
             Text(
+                text = stringResource(R.string.about_translation_help),
+                color = RadioTextMuted,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp, bottom = 8.dp),
+            )
+
+            Text(
                 text = "© 2026",
                 color = RadioTextMuted,
                 fontSize = 13.sp,

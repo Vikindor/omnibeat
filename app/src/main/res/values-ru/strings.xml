@@ -21,7 +21,7 @@
 
     <string name="page_stations">Станции</string>
     <string name="page_favorites">Избранное</string>
-    <string name="page_export_import">Экспорт и импорт</string>
+    <string name="page_export_import">Экспорт / Импорт</string>
     <string name="page_settings">Настройки</string>
     <string name="page_about">О приложении</string>
 
@@ -217,7 +217,7 @@
     <string name="onboarding_screenshot_placeholder">Здесь будет скриншот</string>
 
     <string name="about_tagline">Интернет-радио без заморочек</string>
-    <string name="about_description">Работает с разными типами ссылок на радиостанции</string>
+    <string name="about_description">Поддерживает все актуальные форматы радиостримов</string>
     <string name="about_section_app">Приложение</string>
     <string name="about_version">Версия</string>
     <string name="about_build">Сборка</string>
@@ -228,5 +228,6 @@
     <string name="about_license">Лицензия</string>
     <string name="about_radio_browser_value">Источник данных для онлайн-поиска</string>
     <string name="about_section_author">Автор</string>
+    <string name="about_translation_help">Хотите помочь перевести OmniBeat? Контакты есть на сайте.</string>
     <string name="toast_link_copied">Ссылка скопирована</string>
 </resources>
