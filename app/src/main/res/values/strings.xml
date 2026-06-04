@@ -218,8 +218,8 @@
     <string name="onboarding_stream_hold_suffix">\u0020to open detailed stream information.</string>
     <string name="onboarding_screenshot_placeholder">Screenshot placeholder</string>
 
-    <string name="about_tagline">Streaming audio, without the fuss</string>
-    <string name="about_description">Built to handle popular audio stream and playlist formats</string>
+    <string name="about_tagline">Internet radio, made simple</string>
+    <string name="about_description">Built to play streams from a wide range of radio links</string>
     <string name="about_section_app">App</string>
     <string name="about_version">Version</string>
     <string name="about_build">Build</string>
