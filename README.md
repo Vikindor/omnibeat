@@ -76,9 +76,7 @@ Requires Android 14 or newer.
 
 ## 🌍 Translations
 
-Want to help translate OmniBeat into your language? Please get in touch through my website.
-
-[Get in touch](https://vikindor.github.io/)
+Want to help translate OmniBeat into your language? Please [get in touch](https://vikindor.github.io/) through my website.
 
 ## 🛠 Tech Stack
 
