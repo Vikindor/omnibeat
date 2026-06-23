@@ -127,10 +127,10 @@ class PlaybackService : Service() {
         repository = StationRepository(applicationContext)
         player = buildPlayer()
         sessionPlayer = OmniBeatSessionPlayer(player)
-        mediaSession = MediaSession.Builder(this, sessionPlayer).build()
-        createNotificationChannel()
         player.addListener(playerListener)
         player.addAnalyticsListener(analyticsListener)
+        mediaSession = MediaSession.Builder(this, sessionPlayer).build()
+        createNotificationChannel()
 
         scope.launch {
             repository.stations.collect { savedStations ->
