@@ -925,6 +925,7 @@ fun OmniBeatApp() {
                                 pagerState = pagerState,
                                 stations = stations,
                                 selectedStationId = playbackState.selectedStation?.id,
+                                playingStationId = playbackState.selectedStation?.id.takeIf { playbackState.isPlaying },
                                 sortState = sortState,
                                 customStationOrder = customStationOrder,
                                 customFavoriteOrder = customFavoriteOrder,

@@ -5,6 +5,12 @@ import omnibeat.app.model.Station
 
 import android.graphics.BitmapFactory
 import android.util.LruCache
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,6 +43,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -106,6 +115,7 @@ fun EmptyFavoritesState(modifier: Modifier = Modifier) {
 fun StationList(
     stations: List<Station>,
     selectedIndex: Int,
+    playingStationId: String?,
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
     showArtwork: Boolean,
@@ -165,6 +175,7 @@ fun StationList(
                     StationRow(
                         station = station,
                         selected = selectedIndex == index,
+                        playing = station.id == playingStationId,
                         enabled = enabled,
                         reordering = reordering,
                         showArtwork = showArtwork,
@@ -266,7 +277,6 @@ fun StationTagPills(
                 text = tag,
                 color = if (selected) RadioText else RadioTextMuted,
                 fontSize = 11.sp,
-                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
@@ -362,6 +372,7 @@ private suspend fun loadStationArtwork(imageUrl: String): ImageBitmap? {
 private fun StationRow(
     station: Station,
     selected: Boolean,
+    playing: Boolean,
     enabled: Boolean,
     reordering: Boolean,
     showArtwork: Boolean,
@@ -403,16 +414,65 @@ private fun StationRow(
             null
         },
         trailingContent = {
-            OmniIconButton(
-                painter = painterResource(
-                    if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
-                ),
-                enabled = enabled && !reordering,
-                onClick = onFavoriteClick,
-                tint = if (station.isFavorite) RadioPrimary else RadioText,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(start = 12.dp),
-            )
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(width = 16.dp, height = 18.dp),
+                ) {
+                    if (playing && !reordering) {
+                        StationPlayingIndicator()
+                    }
+                }
+                OmniIconButton(
+                    painter = painterResource(
+                        if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
+                    ),
+                    enabled = enabled && !reordering,
+                    onClick = onFavoriteClick,
+                    tint = if (station.isFavorite) RadioPrimary else RadioText,
+                )
+            }
         },
         modifier = modifier,
     )
+}
+
+@Composable
+private fun StationPlayingIndicator(modifier: Modifier = Modifier) {
+    val indicatorColor = RadioPrimary
+    val transition = rememberInfiniteTransition(label = "station-playing-indicator")
+    val barFractions = List(3) { index ->
+        transition.animateFloat(
+            initialValue = 0.35f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 420 + index * 90, delayMillis = index * 70),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "station-playing-bar-$index",
+        ).value
+    }
+
+    Canvas(modifier = modifier.size(width = 16.dp, height = 18.dp)) {
+        val barWidth = 3.dp.toPx()
+        val gap = 2.dp.toPx()
+        val totalWidth = barWidth * barFractions.size + gap * (barFractions.size - 1)
+        val startX = (size.width - totalWidth) / 2f
+        val radius = CornerRadius(barWidth / 2f, barWidth / 2f)
+
+        barFractions.forEachIndexed { index, fraction ->
+            val height = size.height * fraction.coerceIn(0.25f, 1f)
+            val left = startX + index * (barWidth + gap)
+            drawRoundRect(
+                color = indicatorColor,
+                topLeft = Offset(left, size.height - height),
+                size = Size(barWidth, height),
+                cornerRadius = radius,
+            )
+        }
+    }
 }

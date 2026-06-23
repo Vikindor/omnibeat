@@ -21,6 +21,7 @@ fun StationTabsPager(
     pagerState: PagerState,
     stations: List<Station>,
     selectedStationId: String?,
+    playingStationId: String?,
     sortState: StationSortState,
     customStationOrder: List<String>,
     customFavoriteOrder: List<String>,
@@ -57,6 +58,7 @@ fun StationTabsPager(
                     StationPageList(
                         stations = visibleStations,
                         selectedStationId = selectedStationId,
+                        playingStationId = playingStationId,
                         emptyContent = {
                             EmptyStationsState(
                                 modifier = Modifier
@@ -89,6 +91,7 @@ fun StationTabsPager(
                     StationPageList(
                         stations = favoriteStations,
                         selectedStationId = selectedStationId,
+                        playingStationId = playingStationId,
                         emptyContent = {
                             EmptyFavoritesState(
                                 modifier = Modifier
@@ -120,6 +123,7 @@ fun StationTabsPager(
 private fun StationPageList(
     stations: List<Station>,
     selectedStationId: String?,
+    playingStationId: String?,
     emptyContent: @Composable () -> Unit,
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
@@ -139,6 +143,7 @@ private fun StationPageList(
     StationList(
         stations = stations,
         selectedIndex = stations.indexOfFirst { it.id == selectedStationId },
+        playingStationId = playingStationId,
         scrollToSelectedRequest = scrollToSelectedRequest,
         scrollToStationId = scrollToStationId,
         showArtwork = showArtwork,
