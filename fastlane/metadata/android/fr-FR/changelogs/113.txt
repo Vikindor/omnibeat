@@ -1,0 +1,2 @@
+fix: Les contrôles multimédias ne reçoivent pas les métadonnées de piste mises à jour
+feat: Ajout d’un indicateur de lecture pour la station active

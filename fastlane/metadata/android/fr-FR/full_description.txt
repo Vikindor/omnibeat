@@ -1,0 +1,21 @@
+OmniBeat est un lecteur de radio Internet conçu pour prendre en charge toutes les stations en ligne modernes.
+
+Fonctionnalités :
+- Ajoutez des stations manuellement. Construisez votre propre bibliothèque.
+- Découvrez de nouvelles stations en ligne. Utilisez une recherche flexible et des filtres détaillés pour explorer une grande base de stations, écouter les résultats en aperçu et enregistrer vos favorites.
+- Contrôlez la lecture depuis n’importe où sur votre appareil : l’application, les notifications Android, l’écran de verrouillage ou le panneau multimédia du système.
+- Gardez votre bibliothèque organisée. Utilisez les favoris, les tags et le tri personnalisé pour parcourir plus facilement les grandes bibliothèques.
+- Personnalisez l’expérience. Passez du thème clair au thème sombre ou système. Choisissez votre langue préférée, avec d’autres traductions prévues.
+- Gardez votre bibliothèque portable. Sauvegardez, restaurez ou déplacez vos stations avec une sauvegarde JSON complète ou un format TXT simple modifiable à la main.
+- Respectueux de la vie privée. Pas de publicité, pas de trackers, pas d’analyses.
+
+Formats pris en charge :
+- URL directes de flux
+- PLS
+- M3U
+- HLS / M3U8
+- XSPF
+- ASX / WAX / WMX
+- DASH / MPD
+
+Vous avez trouvé une station qu’OmniBeat ne peut pas lire ? Faites-le-moi savoir et je travaillerai sur sa prise en charge.

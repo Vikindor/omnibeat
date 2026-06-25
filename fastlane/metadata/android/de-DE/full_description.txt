@@ -1,0 +1,21 @@
+OmniBeat ist ein Internetradio-Player, der alle modernen Online-Sender unterstützen soll.
+
+Funktionen:
+- Füge Sender manuell hinzu. Baue deine eigene Bibliothek auf.
+- Entdecke neue Sender online. Nutze flexible Suche und detaillierte Filter, um eine große Senderdatenbank zu durchsuchen, Ergebnisse vorzuhören und deine Favoriten zu speichern.
+- Steuere die Wiedergabe überall auf deinem Gerät: in der App, über Android-Benachrichtigungen, den Sperrbildschirm oder das System-Medienpanel.
+- Halte deine Bibliothek übersichtlich. Nutze Favoriten, Tags und benutzerdefinierte Sortierung, damit große Bibliotheken leichter zu durchsuchen sind.
+- Passe die App an. Wechsle zwischen hellem, dunklem und System-Design. Wähle deine bevorzugte App-Sprache; weitere Übersetzungen sind geplant.
+- Halte deine Bibliothek portabel. Sichere, stelle wieder her oder übertrage deine Sender mit einem vollständigen JSON-Backup oder einem einfachen TXT-Format, das von Hand bearbeitet werden kann.
+- Datenschutzfreundlich. Keine Werbung, keine Tracker, keine Analysen.
+
+Unterstützte Formate:
+- Direkte Stream-URLs
+- PLS
+- M3U
+- HLS / M3U8
+- XSPF
+- ASX / WAX / WMX
+- DASH / MPD
+
+Einen Sender gefunden, den OmniBeat nicht abspielen kann? Gib mir Bescheid, und ich arbeite an der Unterstützung.

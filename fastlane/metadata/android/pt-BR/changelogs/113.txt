@@ -1,0 +1,2 @@
+fix: Controles de mídia não recebem metadados atualizados da faixa
+feat: Adicionado um indicador de reprodução para a estação ativa

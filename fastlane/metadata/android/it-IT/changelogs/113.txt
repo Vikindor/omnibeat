@@ -1,0 +1,2 @@
+fix: I controlli multimediali non ricevono i metadati aggiornati della traccia
+feat: Aggiunto un indicatore di riproduzione per la stazione attiva

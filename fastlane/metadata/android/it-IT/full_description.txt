@@ -1,0 +1,21 @@
+OmniBeat è un player radio Internet creato per supportare tutte le stazioni online moderne.
+
+Funzionalità:
+- Aggiungi stazioni manualmente. Crea la tua libreria.
+- Scopri nuove stazioni online. Usa una ricerca flessibile e filtri dettagliati per esplorare un grande database di stazioni, ascoltare le anteprime e salvare le tue preferite.
+- Controlla la riproduzione da qualsiasi punto del dispositivo: app, notifiche Android, schermata di blocco o pannello multimediale di sistema.
+- Mantieni organizzata la libreria. Usa preferiti, tag e ordinamento personalizzato per consultare più facilmente le librerie grandi.
+- Personalizza l’esperienza. Passa tra tema chiaro, scuro e di sistema. Scegli la lingua dell’app, con altre traduzioni previste.
+- Mantieni portabile la libreria. Esegui backup, ripristina o sposta le tue stazioni usando un backup JSON completo o un semplice formato TXT modificabile a mano.
+- Rispetta la privacy. Niente annunci, niente tracker, niente analytics.
+
+Formati supportati:
+- URL diretti degli stream
+- PLS
+- M3U
+- HLS / M3U8
+- XSPF
+- ASX / WAX / WMX
+- DASH / MPD
+
+Hai trovato una stazione che OmniBeat non riesce a riprodurre? Fammelo sapere e lavorerò per supportarla.

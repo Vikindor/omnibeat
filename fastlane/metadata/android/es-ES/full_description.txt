@@ -1,0 +1,21 @@
+OmniBeat es un reproductor de radio por Internet creado para admitir todas las emisoras modernas en línea.
+
+Funciones:
+- Añade emisoras manualmente. Crea tu propia biblioteca.
+- Descubre nuevas emisoras en línea. Usa una búsqueda flexible y filtros detallados para explorar una gran base de emisoras, previsualizar resultados y guardar tus favoritas.
+- Controla la reproducción desde cualquier lugar del dispositivo: la app, las notificaciones de Android, la pantalla de bloqueo o el panel multimedia del sistema.
+- Mantén tu biblioteca organizada. Usa favoritos, etiquetas y ordenación personalizada para revisar bibliotecas grandes con más facilidad.
+- Personaliza la experiencia. Cambia entre tema claro, oscuro y del sistema. Elige el idioma de la app; se añadirán más traducciones en el futuro.
+- Mantén tu biblioteca portátil. Haz copias de seguridad, restaura o mueve tus emisoras con una copia JSON completa o un formato TXT sencillo que se puede editar a mano.
+- Respeta tu privacidad. Sin anuncios, sin rastreadores, sin analíticas.
+
+Formatos compatibles:
+- URL directas de stream
+- PLS
+- M3U
+- HLS / M3U8
+- XSPF
+- ASX / WAX / WMX
+- DASH / MPD
+
+¿Encontraste una emisora que OmniBeat no puede reproducir? Avísame y trabajaré en añadir soporte.

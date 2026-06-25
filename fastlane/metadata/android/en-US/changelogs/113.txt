@@ -1,0 +1,2 @@
+fix: Media controls do not receive updated track metadata
+feat: Add a playback indicator to the active station

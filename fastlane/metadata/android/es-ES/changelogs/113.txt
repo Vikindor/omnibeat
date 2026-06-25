@@ -1,0 +1,2 @@
+fix: Los controles multimedia no reciben los metadatos de pista actualizados
+feat: Añadido un indicador de reproducción para la emisora activa

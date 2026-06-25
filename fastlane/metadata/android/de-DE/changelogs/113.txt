@@ -1,0 +1,2 @@
+fix: Mediensteuerungen erhalten keine aktualisierten Titel-Metadaten
+feat: Wiedergabeindikator für den aktiven Sender hinzugefügt
