@@ -18,8 +18,6 @@ android {
         versionCode = providers.gradleProperty("app.versionCode").get().toInt()
         versionName = providers.gradleProperty("app.versionName").get()
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
         ndk {
             debugSymbolLevel = "SYMBOL_TABLE"
         }
@@ -63,8 +61,4 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.reorderable)
     debugImplementation(libs.compose.ui.tooling)
-    testImplementation(libs.junit)
-    testImplementation(libs.json)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
 }
