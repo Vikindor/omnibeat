@@ -79,7 +79,7 @@ fun AboutPage(modifier: Modifier = Modifier) {
             )
             AboutLinkRow(
                 label = stringResource(R.string.about_license),
-                value = "GNU GPL 3.0",
+                value = "GNU AGPL 3.0",
                 url = "https://github.com/Vikindor/omnibeat/blob/master/LICENSE",
             )
             AboutLinkRow(
