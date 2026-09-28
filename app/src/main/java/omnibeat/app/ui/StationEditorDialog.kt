@@ -10,7 +10,6 @@ import omnibeat.app.model.StationEditorState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.util.Locale
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -19,10 +18,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -112,7 +113,7 @@ fun StationEditorDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 3,
-                    label = { Text(stringResource(R.string.station_editor_title_label)) },
+                    label = { EditableFieldLabel(stringResource(R.string.station_editor_title_label)) },
                     colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -125,7 +126,7 @@ fun StationEditorDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 5,
-                    label = { Text(stringResource(R.string.station_editor_stream_url_label)) },
+                    label = { EditableFieldLabel(stringResource(R.string.station_editor_stream_url_label)) },
                     placeholder = { Text("https://...") },
                     isError = showUrlError && !hasValidStreamUrl,
                     supportingText = if (showUrlError && !hasValidStreamUrl) {
@@ -143,7 +144,7 @@ fun StationEditorDialog(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 5,
-                    label = { Text(stringResource(R.string.station_editor_tags_label)) },
+                    label = { EditableFieldLabel(stringResource(R.string.station_editor_tags_label)) },
                     placeholder = { Text(stringResource(R.string.common_comma_separated)) },
                     colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
@@ -204,6 +205,21 @@ fun StationEditorDialog(
     }
 }
 
+@Composable
+private fun EditableFieldLabel(text: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text)
+        Icon(
+            painter = painterResource(R.drawable.ic_edit),
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+        )
+    }
+}
+
 private fun isValidStreamUrl(streamUrl: String): Boolean {
     val uri = streamUrl.toUri()
     return uri.scheme in setOf("http", "https") && !uri.host.isNullOrBlank()
@@ -213,8 +229,7 @@ private fun formatDateAdded(dateAdded: String?): String? {
     val value = dateAdded?.takeIf { it.isNotBlank() } ?: return null
     return runCatching {
         DateTimeFormatter
-            .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-            .withLocale(Locale.getDefault())
+            .ofPattern("dd MMMM yyyy, HH:mm", Locale.ENGLISH)
             .withZone(ZoneId.systemDefault())
             .format(Instant.parse(value))
     }.getOrDefault(value)
