@@ -378,11 +378,10 @@ private fun SearchOptionsContent(
             modifier = Modifier.padding(top = 10.dp),
         )
 
-        HorizontalDivider(
-            color = RadioOutline.copy(alpha = 0.65f),
-            modifier = Modifier.padding(top = 16.dp, bottom = 12.dp),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(top = 10.dp),
+        ) {
             SearchDropdown(
                 label = stringResource(R.string.online_search_sort_by),
                 selectedText = stringResource(searchState.selectedSort.labelRes()),
@@ -400,24 +399,29 @@ private fun SearchOptionsContent(
                 modifier = Modifier.weight(1f),
             )
         }
-        SearchTextField(
-            value = searchState.bitrateMin,
-            onValueChange = { onSearchStateChange(searchState.copy(bitrateMin = it.digitsOnly())) },
-            label = stringResource(R.string.online_search_bitrate_min),
-            imeAction = ImeAction.Next,
-            keyboardType = KeyboardType.Number,
-            onSearch = onSearch,
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.padding(top = 10.dp),
-        )
-        SearchTextField(
-            value = searchState.bitrateMax,
-            onValueChange = { onSearchStateChange(searchState.copy(bitrateMax = it.digitsOnly())) },
-            label = stringResource(R.string.online_search_bitrate_max),
-            imeAction = ImeAction.Search,
-            keyboardType = KeyboardType.Number,
-            onSearch = onSearch,
-            modifier = Modifier.padding(top = 10.dp),
-        )
+        ) {
+            SearchTextField(
+                value = searchState.bitrateMin,
+                onValueChange = { onSearchStateChange(searchState.copy(bitrateMin = it.digitsOnly())) },
+                label = stringResource(R.string.online_search_bitrate_min),
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Number,
+                onSearch = onSearch,
+                modifier = Modifier.weight(1f),
+            )
+            SearchTextField(
+                value = searchState.bitrateMax,
+                onValueChange = { onSearchStateChange(searchState.copy(bitrateMax = it.digitsOnly())) },
+                label = stringResource(R.string.online_search_bitrate_max),
+                imeAction = ImeAction.Search,
+                keyboardType = KeyboardType.Number,
+                onSearch = onSearch,
+                modifier = Modifier.weight(1f),
+            )
+        }
         SearchCheckbox(
             checked = searchState.includeBroken,
             onCheckedChange = { onSearchStateChange(searchState.copy(includeBroken = it)) },
