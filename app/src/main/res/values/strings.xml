@@ -220,7 +220,7 @@
     <string name="onboarding_screenshot_placeholder">Screenshot placeholder</string>
 
     <string name="about_tagline">Internet radio, made simple</string>
-    <string name="about_description">Built to play streams from a wide range of radio links</string>
+    <string name="about_description">Built to support all modern online stations</string>
     <string name="about_section_app">App</string>
     <string name="about_version">Version</string>
     <string name="about_build">Build</string>
@@ -231,6 +231,7 @@
     <string name="about_license">License</string>
     <string name="about_radio_browser_value">Online search data source</string>
     <string name="about_section_author">Author</string>
-    <string name="about_translation_help">Want to help translate OmniBeat? Get in touch through the website.</string>
+    <string name="about_contact_support">Support</string>
+    <string name="about_support">Problems, suggestions, or want to help with translation? Get in touch!</string>
     <string name="toast_link_copied">Link copied</string>
 </resources>

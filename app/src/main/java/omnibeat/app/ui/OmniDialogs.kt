@@ -69,6 +69,7 @@ fun ErrorDialog(
 ) {
     val context = LocalContext.current
     val dialogTitle = title ?: stringResource(R.string.dialog_error_title)
+    val errorCopiedText = stringResource(R.string.toast_error_copied)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -105,7 +106,7 @@ fun ErrorDialog(
                     onClick = {
                         val clipboard = context.getSystemService(ClipboardManager::class.java)
                         clipboard.setPrimaryClip(ClipData.newPlainText(dialogTitle, message))
-                        Toast.makeText(context, context.getString(R.string.toast_error_copied), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, errorCopiedText, Toast.LENGTH_SHORT).show()
                     },
                 )
             }

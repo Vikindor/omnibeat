@@ -74,7 +74,7 @@ fun AboutPage(modifier: Modifier = Modifier) {
             AboutSectionHeader(stringResource(R.string.about_section_project))
             AboutLinkRow(
                 label = stringResource(R.string.about_source_code),
-                value = stringResource(R.string.about_source_code_value),
+                value = "github.com/vikindor/omnibeat",
                 url = "https://github.com/Vikindor/omnibeat",
             )
             AboutLinkRow(
@@ -83,8 +83,8 @@ fun AboutPage(modifier: Modifier = Modifier) {
                 url = "https://github.com/Vikindor/omnibeat/blob/master/LICENSE",
             )
             AboutLinkRow(
-                label = "Radio Browser",
-                value = stringResource(R.string.about_radio_browser_value),
+                label = stringResource(R.string.about_radio_browser_value),
+                value = "Radio Browser",
                 url = "https://www.radio-browser.info",
             )
             AboutDivider()
@@ -97,13 +97,19 @@ fun AboutPage(modifier: Modifier = Modifier) {
             )
 
             Text(
-                text = stringResource(R.string.about_translation_help),
+                text = stringResource(R.string.about_support),
                 color = RadioTextMuted,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 6.dp, bottom = 8.dp),
+            )
+
+            AboutLinkRow(
+                label = stringResource(R.string.about_contact_support),
+                value = "vikindor.github.io/support/",
+                url = "https://vikindor.github.io/support/",
             )
 
             Text(
@@ -195,6 +201,7 @@ private fun AboutLinkRow(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val linkCopiedText = stringResource(R.string.toast_link_copied)
     val enabled = url != null
 
     Row(
@@ -208,7 +215,7 @@ private fun AboutLinkRow(
                 onLongClick = {
                     url?.let {
                         copyLinkToClipboard(context, label = label, url = it)
-                        Toast.makeText(context, context.getString(R.string.toast_link_copied), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, linkCopiedText, Toast.LENGTH_SHORT).show()
                     }
                 },
             )
