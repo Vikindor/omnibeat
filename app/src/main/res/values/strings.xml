@@ -234,4 +234,19 @@
     <string name="about_contact_support">Support</string>
     <string name="about_support">Problems, suggestions, or want to help with translation? Get in touch!</string>
     <string name="toast_link_copied">Link copied</string>
+    <string name="page_translation">Translation</string>
+    <string name="translation_enabled">Translation menu enabled</string>
+    <string name="translation_disabled">Translation menu disabled</string>
+    <string name="translation_description">Export the language selected in Settings, edit the text, then import it to preview your translation throughout the app.</string>
+    <string name="translation_export">Export strings</string>
+    <string name="translation_export_description">Save the current language as TXT</string>
+    <string name="translation_import">Import translation</string>
+    <string name="translation_import_description">Load an edited TXT file</string>
+    <string name="translation_reset">Reset translation</string>
+    <string name="translation_active">An imported translation is active. Reset to return to the app language.</string>
+    <string name="translation_inactive">No imported translation is active</string>
+    <string name="translation_exported">Strings exported</string>
+    <string name="translation_imported">Translation applied</string>
+    <string name="translation_reset_done">Translation reset</string>
+    <string name="translation_failed">Translation operation failed: %1$s</string>
 </resources>

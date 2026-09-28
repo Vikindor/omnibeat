@@ -24,7 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -168,30 +168,31 @@ private fun FormatDescription(
 }
 
 @Composable
-private fun ExportImportActionRow(
+internal fun ExportImportActionRow(
     icon: Int,
     title: String,
     subtitle: String,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 14.dp),
     ) {
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            tint = RadioText,
+            tint = if (enabled) RadioText else RadioTextMuted,
             modifier = Modifier.size(28.dp),
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                color = RadioText,
+                color = if (enabled) RadioText else RadioTextMuted,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
             )

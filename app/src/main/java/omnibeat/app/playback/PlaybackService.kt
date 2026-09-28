@@ -1,5 +1,7 @@
 package omnibeat.app.playback
 
+import omnibeat.app.data.TranslationStrings
+import omnibeat.app.data.appString
 import omnibeat.app.R
 
 import android.app.Notification
@@ -109,12 +111,12 @@ class PlaybackService : Service() {
 
     private fun trackText(status: PlaybackTrackStatus): String {
         return when (status) {
-            PlaybackTrackStatus.Stopped -> getString(R.string.track_text_stopped)
-            PlaybackTrackStatus.Paused -> getString(R.string.track_text_paused)
-            PlaybackTrackStatus.LoadingStations -> getString(R.string.track_text_loading_stations)
-            PlaybackTrackStatus.Resolving -> getString(R.string.track_text_resolving)
-            PlaybackTrackStatus.WaitingMetadata -> getString(R.string.track_text_waiting_metadata)
-            PlaybackTrackStatus.NoMetadata -> getString(R.string.track_text_no_metadata)
+            PlaybackTrackStatus.Stopped -> resources.appString(R.string.track_text_stopped)
+            PlaybackTrackStatus.Paused -> resources.appString(R.string.track_text_paused)
+            PlaybackTrackStatus.LoadingStations -> resources.appString(R.string.track_text_loading_stations)
+            PlaybackTrackStatus.Resolving -> resources.appString(R.string.track_text_resolving)
+            PlaybackTrackStatus.WaitingMetadata -> resources.appString(R.string.track_text_waiting_metadata)
+            PlaybackTrackStatus.NoMetadata -> resources.appString(R.string.track_text_no_metadata)
         }
     }
 
@@ -125,6 +127,9 @@ class PlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         repository = StationRepository(applicationContext)
+        scope.launch {
+            repository.translationOverrides.collect { TranslationStrings.apply(it) }
+        }
         player = buildPlayer()
         sessionPlayer = OmniBeatSessionPlayer(player)
         player.addListener(playerListener)
@@ -325,7 +330,7 @@ class PlaybackService : Service() {
                     resolving = false,
                     buffering = false,
                     isPlaying = false,
-                    errorText = getString(R.string.toast_no_internet),
+                    errorText = resources.appString(R.string.toast_no_internet),
                     streamInfo = PlaybackStreamInfo(),
                 ).withTrackStatus(PlaybackTrackStatus.Stopped)
             }

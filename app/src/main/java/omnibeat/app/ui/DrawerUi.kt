@@ -5,6 +5,8 @@ import omnibeat.app.R
 import omnibeat.app.model.MainPage
 
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,6 +24,9 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -29,7 +34,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +42,10 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun DrawerContent(
     selectedPage: MainPage,
+    isOpen: Boolean,
+    translationEnabled: Boolean,
+    onToggleTranslation: () -> Unit,
+    onTranslationClick: () -> Unit,
     onStationsClick: () -> Unit = {},
     onExportImportClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
@@ -46,6 +55,7 @@ fun DrawerContent(
     val aboutFocusRequester = remember { FocusRequester() }
     val exitFocusRequester = remember { FocusRequester() }
     val drawerScrollState = rememberScrollState()
+    var logoTaps by remember(isOpen) { mutableIntStateOf(0) }
 
     ModalDrawerSheet(
         drawerContainerColor = RadioSurface,
@@ -72,7 +82,18 @@ fun DrawerContent(
                     modifier = Modifier
                         .padding(start = 16.dp)
                         .size(52.dp)
-                        .clip(CircleShape),
+                        .clip(CircleShape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            enabled = isOpen,
+                        ) {
+                            logoTaps++
+                            if (logoTaps == 10) {
+                                logoTaps = 0
+                                onToggleTranslation()
+                            }
+                        },
                 )
                 Text(
                     text = stringResource(R.string.app_name),
@@ -99,6 +120,14 @@ fun DrawerContent(
                     selected = selectedPage == MainPage.ExportImport,
                     onClick = onExportImportClick,
                 )
+                if (translationEnabled) {
+                    DrawerItem(
+                        text = stringResource(R.string.page_translation),
+                        iconRes = R.drawable.ic_edit,
+                        selected = selectedPage == MainPage.Translation,
+                        onClick = onTranslationClick,
+                    )
+                }
                 DrawerItem(
                     text = stringResource(R.string.page_settings),
                     iconRes = R.drawable.ic_settings,

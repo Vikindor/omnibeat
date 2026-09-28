@@ -40,7 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import omnibeat.app.R

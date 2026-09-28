@@ -2,6 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
 }
+val translationAssets = tasks.register<Sync>("prepareTranslationAssets") {
+    from("src/main/res") { include("values*/strings.xml") }
+    into(layout.buildDirectory.dir("generated/translationAssets/translations"))
+}
 
 android {
     namespace = "omnibeat.app"
@@ -43,7 +47,12 @@ android {
     androidResources {
         generateLocaleConfig = true
     }
+    sourceSets.getByName("main").assets.directories.add(
+        layout.buildDirectory.dir("generated/translationAssets").get().asFile.absolutePath,
+    )
 }
+
+tasks.named("preBuild").configure { dependsOn(translationAssets) }
 
 dependencies {
     implementation(libs.androidx.core.ktx)

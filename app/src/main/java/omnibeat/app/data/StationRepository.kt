@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationSortMode
@@ -44,8 +45,35 @@ private val stationSortKey = stringPreferencesKey("station_sort")
 private val customStationOrderKey = stringPreferencesKey("custom_station_order")
 private val customFavoriteOrderKey = stringPreferencesKey("custom_favorite_order")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
+private val translationEnabledKey = booleanPreferencesKey("translation_enabled")
+private val translationOverridesKey = stringPreferencesKey("translation_overrides")
 
 class StationRepository(private val context: Context) {
+    val translationEnabled: Flow<Boolean> = context.stationDataStore.data
+        .map { it[translationEnabledKey] ?: false }
+
+    val translationOverrides: Flow<Map<String, String>> = context.stationDataStore.data
+        .map { it[translationOverridesKey] }
+        .distinctUntilChanged()
+        .map { saved ->
+            val json = JSONObject(saved ?: "{}")
+            json.keys().asSequence().associateWith { json.getString(it) }
+        }
+
+    suspend fun toggleTranslation(): Boolean {
+        val preferences = context.stationDataStore.edit {
+            it[translationEnabledKey] = !(it[translationEnabledKey] ?: false)
+        }
+        return preferences[translationEnabledKey] == true
+    }
+
+    suspend fun saveTranslation(overrides: Map<String, String>) {
+        context.stationDataStore.edit {
+            if (overrides.isEmpty()) it.remove(translationOverridesKey)
+            else it[translationOverridesKey] = JSONObject(overrides).toString()
+        }
+    }
+
     val appVolume: Flow<Float> = context.stationDataStore.data
         .map { preferences -> preferences[appVolumeKey] ?: DEFAULT_APP_VOLUME }
 

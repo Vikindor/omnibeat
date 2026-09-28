@@ -232,4 +232,19 @@
     <string name="about_contact_support">Поддержка</string>
     <string name="about_support">Проблемы, предложения, или хотите помочь с переводом? Свяжитесь со мной!</string>
     <string name="toast_link_copied">Ссылка скопирована</string>
+    <string name="page_translation">Перевод</string>
+    <string name="translation_enabled">Раздел перевода включён</string>
+    <string name="translation_disabled">Раздел перевода выключен</string>
+    <string name="translation_description">Экспортируйте язык, выбранный в настройках, отредактируйте текст и импортируйте его для проверки перевода во всём приложении.</string>
+    <string name="translation_export">Экспорт строк</string>
+    <string name="translation_export_description">Сохранить текущий язык в TXT</string>
+    <string name="translation_import">Импорт перевода</string>
+    <string name="translation_import_description">Загрузить отредактированный TXT</string>
+    <string name="translation_reset">Сбросить перевод</string>
+    <string name="translation_active">Загруженный перевод активен. Сброс вернёт язык приложения.</string>
+    <string name="translation_inactive">Загруженного перевода нет</string>
+    <string name="translation_exported">Строки экспортированы</string>
+    <string name="translation_imported">Перевод применён</string>
+    <string name="translation_reset_done">Перевод сброшен</string>
+    <string name="translation_failed">Не удалось выполнить операцию с переводом: %1$s</string>
 </resources>
