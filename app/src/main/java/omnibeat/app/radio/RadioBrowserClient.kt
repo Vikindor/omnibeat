@@ -274,7 +274,7 @@ class RadioBrowserClient {
                     ),
                 )
             }
-        }
+        }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
     }
 
     private fun buildQuery(params: List<Pair<String, String>>): String {

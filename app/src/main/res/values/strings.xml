@@ -150,6 +150,7 @@
     <string name="online_search_all_countries">All countries</string>
     <string name="online_search_languages">Languages</string>
     <string name="online_search_all_languages">All languages</string>
+    <string name="online_search_no_matching_options">No matches found</string>
     <string name="online_search_sort_by">Sort by</string>
     <string name="online_search_sort_in">Sort in</string>
     <string name="online_search_bitrate_min">Bitrate min</string>

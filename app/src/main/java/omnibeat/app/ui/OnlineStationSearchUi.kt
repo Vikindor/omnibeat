@@ -49,6 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -359,19 +361,19 @@ private fun SearchOptionsContent(
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
         )
-        SearchDropdown(
+        SearchFilterDropdown(
             label = stringResource(R.string.online_search_countries),
-            selectedText = searchState.selectedCountry?.name ?: stringResource(R.string.online_search_all_countries),
-            options = listOf<RadioBrowserFilterOption?>(null) + countries,
-            optionText = { it?.name ?: stringResource(R.string.online_search_all_countries) },
+            selectedOption = searchState.selectedCountry,
+            options = countries,
+            allOptionsText = stringResource(R.string.online_search_all_countries),
             onOptionSelected = { onSearchStateChange(searchState.copy(selectedCountry = it)) },
             modifier = Modifier.padding(top = 10.dp),
         )
-        SearchDropdown(
+        SearchFilterDropdown(
             label = stringResource(R.string.online_search_languages),
-            selectedText = searchState.selectedLanguage?.name ?: stringResource(R.string.online_search_all_languages),
-            options = listOf<RadioBrowserFilterOption?>(null) + languages,
-            optionText = { it?.name ?: stringResource(R.string.online_search_all_languages) },
+            selectedOption = searchState.selectedLanguage,
+            options = languages,
+            allOptionsText = stringResource(R.string.online_search_all_languages),
             onOptionSelected = { onSearchStateChange(searchState.copy(selectedLanguage = it)) },
             modifier = Modifier.padding(top = 10.dp),
         )
@@ -458,6 +460,106 @@ private fun SearchTextField(
         colors = omniTextFieldColors(),
         modifier = modifier.fillMaxWidth(),
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchFilterDropdown(
+    label: String,
+    selectedOption: RadioBrowserFilterOption?,
+    options: List<RadioBrowserFilterOption>,
+    allOptionsText: String,
+    onOptionSelected: (RadioBrowserFilterOption?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var query by remember(selectedOption) { mutableStateOf<String?>(null) }
+    val focusManager = LocalFocusManager.current
+    val filteredOptions = remember(options, query) {
+        val filter = query.orEmpty().trim()
+        if (filter.isEmpty()) options else options.filter { it.name.contains(filter, ignoreCase = true) }
+    }
+
+    fun dismiss() {
+        expanded = false
+        query = null
+        focusManager.clearFocus()
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { nextExpanded ->
+            if (nextExpanded) expanded = true else dismiss()
+        },
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        OutlinedTextField(
+            value = query ?: selectedOption?.name.orEmpty(),
+            onValueChange = {
+                query = it
+                expanded = true
+                if (it.isEmpty()) onOptionSelected(null)
+            },
+            singleLine = true,
+            label = { Text(label) },
+            placeholder = { Text(allOptionsText) },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(
+                    expanded = expanded,
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.SecondaryEditable),
+                )
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { dismiss() }),
+            colors = omniTextFieldColors(),
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
+                .onFocusChanged {
+                    if (!it.isFocused) {
+                        expanded = false
+                        query = null
+                    }
+                }
+                .fillMaxWidth(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { dismiss() },
+            containerColor = RadioSurface,
+        ) {
+            DropdownMenuItem(
+                text = { Text(allOptionsText) },
+                onClick = {
+                    onOptionSelected(null)
+                    dismiss()
+                },
+            )
+            filteredOptions.forEach { option ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = option.name,
+                            color = RadioText,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    onClick = {
+                        onOptionSelected(option)
+                        dismiss()
+                    },
+                )
+            }
+            if (filteredOptions.isEmpty() && !query.isNullOrBlank()) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.online_search_no_matching_options)) },
+                    onClick = {},
+                    enabled = false,
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
