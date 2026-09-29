@@ -51,9 +51,8 @@ import omnibeat.app.data.SimpleStationTextCodec
 import omnibeat.app.data.StationExportCodec
 import omnibeat.app.data.StationImportMode
 import omnibeat.app.data.StationRepository
-import omnibeat.app.data.TranslationStrings
+import omnibeat.app.data.TranslationLanguage
 import omnibeat.app.data.appString
-import kotlinx.coroutines.flow.distinctUntilChanged
 import omnibeat.app.data.removeTrackingParameters
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
@@ -82,13 +81,11 @@ fun OmniBeatApp() {
     val translationEnabled by repository.translationEnabled.collectAsState(initial = false)
     var translationLoaded by remember(repository) { mutableStateOf(false) }
     LaunchedEffect(repository) {
-        repository.translationOverrides.distinctUntilChanged().collect {
-            TranslationStrings.apply(it)
-            translationLoaded = true
-        }
+        TranslationLanguage.load(repository)
+        translationLoaded = true
     }
     val themeMode by repository.themeMode.collectAsState(initial = ThemeMode.System)
-    var appLanguage by remember(context) { mutableStateOf(context.applicationContext.currentAppLanguage()) }
+    val appLanguage = context.applicationContext.currentAppLanguage()
     val useDarkTheme = shouldUseDarkTheme(themeMode)
 
     OmniBeatTheme(themeMode = themeMode) {
@@ -1077,7 +1074,6 @@ fun OmniBeatApp() {
                                     scope.launch { repository.saveThemeMode(nextThemeMode) }
                                 },
                                 onAppLanguageChange = { nextAppLanguage ->
-                                    appLanguage = nextAppLanguage
                                     context.applicationContext.applyAppLanguage(nextAppLanguage)
                                 },
                                 modifier = Modifier.fillMaxSize(),

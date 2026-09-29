@@ -1,10 +1,13 @@
 package omnibeat.app.model
 
-enum class AppLanguage(
+data class AppLanguage(
     val languageTag: String?,
     val displayName: String?,
 ) {
-    System(null, null),
-    English("en", "English"),
-    Russian("ru", "Русский"),
+    companion object {
+        val System = AppLanguage(null, null)
+        val English = AppLanguage("en", "English")
+        val Russian = AppLanguage("ru", "Русский")
+        val entries = listOf(System, English, Russian)
+    }
 }

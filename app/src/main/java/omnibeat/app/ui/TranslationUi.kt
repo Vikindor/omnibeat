@@ -30,7 +30,7 @@ import kotlinx.coroutines.withContext
 import omnibeat.app.R
 import omnibeat.app.data.StationRepository
 import omnibeat.app.data.TranslationCodec
-import omnibeat.app.data.TranslationStrings
+import omnibeat.app.data.TranslationLanguage
 import omnibeat.app.data.appString
 
 @Composable
@@ -41,7 +41,7 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
     val scrollState = rememberScrollState()
     var busy by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val hasTranslation = TranslationStrings.overrides.isNotEmpty()
+    val hasTranslation = TranslationLanguage.imported != null
 
     fun perform(success: Int, operation: suspend () -> Unit) {
         if (busy) return
@@ -71,12 +71,11 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) perform(R.string.translation_imported) {
-            val strings = withContext(Dispatchers.IO) {
+            val translation = withContext(Dispatchers.IO) {
                 val input = requireNotNull(context.contentResolver.openInputStream(uri)) { "Cannot open file" }
                 TranslationCodec.decode(input.use(TranslationCodec::read), resources)
             }
-            repository.saveTranslation(strings)
-            TranslationStrings.apply(strings)
+            TranslationLanguage.install(context.applicationContext, repository, translation)
         }
     }
 
@@ -103,7 +102,11 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
                 title = appStringResource(R.string.translation_export),
                 subtitle = appStringResource(R.string.translation_export_description),
                 enabled = !busy,
-                onClick = { exportLauncher.launch("omnibeat-strings-${resources.configuration.locales[0].toLanguageTag()}.txt") },
+                onClick = {
+                    val tag = TranslationLanguage.activeTranslation(resources)?.languageTag
+                        ?: resources.configuration.locales[0].toLanguageTag()
+                    exportLauncher.launch("omnibeat-strings-$tag.txt")
+                },
             )
             ExportImportActionRow(
                 icon = R.drawable.ic_file_import,
@@ -123,8 +126,7 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
                 enabled = !busy && hasTranslation,
                 onClick = {
                     perform(R.string.translation_reset_done) {
-                        repository.saveTranslation(emptyMap())
-                        TranslationStrings.apply(emptyMap())
+                        TranslationLanguage.reset(context.applicationContext, repository)
                     }
                 },
             )

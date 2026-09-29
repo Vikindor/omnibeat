@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import omnibeat.app.R
 import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
 import omnibeat.app.model.AppLanguage
+import omnibeat.app.data.TranslationLanguage
 import omnibeat.app.model.ThemeMode
 
 @Composable
@@ -116,7 +117,9 @@ private fun themeModeIcon(themeMode: ThemeMode): Int {
 private fun appLanguageLabel(appLanguage: AppLanguage): String {
     return when (appLanguage) {
         AppLanguage.System -> stringResource(R.string.language_system)
-        else -> appLanguage.displayName.orEmpty()
+        else -> if (appLanguage.languageTag == TranslationLanguage.imported?.languageTag) {
+            stringResource(R.string.language_imported, appLanguage.displayName.orEmpty())
+        } else appLanguage.displayName.orEmpty()
     }
 }
 
@@ -417,7 +420,7 @@ private fun SettingsLanguageRow(
                 containerColor = RadioSurface,
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
             ) {
-                AppLanguage.entries.forEach { option ->
+                TranslationLanguage.languages.forEach { option ->
                     DropdownMenuItem(
                         text = {
                             Text(

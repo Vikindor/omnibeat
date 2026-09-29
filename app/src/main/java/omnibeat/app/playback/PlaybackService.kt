@@ -1,6 +1,5 @@
 package omnibeat.app.playback
 
-import omnibeat.app.data.TranslationStrings
 import omnibeat.app.data.appString
 import omnibeat.app.R
 
@@ -127,9 +126,6 @@ class PlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         repository = StationRepository(applicationContext)
-        scope.launch {
-            repository.translationOverrides.collect { TranslationStrings.apply(it) }
-        }
         player = buildPlayer()
         sessionPlayer = OmniBeatSessionPlayer(player)
         player.addListener(playerListener)

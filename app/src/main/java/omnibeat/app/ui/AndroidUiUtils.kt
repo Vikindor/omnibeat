@@ -4,8 +4,9 @@ import android.app.Activity
 import android.app.LocaleManager
 import android.content.Context
 import android.content.ContextWrapper
-import android.os.LocaleList
 import omnibeat.app.model.AppLanguage
+import omnibeat.app.data.TranslationLanguage
+import java.util.Locale
 
 tailrec fun Context.findActivity(): Activity? {
     return when (this) {
@@ -16,13 +17,7 @@ tailrec fun Context.findActivity(): Activity? {
 }
 
 fun Context.applyAppLanguage(appLanguage: AppLanguage) {
-    val localeManager = getSystemService(LocaleManager::class.java)
-    val nextLocales = appLanguage.languageTag
-        ?.let(LocaleList::forLanguageTags)
-        ?: LocaleList.getEmptyLocaleList()
-    if (localeManager.applicationLocales != nextLocales) {
-        localeManager.applicationLocales = nextLocales
-    }
+    TranslationLanguage.select(this, appLanguage.languageTag.orEmpty())
 }
 
 fun Context.currentAppLanguage(): AppLanguage {
@@ -32,6 +27,6 @@ fun Context.currentAppLanguage(): AppLanguage {
         return AppLanguage.System
     }
     val languageTag = locales[0]?.toLanguageTag() ?: return AppLanguage.System
-    return AppLanguage.entries.firstOrNull { it.languageTag == languageTag || it.languageTag == locales[0]?.language }
-        ?: AppLanguage.System
+    return TranslationLanguage.languages.firstOrNull { it.languageTag == languageTag }
+        ?: Locale.forLanguageTag(languageTag).let { AppLanguage(languageTag, it.getDisplayName(it)) }
 }

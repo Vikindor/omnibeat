@@ -4,13 +4,17 @@ import android.content.res.Resources
 import android.util.Xml
 import org.xmlpull.v1.XmlPullParser
 import java.io.InputStream
+import java.util.Locale
+import omnibeat.app.model.ImportedTranslation
 
 /** TXT files contain Android string-resource XML, not a second translation format. */
 object TranslationCodec {
     private const val MAX_BYTES = 1_048_576
     private data class Entry(val value: String, val translatable: Boolean)
+    private data class Document(val entries: Map<String, Entry>, val languageTag: String?)
 
     fun export(resources: Resources): String {
+        TranslationLanguage.activeTranslation(resources)?.let { return it.source }
         val directories = resources.assets.list("translations").orEmpty().toSet()
         val locales = resources.configuration.locales
         val directory = (0 until locales.size()).firstNotNullOfOrNull { index ->
@@ -21,9 +25,13 @@ object TranslationCodec {
                 "values-${locale.language}-r${locale.country}",
                 "values-${locale.language}",
             ).firstOrNull { it in directories }
-        } ?: "values"
-        return resources.assets.open("translations/$directory/strings.xml")
+        }
+        requireNotNull(directory) { "No source catalog for the current language" }
+        val source = resources.assets.open("translations/$directory/strings.xml")
             .bufferedReader(Charsets.UTF_8).use { it.readText() }
+        val languageTag = if (directory == "values") "en" else directory
+            .removePrefix("values-").removePrefix("b+").replace('+', '-').replace("-r", "-")
+        return "<!-- language: $languageTag -->\n$source"
     }
 
     fun read(input: InputStream): String {
@@ -32,25 +40,28 @@ object TranslationCodec {
         return bytes.toString(Charsets.UTF_8)
     }
 
-    fun decode(text: String, resources: Resources): Map<String, String> {
+    fun decode(text: String, resources: Resources): ImportedTranslation {
         val baseline = resources.assets.open("translations/values/strings.xml")
-            .bufferedReader(Charsets.UTF_8).use { parse(it.readText()) }
+            .bufferedReader(Charsets.UTF_8).use { parse(it.readText()).entries }
         val imported = parse(text)
+        val languageTag = requireNotNull(imported.languageTag) { "Missing <!-- language: en --> comment" }
+        val missing = baseline.filterValues { it.translatable }.keys - imported.entries.keys
+        require(missing.isEmpty()) { "Missing strings: ${missing.joinToString()}" }
         val result = linkedMapOf<String, String>()
-        imported.forEach { (name, entry) ->
+        imported.entries.forEach { (name, entry) ->
             val original = requireNotNull(baseline[name]) { "Unknown string: $name" }
             if (!original.translatable) {
                 require(entry.value == original.value) { "String cannot be translated: $name" }
             } else {
                 validatePlaceholders(name, original.value, entry.value)
-                result[name] = entry.value
             }
+            result[name] = entry.value
         }
-        require(result.isNotEmpty()) { "No translatable strings found" }
-        return result
+        baseline.filterValues { !it.translatable }.forEach { (name, entry) -> result[name] = entry.value }
+        return ImportedTranslation(languageTag, result, text)
     }
 
-    private fun parse(text: String): Map<String, Entry> {
+    private fun parse(text: String): Document {
         require(text.toByteArray(Charsets.UTF_8).size <= MAX_BYTES) { "Translation file is larger than 1 MB" }
         val parser = Xml.newPullParser()
         parser.setInput(text.removePrefix("\uFEFF").reader())
@@ -59,10 +70,23 @@ object TranslationCodec {
         var rootClosed = false
         var name: String? = null
         var translatable = true
+        var languageTag: String? = null
         val value = StringBuilder()
         while (parser.nextToken() != XmlPullParser.END_DOCUMENT) {
             when (parser.eventType) {
                 XmlPullParser.DOCDECL -> error("DOCTYPE is not supported")
+                XmlPullParser.COMMENT -> {
+                    val comment = parser.text.trim()
+                    if (comment.startsWith("language:")) {
+                        require(languageTag == null && !rootSeen) { "Place one language comment before <resources>" }
+                        val tag = comment.substringAfter(':').trim()
+                        val locale = Locale.Builder().setLanguageTag(tag).build()
+                        require(locale.language.isNotEmpty() && Locale.getAvailableLocales().any { it.language == locale.language }) {
+                            "Unsupported language tag: $tag"
+                        }
+                        languageTag = locale.toLanguageTag()
+                    }
+                }
                 XmlPullParser.START_TAG -> when (parser.depth) {
                     1 -> {
                         require(!rootSeen && parser.name == "resources") { "Expected one <resources> element" }
@@ -92,7 +116,7 @@ object TranslationCodec {
             }
         }
         require(rootSeen && rootClosed) { "Incomplete <resources> document" }
-        return entries
+        return Document(entries, languageTag)
     }
 
     // Android resource quoting/escapes are applied after XML entity decoding.

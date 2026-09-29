@@ -29,6 +29,7 @@
     <string name="drawer_close_app">Закрыть приложение</string>
 
     <string name="language_system">Системный</string>
+    <string name="language_imported">%1$s (импортированный)</string>
 
     <string name="settings_section_appearance">Внешний вид</string>
     <string name="settings_theme_title">Тема</string>
@@ -235,13 +236,13 @@
     <string name="page_translation">Перевод</string>
     <string name="translation_enabled">Раздел перевода включён</string>
     <string name="translation_disabled">Раздел перевода выключен</string>
-    <string name="translation_description">Экспортируйте язык, выбранный в настройках, отредактируйте текст и импортируйте его для проверки перевода во всём приложении.</string>
+    <string name="translation_description">Экспортируйте текущий язык, переведите все строки и измените код языка в комментарии файла. Импорт переключит приложение на этот язык.</string>
     <string name="translation_export">Экспорт строк</string>
     <string name="translation_export_description">Сохранить текущий язык в TXT</string>
     <string name="translation_import">Импорт перевода</string>
     <string name="translation_import_description">Загрузить отредактированный TXT</string>
     <string name="translation_reset">Сбросить перевод</string>
-    <string name="translation_active">Загруженный перевод активен. Сброс вернёт язык приложения.</string>
+    <string name="translation_active">Импортированный язык установлен. Сброс удалит его и восстановит язык приложения.</string>
     <string name="translation_inactive">Загруженного перевода нет</string>
     <string name="translation_exported">Строки экспортированы</string>
     <string name="translation_imported">Перевод применён</string>

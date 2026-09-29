@@ -8,8 +8,11 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import omnibeat.app.model.ImportedTranslation
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
@@ -46,19 +49,19 @@ private val customStationOrderKey = stringPreferencesKey("custom_station_order")
 private val customFavoriteOrderKey = stringPreferencesKey("custom_favorite_order")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 private val translationEnabledKey = booleanPreferencesKey("translation_enabled")
-private val translationOverridesKey = stringPreferencesKey("translation_overrides")
+private val importedTranslationKey = stringPreferencesKey("imported_translation")
 
 class StationRepository(private val context: Context) {
     val translationEnabled: Flow<Boolean> = context.stationDataStore.data
         .map { it[translationEnabledKey] ?: false }
 
-    val translationOverrides: Flow<Map<String, String>> = context.stationDataStore.data
-        .map { it[translationOverridesKey] }
-        .distinctUntilChanged()
-        .map { saved ->
-            val json = JSONObject(saved ?: "{}")
-            json.keys().asSequence().associateWith { json.getString(it) }
+    suspend fun loadImportedTranslation(): ImportedTranslation? = withContext(Dispatchers.IO) {
+        context.stationDataStore.data.first()[importedTranslationKey]?.let { saved ->
+            val json = JSONObject(saved)
+            TranslationCodec.decode(json.getString("source"), context.resources)
+                .copy(previousLocaleTags = json.getString("previousLocaleTags"))
         }
+    }
 
     suspend fun toggleTranslation(): Boolean {
         val preferences = context.stationDataStore.edit {
@@ -67,11 +70,22 @@ class StationRepository(private val context: Context) {
         return preferences[translationEnabledKey] == true
     }
 
-    suspend fun saveTranslation(overrides: Map<String, String>) {
+    suspend fun importTranslation(translation: ImportedTranslation, previousLocaleTags: String): ImportedTranslation {
+        var installed = translation
         context.stationDataStore.edit {
-            if (overrides.isEmpty()) it.remove(translationOverridesKey)
-            else it[translationOverridesKey] = JSONObject(overrides).toString()
+            val previous = it[importedTranslationKey]?.let { saved -> JSONObject(saved).getString("previousLocaleTags") }
+                ?: previousLocaleTags
+            installed = translation.copy(previousLocaleTags = previous)
+            it[importedTranslationKey] = JSONObject()
+                .put("source", translation.source)
+                .put("previousLocaleTags", previous)
+                .toString()
         }
+        return installed
+    }
+
+    suspend fun clearImportedTranslation() {
+        context.stationDataStore.edit { it.remove(importedTranslationKey) }
     }
 
     val appVolume: Flow<Float> = context.stationDataStore.data
