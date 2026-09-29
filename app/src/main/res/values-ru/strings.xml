@@ -232,6 +232,7 @@
     <string name="about_section_author">Автор</string>
     <string name="about_contact_support">Поддержка</string>
     <string name="about_support">Проблемы, предложения, или хотите помочь с переводом? Свяжитесь со мной!</string>
+    <string name="about_section_translators">Переводчики</string>
     <string name="toast_link_copied">Ссылка скопирована</string>
     <string name="page_translation">Перевод</string>
     <string name="translation_enabled">Раздел перевода включён</string>
@@ -242,7 +243,9 @@
     <string name="translation_import">Импорт перевода</string>
     <string name="translation_import_description">Загрузить отредактированный TXT</string>
     <string name="translation_reset">Сбросить перевод</string>
-    <string name="translation_active">Импортированный язык установлен. Сброс удалит его и восстановит язык приложения.</string>
+    <string name="translation_open_onboarding">Открыть онбординг</string>
+    <string name="translation_open_onboarding_description">Пройти онбординг повторно на текущем языке приложения</string>
+    <string name="translation_active">Импортированный язык установлен. Сброс удалит его и восстановит язык из настроек.</string>
     <string name="translation_inactive">Загруженного перевода нет</string>
     <string name="translation_exported">Строки экспортированы</string>
     <string name="translation_imported">Перевод применён</string>

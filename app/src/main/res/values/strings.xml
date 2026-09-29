@@ -234,6 +234,7 @@
     <string name="about_section_author">Author</string>
     <string name="about_contact_support">Support</string>
     <string name="about_support">Problems, suggestions, or want to help with translation? Get in touch!</string>
+    <string name="about_section_translators">Translators</string>
     <string name="toast_link_copied">Link copied</string>
     <string name="page_translation">Translation</string>
     <string name="translation_enabled">Translation menu enabled</string>
@@ -244,7 +245,9 @@
     <string name="translation_import">Import translation</string>
     <string name="translation_import_description">Load an edited TXT file</string>
     <string name="translation_reset">Reset translation</string>
-    <string name="translation_active">An imported language is installed. Reset removes it and restores the app language.</string>
+    <string name="translation_open_onboarding">Open onboarding</string>
+    <string name="translation_open_onboarding_description">Repeat onboarding in the current app language</string>
+    <string name="translation_active">An imported language is installed. Reset removes it and restores the language from settings.</string>
     <string name="translation_inactive">No imported translation is active</string>
     <string name="translation_exported">Strings exported</string>
     <string name="translation_imported">Translation applied</string>

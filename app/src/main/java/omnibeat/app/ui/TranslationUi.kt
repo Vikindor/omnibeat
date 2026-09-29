@@ -43,13 +43,15 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val hasTranslation = TranslationLanguage.imported != null
 
-    fun perform(success: Int, operation: suspend () -> Unit) {
+    fun perform(success: Int? = null, operation: suspend () -> Unit) {
         if (busy) return
         busy = true
         scope.launch {
             try {
                 operation()
-                Toast.makeText(context, resources.appString(success), Toast.LENGTH_SHORT).show()
+                if (success != null) {
+                    Toast.makeText(context, resources.appString(success), Toast.LENGTH_SHORT).show()
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -128,6 +130,19 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
                     perform(R.string.translation_reset_done) {
                         TranslationLanguage.reset(context.applicationContext, repository)
                     }
+                },
+            )
+            HorizontalDivider(
+                color = RadioOutline.copy(alpha = 0.65f),
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+            )
+            ExportImportActionRow(
+                icon = R.drawable.ic_info,
+                title = appStringResource(R.string.translation_open_onboarding),
+                subtitle = appStringResource(R.string.translation_open_onboarding_description),
+                enabled = !busy,
+                onClick = {
+                    perform { repository.saveOnboardingCompleted(false) }
                 },
             )
         }
