@@ -1,11 +1,16 @@
 package omnibeat.app.radio
 
+import android.content.Context
+import android.util.AtomicFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import kotlin.time.Duration.Companion.days
 
 data class RadioBrowserStation(
     val stationUuid: String,
@@ -112,10 +117,14 @@ private object RadioBrowserApi {
     }
 }
 
-class RadioBrowserClient {
+class RadioBrowserClient(context: Context) {
     private var cachedBaseUrl: String? = null
-    private var cachedCountries: List<RadioBrowserFilterOption>? = null
-    private var cachedLanguages: List<RadioBrowserFilterOption>? = null
+    private val filterCacheDirectory = File(context.applicationContext.cacheDir, "radio_browser_filters")
+
+    private data class FilterCache(val savedAt: Long, val options: List<RadioBrowserFilterOption>) {
+        val isFresh: Boolean
+            get() = System.currentTimeMillis() - savedAt in 0 until 3.days.inWholeMilliseconds
+    }
 
     suspend fun searchStations(params: RadioBrowserSearchParams): List<RadioBrowserStation> = withContext(Dispatchers.IO) {
         val query = buildQuery(
@@ -153,19 +162,63 @@ class RadioBrowserClient {
     }
 
     suspend fun countries(): List<RadioBrowserFilterOption> = withContext(Dispatchers.IO) {
+        readFilterCache("countries")?.takeIf { it.isFresh }?.let { return@withContext it.options }
         val query = buildDefaultFilterQuery()
-        cachedCountries ?: decodeFilterOptions(
+        decodeFilterOptions(
             responseText = readRadioBrowserText("${RadioBrowserApi.Path.COUNTRIES}?$query"),
             codeKeys = listOf(RadioBrowserApi.Json.ISO_3166_1, RadioBrowserApi.Json.COUNTRY_CODE),
-        ).also { cachedCountries = it }
+        ).also { writeFilterCache("countries", it) }
     }
 
     suspend fun languages(): List<RadioBrowserFilterOption> = withContext(Dispatchers.IO) {
+        readFilterCache("languages")?.takeIf { it.isFresh }?.let { return@withContext it.options }
         val query = buildDefaultFilterQuery()
-        cachedLanguages ?: decodeFilterOptions(
+        decodeFilterOptions(
             responseText = readRadioBrowserText("${RadioBrowserApi.Path.LANGUAGES}?$query"),
             codeKeys = emptyList(),
-        ).also { cachedLanguages = it }
+        ).also { writeFilterCache("languages", it) }
+    }
+
+    suspend fun cachedCountries(): List<RadioBrowserFilterOption>? = withContext(Dispatchers.IO) {
+        readFilterCache("countries")?.options
+    }
+
+    suspend fun cachedLanguages(): List<RadioBrowserFilterOption>? = withContext(Dispatchers.IO) {
+        readFilterCache("languages")?.options
+    }
+
+    private fun readFilterCache(name: String): FilterCache? {
+        val file = AtomicFile(File(filterCacheDirectory, "$name.json"))
+        if (!file.baseFile.exists()) return null
+        val json = JSONObject(file.openRead().bufferedReader(Charsets.UTF_8).use { it.readText() })
+        val items = json.getJSONArray("options")
+        val options = buildList {
+            repeat(items.length()) { index ->
+                val item = items.getJSONObject(index)
+                add(RadioBrowserFilterOption(item.getString("name"), item.getString("code")))
+            }
+        }
+        return FilterCache(json.getLong("savedAt"), options)
+    }
+
+    private fun writeFilterCache(name: String, options: List<RadioBrowserFilterOption>) {
+        val items = JSONArray()
+        options.forEach { option ->
+            items.put(JSONObject().put("name", option.name).put("code", option.code))
+        }
+        val bytes = JSONObject()
+            .put("savedAt", System.currentTimeMillis())
+            .put("options", items)
+            .toString().toByteArray(Charsets.UTF_8)
+        val file = AtomicFile(File(filterCacheDirectory, "$name.json"))
+        val output = file.startWrite()
+        try {
+            output.write(bytes)
+            file.finishWrite(output)
+        } catch (error: Exception) {
+            file.failWrite(output)
+            throw error
+        }
     }
 
     private fun readRadioBrowserText(path: String): String {

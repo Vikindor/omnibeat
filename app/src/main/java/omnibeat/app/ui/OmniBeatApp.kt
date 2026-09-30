@@ -142,7 +142,7 @@ fun OmniBeatApp() {
             return@OmniBeatTheme
         }
 
-        val radioBrowserClient = remember { RadioBrowserClient() }
+        val radioBrowserClient = remember { RadioBrowserClient(context.applicationContext) }
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val playbackState by PlaybackService.state.collectAsState()
 
@@ -306,39 +306,39 @@ fun OmniBeatApp() {
             }
         }
 
-        fun loadOnlineFilterOptions(): Deferred<List<String>>? {
+        fun loadOnlineFilterOptions(): Deferred<List<String>> {
             onlineFilterRequest?.let { return it }
-            if (onlineCountries.isNotEmpty() && onlineLanguages.isNotEmpty()) return null
-            if (!NetworkStatus.isOnline(context)) return null
             onlineFilterErrorsHandledBySearch = false
             val request = scope.async(start = CoroutineStart.LAZY) {
                 try {
                     coroutineScope {
                         val requests = buildList {
-                            if (onlineCountries.isEmpty()) {
-                                add(async {
-                                    try {
+                            add(async {
+                                try {
+                                    radioBrowserClient.cachedCountries()?.let { onlineCountries = it }
+                                    if (NetworkStatus.isOnline(context)) {
                                         onlineCountries = radioBrowserClient.countries()
-                                        null
-                                    } catch (cancelled: CancellationException) {
-                                        throw cancelled
-                                    } catch (error: Exception) {
-                                        "${resources.appString(R.string.online_search_countries)}: ${error.message ?: error.toString()}"
                                     }
-                                })
-                            }
-                            if (onlineLanguages.isEmpty()) {
-                                add(async {
-                                    try {
+                                    null
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    "${resources.appString(R.string.online_search_countries)}: ${error.message ?: error.toString()}"
+                                }
+                            })
+                            add(async {
+                                try {
+                                    radioBrowserClient.cachedLanguages()?.let { onlineLanguages = it }
+                                    if (NetworkStatus.isOnline(context)) {
                                         onlineLanguages = radioBrowserClient.languages()
-                                        null
-                                    } catch (cancelled: CancellationException) {
-                                        throw cancelled
-                                    } catch (error: Exception) {
-                                        "${resources.appString(R.string.online_search_languages)}: ${error.message ?: error.toString()}"
                                     }
-                                })
-                            }
+                                    null
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    "${resources.appString(R.string.online_search_languages)}: ${error.message ?: error.toString()}"
+                                }
+                            })
                         }
                         requests.awaitAll().filterNotNull()
                     }
@@ -353,7 +353,7 @@ fun OmniBeatApp() {
         LaunchedEffect(selectedPage) {
             if (selectedPage == MainPage.SearchOnline) {
                 onlineOptionsExpanded = true
-                val errors = loadOnlineFilterOptions()?.await().orEmpty()
+                val errors = loadOnlineFilterOptions().await()
                 if (errors.isNotEmpty() && !onlineFilterErrorsHandledBySearch) {
                     errorDialog = errors.joinToString("\n\n")
                 }
@@ -486,7 +486,7 @@ fun OmniBeatApp() {
             val query = onlineSearchState
             scope.launch {
                 val filterRequest = loadOnlineFilterOptions()
-                if (filterRequest != null) onlineFilterErrorsHandledBySearch = true
+                onlineFilterErrorsHandledBySearch = true
                 val errors = mutableListOf<String>()
                 try {
                     runCatching {
@@ -505,7 +505,7 @@ fun OmniBeatApp() {
                         errors += message
                         Toast.makeText(context, resources.appString(R.string.toast_search_failed), Toast.LENGTH_SHORT).show()
                     }
-                    errors += filterRequest?.await().orEmpty()
+                    errors += filterRequest.await()
                     if (errors.isNotEmpty()) errorDialog = errors.joinToString("\n\n")
                 } finally {
                     onlineSearchLoading = false
