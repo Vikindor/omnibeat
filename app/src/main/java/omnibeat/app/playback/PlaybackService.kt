@@ -53,6 +53,9 @@ import omnibeat.app.stream.IcyMetadataParser
 import omnibeat.app.stream.StreamResolver
 import java.util.concurrent.CancellationException
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private const val PLAYER_USER_AGENT = "OmniBeat Android"
 
@@ -479,7 +482,7 @@ class PlaybackService : Service() {
         val minutes = stopServiceAfterPauseMinutes
         if (minutes == STOP_SERVICE_AFTER_PAUSE_NEVER) return
         stopAfterPauseJob = scope.launch {
-            delay(minutes * 60_000L)
+            delay(minutes.minutes)
             val current = state.value
             if (!current.isPlaying && !current.resolving && !current.buffering && current.trackStatus == PlaybackTrackStatus.Paused) {
                 stopPlayback()
@@ -620,7 +623,7 @@ class PlaybackService : Service() {
         if (!player.isPlaying || current.resolving || current.buffering || current.trackStatus != PlaybackTrackStatus.WaitingMetadata) return
         if (noMetadataJob?.isActive == true) return
         noMetadataJob = scope.launch {
-            delay(METADATA_WAIT_TIMEOUT_MS)
+            delay(METADATA_WAIT_TIMEOUT)
             val latest = state.value
             if (
                 player.isPlaying &&
@@ -669,7 +672,7 @@ class PlaybackService : Service() {
                 return
             }
             notificationUpdateJob = scope.launch {
-                delay(NOTIFICATION_UPDATE_DELAY_MS)
+                delay(NOTIFICATION_UPDATE_DELAY)
                 if (state.value.selectedStation != null) {
                     startForeground(NOTIFICATION_ID, buildNotification())
                 }
@@ -844,8 +847,8 @@ class PlaybackService : Service() {
     companion object {
         private const val CHANNEL_ID = "playback"
         private const val NOTIFICATION_ID = 1001
-        private const val NOTIFICATION_UPDATE_DELAY_MS = 500L
-        private const val METADATA_WAIT_TIMEOUT_MS = 15_000L
+        private val NOTIFICATION_UPDATE_DELAY = 500.milliseconds
+        private val METADATA_WAIT_TIMEOUT = 15.seconds
         private const val EXTRA_INDEX = "index"
         private const val EXTRA_QUEUE_IDS = "queue_ids"
         private const val EXTRA_PREVIEW_ID = "preview_id"

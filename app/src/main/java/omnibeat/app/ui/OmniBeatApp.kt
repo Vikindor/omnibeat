@@ -44,6 +44,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import omnibeat.app.data.DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES
@@ -177,6 +183,8 @@ fun OmniBeatApp() {
         var errorDialog by remember { mutableStateOf<String?>(null) }
         var onlineCountries by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
         var onlineLanguages by remember { mutableStateOf(emptyList<RadioBrowserFilterOption>()) }
+        var onlineFilterRequest by remember { mutableStateOf<Deferred<List<String>>?>(null) }
+        var onlineFilterErrorsHandledBySearch by remember { mutableStateOf(false) }
         var onlineOptionsExpanded by remember { mutableStateOf(false) }
         val visibleTabPages = if (showEmptyFavoritesTab || stations.any { it.isFavorite }) {
             MainPage.tabPages
@@ -298,20 +306,56 @@ fun OmniBeatApp() {
             }
         }
 
+        fun loadOnlineFilterOptions(): Deferred<List<String>>? {
+            onlineFilterRequest?.let { return it }
+            if (onlineCountries.isNotEmpty() && onlineLanguages.isNotEmpty()) return null
+            if (!NetworkStatus.isOnline(context)) return null
+            onlineFilterErrorsHandledBySearch = false
+            val request = scope.async(start = CoroutineStart.LAZY) {
+                try {
+                    coroutineScope {
+                        val requests = buildList {
+                            if (onlineCountries.isEmpty()) {
+                                add(async {
+                                    try {
+                                        onlineCountries = radioBrowserClient.countries()
+                                        null
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (error: Exception) {
+                                        "${resources.appString(R.string.online_search_countries)}: ${error.message ?: error.toString()}"
+                                    }
+                                })
+                            }
+                            if (onlineLanguages.isEmpty()) {
+                                add(async {
+                                    try {
+                                        onlineLanguages = radioBrowserClient.languages()
+                                        null
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (error: Exception) {
+                                        "${resources.appString(R.string.online_search_languages)}: ${error.message ?: error.toString()}"
+                                    }
+                                })
+                            }
+                        }
+                        requests.awaitAll().filterNotNull()
+                    }
+                } finally {
+                    onlineFilterRequest = null
+                }
+            }
+            onlineFilterRequest = request
+            return request
+        }
+
         LaunchedEffect(selectedPage) {
             if (selectedPage == MainPage.SearchOnline) {
                 onlineOptionsExpanded = true
-                if (onlineCountries.isEmpty()) {
-                    scope.launch {
-                        runCatching { radioBrowserClient.countries() }
-                            .onSuccess { onlineCountries = it }
-                    }
-                }
-                if (onlineLanguages.isEmpty()) {
-                    scope.launch {
-                        runCatching { radioBrowserClient.languages() }
-                            .onSuccess { onlineLanguages = it }
-                    }
+                val errors = loadOnlineFilterOptions()?.await().orEmpty()
+                if (errors.isNotEmpty() && !onlineFilterErrorsHandledBySearch) {
+                    errorDialog = errors.joinToString("\n\n")
                 }
             } else {
                 onlineOptionsExpanded = false
@@ -434,25 +478,38 @@ fun OmniBeatApp() {
 
         fun searchOnlineStations() {
             if (onlineSearchLoading || onlineSearchLoadingMore) return
-            if (!hasInternetOrToast()) return
+            if (!NetworkStatus.isOnline(context)) {
+                errorDialog = resources.appString(R.string.toast_no_internet)
+                return
+            }
             onlineSearchLoading = true
+            val query = onlineSearchState
             scope.launch {
-                runCatching {
-                    radioBrowserClient.searchStations(onlineSearchState.toRadioBrowserParams(offset = 0))
-                }.onSuccess { results ->
-                    onlineSearchResults = results
-                    onlineSearchLastQuery = onlineSearchState
-                    onlineSearchHasMore = results.size == RadioBrowserSearchParams.DEFAULT_LIMIT
-                    onlineOptionsExpanded = false
-                }.onFailure { error ->
-                    onlineSearchResults = emptyList()
-                    onlineSearchLastQuery = null
-                    onlineSearchHasMore = false
-                    val message = error.message ?: resources.appString(R.string.toast_search_default_error)
-                    errorDialog = message
-                    Toast.makeText(context, resources.appString(R.string.toast_search_failed), Toast.LENGTH_SHORT).show()
+                val filterRequest = loadOnlineFilterOptions()
+                if (filterRequest != null) onlineFilterErrorsHandledBySearch = true
+                val errors = mutableListOf<String>()
+                try {
+                    runCatching {
+                        radioBrowserClient.searchStations(query.toRadioBrowserParams(offset = 0))
+                    }.onSuccess { results ->
+                        onlineSearchResults = results
+                        onlineSearchLastQuery = query
+                        onlineSearchHasMore = results.size == RadioBrowserSearchParams.DEFAULT_LIMIT
+                        onlineOptionsExpanded = false
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        onlineSearchResults = emptyList()
+                        onlineSearchLastQuery = null
+                        onlineSearchHasMore = false
+                        val message = error.message ?: resources.appString(R.string.toast_search_default_error)
+                        errors += message
+                        Toast.makeText(context, resources.appString(R.string.toast_search_failed), Toast.LENGTH_SHORT).show()
+                    }
+                    errors += filterRequest?.await().orEmpty()
+                    if (errors.isNotEmpty()) errorDialog = errors.joinToString("\n\n")
+                } finally {
+                    onlineSearchLoading = false
                 }
-                onlineSearchLoading = false
             }
         }
 
@@ -653,7 +710,10 @@ fun OmniBeatApp() {
 
         fun loadMoreOnlineStations() {
             if (onlineSearchLoading || onlineSearchLoadingMore || !onlineSearchHasMore) return
-            if (!hasInternetOrToast()) return
+            if (!NetworkStatus.isOnline(context)) {
+                errorDialog = resources.appString(R.string.toast_no_internet)
+                return
+            }
             val query = onlineSearchLastQuery ?: onlineSearchState
             onlineSearchLoadingMore = true
             scope.launch {
@@ -675,6 +735,7 @@ fun OmniBeatApp() {
                         onlineSearchHasMore = results.size == RadioBrowserSearchParams.DEFAULT_LIMIT
                     }
                 }.onFailure { error ->
+                    if (error is CancellationException) throw error
                     val message = error.message ?: resources.appString(R.string.toast_load_more_default_error)
                     errorDialog = message
                     Toast.makeText(context, resources.appString(R.string.toast_search_failed), Toast.LENGTH_SHORT).show()

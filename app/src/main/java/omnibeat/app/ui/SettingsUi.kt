@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import omnibeat.app.R
 import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
@@ -73,7 +74,7 @@ fun ThemeModeSegmentedControl(
     ) {
         Box(
             modifier = Modifier
-                .offset(x = selectedOffset)
+                .offset { IntOffset(selectedOffset.roundToPx(), 0) }
                 .width(segmentWidth)
                 .height(controlHeight)
                 .background(RadioPrimary, CircleShape),

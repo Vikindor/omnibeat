@@ -7,7 +7,6 @@ import java.io.InputStream
 import java.util.Locale
 import omnibeat.app.model.ImportedTranslation
 
-/** TXT files contain Android string-resource XML, not a second translation format. */
 object TranslationCodec {
     private const val MAX_BYTES = 1_048_576
     private data class Entry(val value: String, val translatable: Boolean)
@@ -119,7 +118,6 @@ object TranslationCodec {
         return Document(entries, languageTag)
     }
 
-    // Android resource quoting/escapes are applied after XML entity decoding.
     private fun decodeAndroidText(text: String): String {
         val result = StringBuilder()
         var quoted = false

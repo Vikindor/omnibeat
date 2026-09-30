@@ -14,7 +14,6 @@ import omnibeat.app.model.ImportedTranslation
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
-/** A complete imported catalog belongs to one locale, never to every app language. */
 object TranslationLanguage {
     var imported: ImportedTranslation? by mutableStateOf(null)
         private set
@@ -72,9 +71,7 @@ object TranslationLanguage {
 
     fun get(resources: Resources, @StringRes id: Int, vararg args: Any): String {
         val translation = activeTranslation(resources)
-        if (translation == null) {
-            return if (args.isEmpty()) resources.getString(id) else resources.getString(id, *args)
-        }
+            ?: return if (args.isEmpty()) resources.getString(id) else resources.getString(id, *args)
         val text = translation.strings.getValue(resources.getResourceEntryName(id))
         return if (args.isEmpty()) text else String.format(translation.locale, text, *args)
     }
