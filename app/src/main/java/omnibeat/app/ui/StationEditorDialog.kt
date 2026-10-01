@@ -1,5 +1,7 @@
 package omnibeat.app.ui
 
+import androidx.compose.foundation.layout.heightIn
+
 import omnibeat.app.R
 import omnibeat.app.model.STATION_STREAM_URL_MAX_LENGTH
 import omnibeat.app.model.STATION_TAGS_INPUT_MAX_LENGTH
@@ -64,7 +66,7 @@ fun StationEditorDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = RadioSpacing.large)
             .widthIn(max = 560.dp),
         properties = DialogProperties(usePlatformDefaultWidth = false),
         title = {
@@ -104,7 +106,7 @@ fun StationEditorDialog(
         },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(RadioSpacing.medium),
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 OutlinedTextField(
@@ -115,7 +117,7 @@ fun StationEditorDialog(
                     maxLines = 3,
                     label = { EditableFieldLabel(stringResource(R.string.station_editor_title_label)) },
                     colors = textFieldColors,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = streamUrl,
@@ -136,7 +138,7 @@ fun StationEditorDialog(
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                     colors = textFieldColors,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = tags,
@@ -147,7 +149,7 @@ fun StationEditorDialog(
                     label = { EditableFieldLabel(stringResource(R.string.station_editor_tags_label)) },
                     placeholder = { Text(stringResource(R.string.common_comma_separated)) },
                     colors = textFieldColors,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
                 )
                 formattedDateAdded?.let { dateAdded ->
                     OutlinedTextField(
@@ -160,7 +162,7 @@ fun StationEditorDialog(
                         maxLines = 2,
                         label = { Text(stringResource(R.string.station_editor_date_added_label)) },
                         colors = omniDisabledTextFieldColors(),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
                     )
                 }
             }
@@ -208,14 +210,14 @@ fun StationEditorDialog(
 @Composable
 private fun EditableFieldLabel(text: String) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.extraSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text)
         Icon(
             painter = painterResource(R.drawable.ic_edit),
             contentDescription = null,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(RadioSizes.iconTiny),
         )
     }
 }

@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.LocalContext
 import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import omnibeat.app.R
 import omnibeat.app.data.StationImportMode
@@ -75,7 +74,7 @@ fun ErrorDialog(
         onDismissRequest = onDismiss,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = RadioSpacing.large)
             .widthIn(max = 560.dp),
         properties = DialogProperties(usePlatformDefaultWidth = false),
         containerColor = RadioSurface,
@@ -90,7 +89,7 @@ fun ErrorDialog(
         text = {
             Text(
                 text = message,
-                lineHeight = 20.sp,
+                lineHeight = RadioTextSizes.bodyLineHeight,
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             )
         },
@@ -126,7 +125,7 @@ fun ImportStationsDialog(
         onDismissRequest = onDismiss,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = RadioSpacing.large)
             .widthIn(max = 560.dp),
         properties = DialogProperties(usePlatformDefaultWidth = false),
         containerColor = RadioSurface,
@@ -141,7 +140,7 @@ fun ImportStationsDialog(
             Text(
                 text = stringResource(R.string.dialog_import_stations_text, stationCount),
                 color = RadioTextMuted,
-                lineHeight = 20.sp,
+                lineHeight = RadioTextSizes.bodyLineHeight,
             )
         },
         confirmButton = {

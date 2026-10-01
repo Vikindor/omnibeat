@@ -1,5 +1,7 @@
 package omnibeat.app.ui
 
+import androidx.compose.foundation.layout.heightIn
+
 import omnibeat.app.R
 
 import android.content.ClipData
@@ -36,7 +38,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.OutlinedTextField
@@ -50,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -63,7 +65,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import omnibeat.app.model.Station
 import omnibeat.app.playback.PlaybackTrackStatus
@@ -120,23 +121,23 @@ fun PlayerPanel(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(34.dp)
-                .padding(start = 20.dp, top = 6.dp, end = 20.dp),
+                .height(RadioSizes.playerHeaderHeight)
+                .padding(horizontal = RadioSpacing.page),
         ) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(DividerDefaults.Thickness)
+                    .height(RadioSizes.playerDividerThickness)
                     .background(RadioOutline),
             )
             OmniIconButton(
-                painter = painterResource(
-                    if (collapsed) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down,
-                ),
+                painter = painterResource(R.drawable.ic_player_collapse),
                 onClick = { onCollapsedChange(!collapsed) },
                 tint = RadioTextMuted,
-                modifier = Modifier.size(36.dp),
-                iconModifier = Modifier.size(20.dp),
+                modifier = Modifier.size(RadioSizes.playerCollapseButton),
+                iconModifier = Modifier
+                    .size(RadioSizes.playerCollapseIcon)
+                    .rotate(if (collapsed) 180f else 0f),
             )
         }
         AnimatedVisibility(
@@ -154,7 +155,7 @@ fun PlayerPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(RadioSurface)
-                    .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
+                    .padding(start = RadioSpacing.page, end = RadioSpacing.page, bottom = RadioSpacing.large),
             ) {
                 Column(
                     modifier = Modifier
@@ -176,14 +177,13 @@ fun PlayerPanel(
                             },
                             onLongClick = { showStreamInfo = true },
                         )
-                        .fillMaxWidth()
-                        .padding(top = 2.dp),
+                        .fillMaxWidth(),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = station?.title ?: stringResource(R.string.player_choose_station),
                             color = RadioText,
-                            fontSize = 18.sp,
+                            fontSize = RadioTextSizes.title,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -192,8 +192,8 @@ fun PlayerPanel(
                         if (loading) {
                             CircularProgressIndicator(
                                 modifier = Modifier
-                                    .padding(start = 12.dp)
-                                    .size(24.dp),
+                                    .padding(start = RadioSpacing.medium)
+                                    .size(RadioSizes.icon),
                                 strokeWidth = 2.dp,
                                 color = RadioPrimary,
                             )
@@ -203,12 +203,12 @@ fun PlayerPanel(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 2.dp),
+                            .padding(top = RadioSpacing.extraSmall),
                     ) {
                         Text(
                             text = displayTrackText,
                             color = RadioTextMuted,
-                            fontSize = 14.sp,
+                            fontSize = RadioTextSizes.body,
                             maxLines = 1,
                             overflow = if (marqueeTrackTitle) TextOverflow.Clip else TextOverflow.Ellipsis,
                             softWrap = false,
@@ -229,9 +229,9 @@ fun PlayerPanel(
                             Text(
                                 text = bitrate,
                                 color = RadioTextMuted,
-                                fontSize = 13.sp,
+                                fontSize = RadioTextSizes.bodySmall,
                                 maxLines = 1,
-                                modifier = Modifier.padding(start = 12.dp),
+                                modifier = Modifier.padding(start = RadioSpacing.medium),
                             )
                         }
                     }
@@ -239,60 +239,60 @@ fun PlayerPanel(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp),
+                        .padding(top = RadioSpacing.large),
                 ) {
                     PlayerIconButton(
                         enabled = true,
                         onClick = onRandomStation,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
-                            .size(48.dp),
+                            .size(RadioSizes.button),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_shuffle),
                             contentDescription = null,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(RadioSizes.icon),
                         )
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.fieldGap),
                         modifier = Modifier.align(Alignment.Center),
                     ) {
                         PlayerIconButton(
                             enabled = true,
                             onClick = onPreviousStation,
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(RadioSizes.button),
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_skip_previous),
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(RadioSizes.icon),
                             )
                         }
                         PlayerIconButton(
                             enabled = true,
                             onClick = onPlayPause,
                             onLongClick = onStop,
-                            modifier = Modifier.size(62.dp),
+                            modifier = Modifier.size(RadioSizes.primaryPlaybackButton),
                         ) {
                             Icon(
                                 painter = painterResource(
                                     if (hasActivePlaybackRequest) R.drawable.ic_pause else R.drawable.ic_play_arrow,
                                 ),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(RadioSizes.iconPlayback),
                             )
                         }
                         PlayerIconButton(
                             enabled = true,
                             onClick = onNextStation,
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(RadioSizes.button),
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_skip_next),
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(RadioSizes.icon),
                             )
                         }
                     }
@@ -357,13 +357,13 @@ private fun StreamInfoDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = RadioSpacing.large)
             .widthIn(max = 560.dp),
         properties = DialogProperties(usePlatformDefaultWidth = false),
         title = { Text(stringResource(R.string.player_stream_info_title)) },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(RadioSpacing.medium),
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 OutlinedTextField(
@@ -375,7 +375,7 @@ private fun StreamInfoDialog(
                     maxLines = 3,
                     label = { Text(stringResource(R.string.player_stream_info_station)) },
                     colors = textFieldColors,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = trackText,
@@ -386,7 +386,7 @@ private fun StreamInfoDialog(
                     maxLines = 5,
                     label = { Text(stringResource(R.string.player_stream_info_track_metadata)) },
                     colors = textFieldColors,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
                 )
                 StreamInfoRow(label = stringResource(R.string.player_stream_info_bitrate), value = bitrate)
                 StreamInfoRow(label = stringResource(R.string.player_stream_info_sample_rate), value = sampleRate)
@@ -420,8 +420,8 @@ private fun StreamInfoRow(label: String, value: String) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text(text = label, color = RadioTextMuted, fontSize = 14.sp)
-        Text(text = value, color = RadioText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Text(text = label, color = RadioTextMuted, fontSize = RadioTextSizes.bodySmall)
+        Text(text = value, color = RadioText, fontSize = RadioTextSizes.body, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -473,9 +473,9 @@ private fun VolumeButton(
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val sliderHeight = 320.dp
-    val sliderTrackBottomGap = 14.dp
-    val sliderTrackBottomInset = 12.dp
+    val sliderHeight = RadioSizes.volumeSliderHeight
+    val sliderTrackBottomGap = RadioSpacing.rowVertical
+    val sliderTrackBottomInset = RadioSpacing.medium
     val popupOffsetY = with(LocalDensity.current) {
         -(sliderHeight + sliderTrackBottomGap - sliderTrackBottomInset).roundToPx()
     }
@@ -484,12 +484,12 @@ private fun VolumeButton(
         OmniFilledIconButton(
             enabled = true,
             onClick = { expanded = !expanded },
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(RadioSizes.button),
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_volume),
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(RadioSizes.icon),
             )
         }
 
@@ -504,7 +504,7 @@ private fun VolumeButton(
                     volume = volume,
                     onVolumeChange = onVolumeChange,
                     modifier = Modifier
-                        .width(72.dp)
+                        .width(RadioSizes.volumeSliderWidth)
                         .height(sliderHeight),
                 )
             }
@@ -535,8 +535,8 @@ private fun VerticalVolumeSlider(
 
     Canvas(
         modifier = modifier.pointerInput(Unit) {
-            val thumbHeight = 8.dp.toPx()
-            val verticalPadding = 8.dp.toPx()
+            val thumbHeight = RadioSizes.volumeThumbHeight.toPx()
+            val verticalPadding = RadioSpacing.small.toPx()
 
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
@@ -550,10 +550,10 @@ private fun VerticalVolumeSlider(
             }
         },
     ) {
-        val trackWidth = 18.dp.toPx()
-        val thumbWidth = 40.dp.toPx()
-        val thumbHeight = 8.dp.toPx()
-        val verticalPadding = 8.dp.toPx()
+        val trackWidth = RadioSizes.volumeTrackWidth.toPx()
+        val thumbWidth = RadioSizes.volumeThumbWidth.toPx()
+        val thumbHeight = RadioSizes.volumeThumbHeight.toPx()
+        val verticalPadding = RadioSpacing.small.toPx()
         val centerX = size.width / 2f
         val trackTop = verticalPadding + thumbHeight / 2f
         val trackBottom = size.height - verticalPadding - thumbHeight / 2f
@@ -561,7 +561,7 @@ private fun VerticalVolumeSlider(
         val thumbCenterY = trackBottom - trackHeight * coercedVolume
         val trackRadius = trackWidth / 2f
         val thumbRadius = thumbWidth / 2f
-        val thumbTrackGap = 4.dp.toPx()
+        val thumbTrackGap = RadioSpacing.extraSmall.toPx()
         val inactiveTrackBottom = (thumbCenterY - thumbHeight / 2f - thumbTrackGap).coerceAtLeast(trackTop)
         val activeTrackTop = (thumbCenterY + thumbHeight / 2f + thumbTrackGap).coerceAtMost(trackBottom)
 

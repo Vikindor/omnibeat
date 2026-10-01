@@ -51,7 +51,6 @@ import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import sh.calvin.reorderable.ReorderableItem
@@ -63,32 +62,32 @@ import java.net.URL
 fun EmptyStationsState(modifier: Modifier = Modifier) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier.padding(horizontal = 20.dp),
+        modifier = modifier.padding(horizontal = RadioSpacing.page),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(RadioSpacing.small),
         ) {
             Text(
                 text = stringResource(R.string.empty_stations_prefix),
                 color = RadioTextMuted,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
                 textAlign = TextAlign.Center,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
-                Text(stringResource(R.string.empty_stations_suffix_start), color = RadioTextMuted, fontSize = 16.sp)
+                Text(stringResource(R.string.empty_stations_suffix_start), color = RadioTextMuted, fontSize = RadioTextSizes.bodyLarge)
                 Icon(
                     painter = painterResource(R.drawable.ic_add),
                     contentDescription = null,
                     tint = RadioTextMuted,
                     modifier = Modifier
-                        .padding(horizontal = 6.dp)
-                        .size(18.dp),
+                        .padding(horizontal = RadioSpacing.compact)
+                        .size(RadioSizes.iconInline),
                 )
-                Text(stringResource(R.string.empty_stations_suffix_end), color = RadioTextMuted, fontSize = 16.sp)
+                Text(stringResource(R.string.empty_stations_suffix_end), color = RadioTextMuted, fontSize = RadioTextSizes.bodyLarge)
             }
         }
     }
@@ -98,12 +97,12 @@ fun EmptyStationsState(modifier: Modifier = Modifier) {
 fun EmptyFavoritesState(modifier: Modifier = Modifier) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier.padding(horizontal = 20.dp),
+        modifier = modifier.padding(horizontal = RadioSpacing.page),
     ) {
         Text(
             text = stringResource(R.string.empty_favorites),
             color = RadioTextMuted,
-            fontSize = 16.sp,
+            fontSize = RadioTextSizes.bodyLarge,
             textAlign = TextAlign.Center,
         )
     }
@@ -196,7 +195,7 @@ fun StationList(
             listState = listState,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 4.dp),
+                .padding(end = RadioSpacing.extraSmall),
         )
     }
 }
@@ -215,7 +214,7 @@ fun StationListItem(
     leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
-    startPadding: androidx.compose.ui.unit.Dp = 20.dp,
+    startPadding: androidx.compose.ui.unit.Dp = RadioSpacing.page,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -229,23 +228,23 @@ fun StationListItem(
             )
             .padding(
                 start = startPadding,
-                end = if (trailingContent == null) 20.dp else 8.dp,
-                top = 14.dp,
-                bottom = 14.dp,
+                end = if (trailingContent == null) RadioSpacing.page else RadioSpacing.small,
+                top = RadioSpacing.rowVertical,
+                bottom = RadioSpacing.rowVertical,
             ),
     ) {
         leadingContent?.invoke()
         if (showArtwork) {
             StationArtwork(
                 imageUrl = imageUrl,
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = RadioSpacing.medium),
             )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 color = RadioText,
-                fontSize = 17.sp,
+                fontSize = RadioTextSizes.stationTitle,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -265,17 +264,17 @@ fun StationTagPills(
         return
     }
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.extraSmall),
+        verticalArrangement = Arrangement.spacedBy(RadioSpacing.extraSmall),
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 5.dp),
+            .padding(top = RadioSpacing.labelGap),
     ) {
         tags.forEach { tag ->
             Text(
                 text = tag,
                 color = if (selected) RadioText else RadioTextMuted,
-                fontSize = 11.sp,
+                fontSize = RadioTextSizes.badge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
@@ -287,7 +286,7 @@ fun StationTagPills(
                         },
                         shape = RoundedCornerShape(percent = 50),
                     )
-                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                    .padding(horizontal = RadioSpacing.compact, vertical = 1.dp),
             )
         }
     }
@@ -311,8 +310,8 @@ private fun StationArtwork(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(52.dp)
-            .clip(RoundedCornerShape(6.dp))
+            .size(RadioSizes.artwork)
+            .clip(RoundedCornerShape(RadioCorners.small))
             .background(RadioSurfaceHigh.copy(alpha = 0.72f)),
     ) {
         if (imageBitmap != null) {
@@ -327,7 +326,7 @@ private fun StationArtwork(
                 painter = painterResource(R.drawable.ic_radio_button_unchecked),
                 contentDescription = null,
                 tint = RadioTextMuted,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(RadioSizes.icon),
             )
         }
     }
@@ -391,21 +390,21 @@ private fun StationRow(
         enabled = enabled,
         onClick = onClick,
         onLongClick = onLongClick,
-        startPadding = if (reordering) 8.dp else 20.dp,
+        startPadding = if (reordering) RadioSpacing.small else RadioSpacing.page,
         leadingContent = if (reordering) {
             {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(28.dp)
+                    .padding(end = RadioSpacing.small)
+                    .size(RadioSizes.iconLarge)
                     .then(dragHandleModifier),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_drag_indicator),
                     contentDescription = null,
                     tint = if (dragging) RadioPrimary else RadioTextMuted,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(RadioSizes.icon),
                 )
             }
             }
@@ -415,12 +414,12 @@ private fun StationRow(
         trailingContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(start = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(RadioSpacing.small),
+                modifier = Modifier.padding(start = RadioSpacing.medium),
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(width = 16.dp, height = 18.dp),
+                    modifier = Modifier.size(width = RadioSizes.signalWidth, height = RadioSizes.signalHeight),
                 ) {
                     if (playing && !reordering) {
                         StationPlayingIndicator()
@@ -456,7 +455,7 @@ private fun StationPlayingIndicator(modifier: Modifier = Modifier) {
         ).value
     }
 
-    Canvas(modifier = modifier.size(width = 16.dp, height = 18.dp)) {
+    Canvas(modifier = modifier.size(width = RadioSizes.signalWidth, height = RadioSizes.signalHeight)) {
         val barWidth = 3.dp.toPx()
         val gap = 2.dp.toPx()
         val totalWidth = barWidth * barFractions.size + gap * (barFractions.size - 1)

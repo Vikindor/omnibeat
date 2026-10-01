@@ -27,7 +27,6 @@ import androidx.compose.ui.res.painterResource
 import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun ExportImportPage(
@@ -47,26 +46,26 @@ fun ExportImportPage(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp)
-                .padding(top = 14.dp, bottom = 20.dp),
+                .padding(horizontal = RadioSpacing.page)
+                .padding(top = RadioSpacing.rowVertical, bottom = RadioSpacing.page),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(RadioSpacing.large),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.export_import_library_title),
                         color = RadioText,
-                        fontSize = 22.sp,
+                        fontSize = RadioTextSizes.headline,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = stringResource(R.string.export_import_library_summary, stationCount, favoriteCount),
                         color = RadioTextMuted,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(top = 6.dp),
+                        fontSize = RadioTextSizes.bodySmall,
+                        modifier = Modifier.padding(top = RadioSpacing.compact),
                     )
                 }
                 OmniIconButton(
@@ -78,7 +77,7 @@ fun ExportImportPage(
 
             HorizontalDivider(
                 color = RadioOutline.copy(alpha = 0.65f),
-                modifier = Modifier.padding(top = 22.dp, bottom = 8.dp),
+                modifier = Modifier.padding(top = RadioSpacing.section, bottom = RadioSpacing.small),
             )
 
             FormatDescription(
@@ -100,7 +99,7 @@ fun ExportImportPage(
 
             HorizontalDivider(
                 color = RadioOutline.copy(alpha = 0.65f),
-                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                modifier = Modifier.padding(top = RadioSpacing.small, bottom = RadioSpacing.small),
             )
 
             FormatDescription(
@@ -124,7 +123,7 @@ fun ExportImportPage(
             scrollIndicatorState = scrollState.scrollIndicatorState,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 4.dp),
+                .padding(end = RadioSpacing.extraSmall),
         )
     }
 
@@ -149,20 +148,20 @@ private fun FormatDescription(
     text: String,
 ) {
     Column(
-        modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
+        modifier = Modifier.padding(top = RadioSpacing.fieldGap, bottom = RadioSpacing.compact),
     ) {
         Text(
             text = title,
             color = RadioText,
-            fontSize = 22.sp,
+            fontSize = RadioTextSizes.headline,
             fontWeight = FontWeight.SemiBold,
         )
         Text(
             text = text,
             color = RadioTextMuted,
-            fontSize = 13.sp,
-            lineHeight = 18.sp,
-            modifier = Modifier.padding(top = 4.dp),
+            fontSize = RadioTextSizes.caption,
+            lineHeight = RadioTextSizes.compactLineHeight,
+            modifier = Modifier.padding(top = RadioSpacing.extraSmall),
         )
     }
 }
@@ -177,29 +176,29 @@ internal fun ExportImportActionRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.large),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(vertical = 14.dp),
+            .padding(vertical = RadioSpacing.rowVertical),
     ) {
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
             tint = if (enabled) RadioText else RadioTextMuted,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(RadioSizes.iconLarge),
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 color = if (enabled) RadioText else RadioTextMuted,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
                 fontWeight = FontWeight.Medium,
             )
             Text(
                 text = subtitle,
                 color = RadioTextMuted,
-                fontSize = 13.sp,
+                fontSize = RadioTextSizes.caption,
                 modifier = Modifier.padding(top = 3.dp),
             )
         }

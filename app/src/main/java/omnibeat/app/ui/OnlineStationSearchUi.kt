@@ -1,5 +1,7 @@
 package omnibeat.app.ui
 
+import androidx.compose.foundation.layout.PaddingValues
+
 import omnibeat.app.R
 import omnibeat.app.radio.stationTags
 
@@ -59,7 +61,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import omnibeat.app.radio.RadioBrowserFilterOption
 import omnibeat.app.radio.RadioBrowserSearchParams
 import omnibeat.app.radio.RadioBrowserSort
@@ -122,7 +123,7 @@ fun OnlineStationSearchPage(
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val overlayMaxHeight = (maxHeight - 16.dp).coerceAtLeast(240.dp)
+        val overlayMaxHeight = (maxHeight - RadioSpacing.large).coerceAtLeast(240.dp)
         val listState = rememberLazyListState()
 
         LaunchedEffect(listState, results.size, loading, loadingMore, hasMoreResults) {
@@ -173,12 +174,12 @@ fun OnlineStationSearchPage(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 14.dp),
+                                    .padding(vertical = RadioSpacing.rowVertical),
                             ) {
                                 CircularProgressIndicator(
                                     color = RadioPrimary,
                                     strokeWidth = 2.dp,
-                                    modifier = Modifier.size(22.dp),
+                                    modifier = Modifier.size(RadioSizes.loadingIcon),
                                 )
                             }
                         }
@@ -188,7 +189,7 @@ fun OnlineStationSearchPage(
                     listState = listState,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(end = 4.dp),
+                        .padding(end = RadioSpacing.extraSmall),
                 )
             }
         }
@@ -227,19 +228,19 @@ fun SearchOptionsTopBarControl(
             onClick = { onExpandedChange(!expanded) },
             color = RadioPrimary,
             contentColor = RadioText,
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(RadioCorners.large),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = RadioSpacing.large, vertical = RadioSpacing.extraSmall),
             ) {
                 Text(
                     text = stringResource(R.string.online_search_options),
                     color = RadioText,
-                    fontSize = 16.sp,
+                    fontSize = RadioTextSizes.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
                 )
@@ -248,8 +249,8 @@ fun SearchOptionsTopBarControl(
                         color = RadioText,
                         strokeWidth = 2.dp,
                         modifier = Modifier
-                            .padding(end = 8.dp)
-                            .size(18.dp),
+                            .padding(end = RadioSpacing.small)
+                            .size(RadioSizes.iconInline),
                     )
                 }
                 Icon(
@@ -258,7 +259,7 @@ fun SearchOptionsTopBarControl(
                     ),
                     contentDescription = null,
                     tint = RadioText,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(RadioSizes.icon),
                 )
             }
         }
@@ -297,13 +298,13 @@ private fun SearchOptionsOverlay(
                 onSearch = onSearch,
                 modifier = Modifier
                     .verticalScroll(scrollState)
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                    .padding(horizontal = RadioSpacing.page, vertical = RadioSpacing.fieldGap),
             )
             SearchOptionsScrollIndicator(
                 scrollIndicatorState = scrollState.scrollIndicatorState,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .padding(end = 4.dp),
+                    .padding(end = RadioSpacing.extraSmall),
             )
         }
     }
@@ -348,17 +349,17 @@ private fun SearchOptionsContent(
             imeAction = ImeAction.Search,
             keyboardType = KeyboardType.Text,
             onSearch = onSearch,
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = RadioSpacing.fieldGap),
         )
 
         HorizontalDivider(
             color = RadioOutline.copy(alpha = 0.65f),
-            modifier = Modifier.padding(top = 16.dp, bottom = 12.dp),
+            modifier = Modifier.padding(top = RadioSpacing.large, bottom = RadioSpacing.medium),
         )
         Text(
             text = stringResource(R.string.online_search_filters),
             color = RadioText,
-            fontSize = 16.sp,
+            fontSize = RadioTextSizes.bodyLarge,
             fontWeight = FontWeight.SemiBold,
         )
         SearchFilterDropdown(
@@ -367,7 +368,7 @@ private fun SearchOptionsContent(
             options = countries,
             allOptionsText = stringResource(R.string.online_search_all_countries),
             onOptionSelected = { onSearchStateChange(searchState.copy(selectedCountry = it)) },
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = RadioSpacing.fieldGap),
         )
         SearchFilterDropdown(
             label = stringResource(R.string.online_search_languages),
@@ -375,12 +376,12 @@ private fun SearchOptionsContent(
             options = languages,
             allOptionsText = stringResource(R.string.online_search_all_languages),
             onOptionSelected = { onSearchStateChange(searchState.copy(selectedLanguage = it)) },
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = RadioSpacing.fieldGap),
         )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(RadioSpacing.fieldGap),
+            modifier = Modifier.padding(top = RadioSpacing.fieldGap),
         ) {
             SearchDropdown(
                 label = stringResource(R.string.online_search_sort_by),
@@ -400,8 +401,8 @@ private fun SearchOptionsContent(
             )
         }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(RadioSpacing.fieldGap),
+            modifier = Modifier.padding(top = RadioSpacing.fieldGap),
         ) {
             SearchTextField(
                 value = searchState.bitrateMin,
@@ -425,7 +426,7 @@ private fun SearchOptionsContent(
         SearchCheckbox(
             checked = searchState.includeBroken,
             onCheckedChange = { onSearchStateChange(searchState.copy(includeBroken = it)) },
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = RadioSpacing.small),
         )
         OmniPrimaryButton(
             text = stringResource(R.string.action_search),
@@ -433,7 +434,7 @@ private fun SearchOptionsContent(
             enabled = !loading,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp),
+                .padding(top = RadioSpacing.medium),
         )
     }
 }
@@ -462,7 +463,7 @@ private fun SearchTextField(
         keyboardOptions = KeyboardOptions(imeAction = imeAction, keyboardType = keyboardType),
         keyboardActions = KeyboardActions(onSearch = { onSearch() }),
         colors = omniTextFieldColors(),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
     )
 }
 
@@ -524,7 +525,7 @@ private fun SearchFilterDropdown(
                         query = null
                     }
                 }
-                .fillMaxWidth(),
+                .heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
         )
         ExposedDropdownMenu(
             expanded = expanded,
@@ -532,6 +533,8 @@ private fun SearchFilterDropdown(
             containerColor = RadioSurface,
         ) {
             DropdownMenuItem(
+                modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                 text = { Text(allOptionsText) },
                 onClick = {
                     onOptionSelected(null)
@@ -540,11 +543,13 @@ private fun SearchFilterDropdown(
             )
             filteredOptions.forEach { option ->
                 DropdownMenuItem(
+                    modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                    contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                     text = {
                         Text(
                             text = option.name,
                             color = RadioText,
-                            fontSize = 14.sp,
+                            fontSize = RadioTextSizes.bodySmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -557,6 +562,8 @@ private fun SearchFilterDropdown(
             }
             if (filteredOptions.isEmpty() && !query.isNullOrBlank()) {
                 DropdownMenuItem(
+                    modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                    contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                     text = { Text(stringResource(R.string.online_search_no_matching_options)) },
                     onClick = {},
                     enabled = false,
@@ -600,7 +607,7 @@ private fun <T> SearchDropdown(
             colors = omniTextFieldColors(),
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                .fillMaxWidth(),
+                .heightIn(min = RadioSizes.textFieldMinHeight).fillMaxWidth(),
         )
         ExposedDropdownMenu(
             expanded = expanded,
@@ -609,11 +616,13 @@ private fun <T> SearchDropdown(
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
+                    modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                    contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                     text = {
                         Text(
                             text = optionText(option),
                             color = RadioText,
-                            fontSize = 14.sp,
+                            fontSize = RadioTextSizes.bodySmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -652,7 +661,7 @@ private fun SearchCheckbox(
         Text(
             text = stringResource(R.string.online_search_include_broken),
             color = RadioText,
-            fontSize = 14.sp,
+            fontSize = RadioTextSizes.bodySmall,
         )
     }
 }
@@ -681,7 +690,7 @@ private fun OnlineStationResultItem(
                 onClick = onAddStation,
                 tint = if (added) RadioPrimary else RadioText,
                 disabledTint = if (added) RadioPrimary else RadioTextMuted,
-                modifier = Modifier.padding(start = 12.dp),
+                modifier = Modifier.padding(start = RadioSpacing.medium),
             )
         },
     )
@@ -695,7 +704,7 @@ private fun EmptyOnlineSearchState(
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(horizontal = 20.dp),
+        modifier = modifier.padding(horizontal = RadioSpacing.page),
     ) {
         Text(
             text = if (hasQuery) {
@@ -704,7 +713,7 @@ private fun EmptyOnlineSearchState(
                 stringResource(R.string.online_search_empty_title)
             },
             color = RadioText,
-            fontSize = 20.sp,
+            fontSize = RadioTextSizes.title,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
         )
@@ -715,9 +724,9 @@ private fun EmptyOnlineSearchState(
                 stringResource(R.string.online_search_empty_subtitle)
             },
             color = RadioTextMuted,
-            fontSize = 15.sp,
+            fontSize = RadioTextSizes.body,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 6.dp),
+            modifier = Modifier.padding(top = RadioSpacing.compact),
         )
     }
 }

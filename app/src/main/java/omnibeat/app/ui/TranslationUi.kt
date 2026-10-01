@@ -21,8 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -86,18 +84,18 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp)
-                .padding(top = 14.dp, bottom = 20.dp),
+                .padding(horizontal = RadioSpacing.page)
+                .padding(top = RadioSpacing.rowVertical, bottom = RadioSpacing.page),
         ) {
             Text(
                 text = appStringResource(R.string.translation_description),
                 color = RadioTextMuted,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 6.dp),
+                fontSize = RadioTextSizes.bodySmall,
+                modifier = Modifier.padding(top = RadioSpacing.compact),
             )
             HorizontalDivider(
                 color = RadioOutline.copy(alpha = 0.65f),
-                modifier = Modifier.padding(top = 22.dp, bottom = 8.dp),
+                modifier = Modifier.padding(top = RadioSpacing.section, bottom = RadioSpacing.small),
             )
             ExportImportActionRow(
                 icon = R.drawable.ic_file_export,
@@ -119,7 +117,7 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
             )
             HorizontalDivider(
                 color = RadioOutline.copy(alpha = 0.65f),
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                modifier = Modifier.padding(top = RadioSpacing.large, bottom = RadioSpacing.small),
             )
             ExportImportActionRow(
                 icon = R.drawable.ic_delete,
@@ -134,7 +132,7 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
             )
             HorizontalDivider(
                 color = RadioOutline.copy(alpha = 0.65f),
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                modifier = Modifier.padding(top = RadioSpacing.large, bottom = RadioSpacing.small),
             )
             ExportImportActionRow(
                 icon = R.drawable.ic_info,
@@ -148,7 +146,7 @@ fun TranslationPage(repository: StationRepository, modifier: Modifier = Modifier
         }
         OmniScrollIndicator(
             scrollIndicatorState = scrollState.scrollIndicatorState,
-            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp),
+            modifier = Modifier.align(Alignment.CenterEnd).padding(end = RadioSpacing.extraSmall),
         )
     }
     errorMessage?.let { ErrorDialog(message = it, onDismiss = { errorMessage = null }) }

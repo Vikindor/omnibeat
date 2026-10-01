@@ -1,5 +1,9 @@
 package omnibeat.app.ui
 
+import androidx.compose.foundation.layout.PaddingValues
+
+import androidx.compose.foundation.layout.heightIn
+
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
@@ -43,7 +47,6 @@ import androidx.compose.ui.res.painterResource
 import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.sp
 import omnibeat.app.R
 import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
 import omnibeat.app.model.AppLanguage
@@ -58,8 +61,8 @@ fun ThemeModeSegmentedControl(
 ) {
     val options = listOf(ThemeMode.System, ThemeMode.Light, ThemeMode.Dark)
     val selectedIndex = options.indexOf(themeMode).coerceAtLeast(0)
-    val segmentWidth = 52.dp
-    val controlHeight = 32.dp
+    val segmentWidth = RadioSizes.themeSegmentWidth
+    val controlHeight = RadioSizes.themeSegmentHeight
     val selectedOffset by animateDpAsState(
         targetValue = segmentWidth * selectedIndex,
         animationSpec = tween(durationMillis = 220),
@@ -98,7 +101,7 @@ fun ThemeModeSegmentedControl(
                         painter = painterResource(themeModeIcon(option)),
                         contentDescription = null,
                         tint = if (selected) RadioText else RadioTextMuted,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(RadioSizes.icon),
                     )
                 }
             }
@@ -176,9 +179,9 @@ fun SettingsPage(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp)
-                .padding(top = 14.dp)
-                .padding(bottom = 20.dp),
+                .padding(horizontal = RadioSpacing.page)
+                .padding(top = RadioSpacing.rowVertical)
+                .padding(bottom = RadioSpacing.page),
         ) {
             SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
             SettingsThemeRow(
@@ -357,7 +360,7 @@ fun SettingsPage(
             scrollIndicatorState = scrollState.scrollIndicatorState,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-            .padding(end = 4.dp),
+            .padding(end = RadioSpacing.extraSmall),
         )
     }
 
@@ -388,10 +391,10 @@ private fun SettingsLanguageRow(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = RadioSpacing.fieldGap),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -400,12 +403,12 @@ private fun SettingsLanguageRow(
             Text(
                 text = title,
                 color = RadioText,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
             Text(
                 text = subtitle,
                 color = RadioTextMuted,
-                fontSize = 14.sp,
+                fontSize = RadioTextSizes.bodySmall,
             )
         }
         Box {
@@ -419,10 +422,12 @@ private fun SettingsLanguageRow(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 containerColor = RadioSurface,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(RadioCorners.medium),
             ) {
                 TranslationLanguage.languages.forEach { option ->
                     DropdownMenuItem(
+                        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                         text = {
                             Text(
                                 text = appLanguageLabel(option),
@@ -453,10 +458,10 @@ private fun SettingsPauseTimeoutRow(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = RadioSpacing.fieldGap),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -465,12 +470,12 @@ private fun SettingsPauseTimeoutRow(
             Text(
                 text = title,
                 color = RadioText,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
             Text(
                 text = subtitle,
                 color = RadioTextMuted,
-                fontSize = 14.sp,
+                fontSize = RadioTextSizes.bodySmall,
             )
         }
         Box {
@@ -484,10 +489,12 @@ private fun SettingsPauseTimeoutRow(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 containerColor = RadioSurface,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(RadioCorners.medium),
             ) {
                 options.forEach { minutes ->
                     DropdownMenuItem(
+                        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                         text = {
                             Text(
                                 text = pauseTimeoutLabel(minutes),
@@ -514,10 +521,10 @@ private fun SettingsSectionHeader(
     Text(
         text = title,
         color = color ?: RadioTextMuted,
-        fontSize = 14.sp,
+        fontSize = RadioTextSizes.bodySmall,
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 8.dp),
+            .padding(top = RadioSpacing.fieldGap, bottom = RadioSpacing.small),
     )
 }
 
@@ -525,7 +532,7 @@ private fun SettingsSectionHeader(
 private fun SettingsDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
         color = RadioOutline.copy(alpha = 0.65f),
-        modifier = modifier.padding(top = 14.dp, bottom = 8.dp),
+        modifier = modifier.padding(top = RadioSpacing.rowVertical, bottom = RadioSpacing.small),
     )
 }
 
@@ -539,10 +546,10 @@ private fun SettingsThemeRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = RadioSpacing.fieldGap),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -551,12 +558,12 @@ private fun SettingsThemeRow(
             Text(
                 text = title,
                 color = RadioText,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
             Text(
                 text = subtitle,
                 color = RadioTextMuted,
-                fontSize = 14.sp,
+                fontSize = RadioTextSizes.bodySmall,
             )
         }
         ThemeModeSegmentedControl(
@@ -580,10 +587,10 @@ private fun SettingsSwitchRow(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = RadioSpacing.fieldGap),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -592,12 +599,12 @@ private fun SettingsSwitchRow(
             Text(
                 text = title,
                 color = titleColor,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
             Text(
                 text = subtitle,
                 color = subtitleColor,
-                fontSize = 14.sp,
+                fontSize = RadioTextSizes.bodySmall,
             )
         }
         Switch(
@@ -628,10 +635,10 @@ private fun SettingsDangerRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = RadioSpacing.fieldGap),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -640,7 +647,7 @@ private fun SettingsDangerRow(
             Text(
                 text = title,
                 color = RadioDanger,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
         }
         OmniIconButton(
@@ -678,10 +685,10 @@ private fun SettingsActionRow(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = RadioSpacing.fieldGap),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -690,12 +697,12 @@ private fun SettingsActionRow(
             Text(
                 text = title,
                 color = RadioText,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
             Text(
                 text = subtitle,
                 color = RadioTextMuted,
-                fontSize = 14.sp,
+                fontSize = RadioTextSizes.bodySmall,
             )
         }
         if (actionText == null) {

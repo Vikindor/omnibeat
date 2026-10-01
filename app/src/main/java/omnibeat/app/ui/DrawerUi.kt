@@ -1,5 +1,7 @@
 package omnibeat.app.ui
 
+import androidx.compose.foundation.layout.heightIn
+
 import omnibeat.app.R
 
 import omnibeat.app.model.MainPage
@@ -37,7 +39,6 @@ import androidx.compose.ui.res.painterResource
 import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun DrawerContent(
@@ -61,27 +62,27 @@ fun DrawerContent(
         drawerContainerColor = RadioSurface,
         drawerContentColor = RadioText,
         modifier = Modifier
-            .width(304.dp)
+            .width(RadioSizes.drawerWidth)
             .fillMaxHeight(),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = RadioSpacing.medium),
         ) {
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(drawerScrollState)
-                    .padding(top = 28.dp),
+                    .padding(top = RadioSpacing.spacious),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_launcher_foreground),
                     contentDescription = null,
                     tint = Color.Unspecified,
                     modifier = Modifier
-                        .padding(start = 16.dp)
-                        .size(52.dp)
+                        .padding(start = RadioSpacing.large)
+                        .size(RadioSizes.drawerLogo)
                         .clip(CircleShape)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -97,15 +98,15 @@ fun DrawerContent(
                 )
                 Text(
                     text = stringResource(R.string.app_name),
-                    fontSize = 22.sp,
+                    fontSize = RadioTextSizes.headline,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 16.dp, top = 14.dp),
+                    modifier = Modifier.padding(start = RadioSpacing.large, top = RadioSpacing.rowVertical),
                 )
                 Text(
                     text = stringResource(R.string.drawer_subtitle),
                     color = RadioTextMuted,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 12.dp),
+                    fontSize = RadioTextSizes.caption,
+                    modifier = Modifier.padding(start = RadioSpacing.large, top = 2.dp, bottom = RadioSpacing.medium),
                 )
                 DrawerDivider()
                 DrawerItem(
@@ -162,7 +163,7 @@ fun DrawerContent(
 private fun DrawerDivider() {
     HorizontalDivider(
         color = RadioOutline.copy(alpha = 0.55f),
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier = Modifier.padding(horizontal = RadioSpacing.large, vertical = RadioSpacing.fieldGap),
     )
 }
 
@@ -179,12 +180,13 @@ private fun DrawerItem(
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = null,
+                modifier = Modifier.size(RadioSizes.icon),
             )
         },
         label = {
             Text(
                 text = text,
-                fontSize = 15.sp,
+                fontSize = RadioTextSizes.body,
                 fontWeight = FontWeight.Medium,
             )
         },
@@ -199,7 +201,8 @@ private fun DrawerItem(
             unselectedTextColor = RadioText,
         ),
         modifier = modifier
-            .padding(horizontal = 4.dp, vertical = 2.dp)
-            .clip(RoundedCornerShape(28.dp)),
+            .padding(horizontal = RadioSpacing.extraSmall, vertical = 2.dp)
+            .clip(RoundedCornerShape(RadioCorners.pill))
+            .heightIn(min = RadioSizes.drawerItemMinHeight),
     )
 }

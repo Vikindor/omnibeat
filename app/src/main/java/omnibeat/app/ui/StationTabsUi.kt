@@ -7,7 +7,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationEditorState
@@ -63,7 +62,7 @@ fun StationTabsPager(
                             EmptyStationsState(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 32.dp),
+                                    .padding(horizontal = RadioSpacing.inset),
                             )
                         },
                         scrollToSelectedRequest = scrollToSelectedRequest,
@@ -96,7 +95,7 @@ fun StationTabsPager(
                             EmptyFavoritesState(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 32.dp),
+                                    .padding(horizontal = RadioSpacing.inset),
                             )
                         },
                         scrollToSelectedRequest = scrollToSelectedRequest,
