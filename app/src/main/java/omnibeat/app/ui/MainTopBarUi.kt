@@ -1,5 +1,9 @@
 package omnibeat.app.ui
 
+import androidx.compose.foundation.layout.PaddingValues
+
+import androidx.compose.foundation.layout.heightIn
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -33,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import omnibeat.app.R
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.StationSortMode
@@ -66,8 +70,8 @@ fun MainTopBar(
             .fillMaxWidth()
             .background(RadioBackground)
             .windowInsetsPadding(WindowInsets.statusBars)
-            .height(52.dp)
-            .padding(start = 4.dp, end = 8.dp),
+            .height(RadioSizes.topBarHeight)
+            .padding(start = RadioSpacing.extraSmall, end = RadioSpacing.small),
     ) {
         if (selectedPage in tabPages) {
             OmniIconButton(
@@ -84,7 +88,7 @@ fun MainTopBar(
             onlineSearchControl(
                 Modifier
                     .weight(1f)
-                    .padding(start = 8.dp, end = 12.dp),
+                    .padding(start = RadioSpacing.small, end = RadioSpacing.medium),
             )
         } else {
             Row(
@@ -102,12 +106,12 @@ fun MainTopBar(
                                     role = Role.Tab,
                                     onClick = { onPageSelected(tab) },
                                 )
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .padding(horizontal = RadioSpacing.medium, vertical = RadioSpacing.small),
                         ) {
                             Text(
                                 text = stringResource(tab.titleRes()),
                                 color = if (visualSelectedPage == tab) RadioText else RadioTextMuted,
-                                fontSize = 18.sp,
+                                fontSize = RadioTextSizes.subtitle,
                                 fontWeight = if (visualSelectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -117,7 +121,7 @@ fun MainTopBar(
                             )
                             Box(
                                 modifier = Modifier
-                                    .padding(top = 6.dp)
+                                    .padding(top = RadioSpacing.compact)
                                     .width(tabTextWidth)
                                     .height(2.dp)
                                     .background(if (visualSelectedPage == tab) RadioPrimary else RadioOutline),
@@ -128,11 +132,11 @@ fun MainTopBar(
                     Text(
                         text = stringResource(selectedPage.titleRes()),
                         color = RadioText,
-                        fontSize = 20.sp,
+                        fontSize = RadioTextSizes.title,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 12.dp),
+                        modifier = Modifier.padding(start = RadioSpacing.medium),
                     )
                 }
             }
@@ -183,12 +187,14 @@ private fun SortMenuButton(
             expanded = expanded,
             onDismissRequest = { onExpandedChange(false) },
             containerColor = RadioSurface,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-            offset = DpOffset(x = 0.dp, y = 4.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(RadioCorners.medium),
+            offset = DpOffset(x = 0.dp, y = RadioSpacing.extraSmall),
         ) {
             StationSortMode.entries.forEach { option ->
                 val selected = sortState.mode == option
                 DropdownMenuItem(
+                    modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                    contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                     text = {
                         Text(
                             text = stringResource(option.labelRes()),
@@ -208,6 +214,7 @@ private fun SortMenuButton(
                                 },
                             ),
                             contentDescription = null,
+                            modifier = Modifier.size(RadioSizes.icon),
                             tint = if (selected) RadioPrimary else RadioTextMuted,
                         )
                     },
@@ -222,6 +229,7 @@ private fun SortMenuButton(
                                     },
                                 ),
                                 contentDescription = null,
+                                modifier = Modifier.size(RadioSizes.icon),
                                 tint = RadioText,
                             )
                         }
@@ -250,10 +258,12 @@ private fun AddMenuButton(
             expanded = expanded,
             onDismissRequest = { onExpandedChange(false) },
             containerColor = RadioSurface,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-            offset = DpOffset(x = 0.dp, y = 4.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(RadioCorners.medium),
+            offset = DpOffset(x = 0.dp, y = RadioSpacing.extraSmall),
         ) {
             DropdownMenuItem(
+                modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                 text = {
                     Text(
                         text = stringResource(R.string.action_add_manually),
@@ -268,11 +278,14 @@ private fun AddMenuButton(
                     Icon(
                         painter = painterResource(R.drawable.ic_add_manually),
                         contentDescription = null,
+                        modifier = Modifier.size(RadioSizes.icon),
                         tint = RadioText,
                     )
                 },
             )
             DropdownMenuItem(
+                modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+                contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                 text = {
                     Text(
                         text = stringResource(R.string.action_search_online),
@@ -287,6 +300,7 @@ private fun AddMenuButton(
                     Icon(
                         painter = painterResource(R.drawable.ic_search),
                         contentDescription = null,
+                        modifier = Modifier.size(RadioSizes.icon),
                         tint = RadioText,
                     )
                 },

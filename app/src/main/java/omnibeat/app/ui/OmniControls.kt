@@ -18,6 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
@@ -55,7 +58,8 @@ fun OmniPrimaryButton(
             disabledContainerColor = RadioSurfaceHigh,
             disabledContentColor = RadioTextMuted,
         ),
-        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = RadioSpacing.wide, vertical = RadioSpacing.small),
+        modifier = modifier.heightIn(min = RadioSizes.actionButtonMinHeight),
     ) {
         Text(text)
     }
@@ -77,7 +81,8 @@ fun OmniSecondaryButton(
             disabledContainerColor = RadioSurfaceHigh,
             disabledContentColor = RadioTextMuted,
         ),
-        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = RadioSpacing.wide, vertical = RadioSpacing.small),
+        modifier = modifier.heightIn(min = RadioSizes.actionButtonMinHeight),
     ) {
         Text(text)
     }
@@ -99,7 +104,8 @@ fun OmniDangerButton(
             disabledContainerColor = RadioSurfaceHigh,
             disabledContentColor = RadioTextMuted,
         ),
-        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = RadioSpacing.wide, vertical = RadioSpacing.small),
+        modifier = modifier.heightIn(min = RadioSizes.actionButtonMinHeight),
     ) {
         Text(text)
     }
@@ -118,13 +124,13 @@ fun OmniIconButton(
     IconButton(
         enabled = enabled,
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.sizeIn(minWidth = RadioSizes.button, minHeight = RadioSizes.button),
     ) {
         Icon(
             painter = painter,
             contentDescription = null,
             tint = if (enabled) tint else disabledTint,
-            modifier = iconModifier.size(24.dp),
+            modifier = iconModifier.size(RadioSizes.icon),
         )
     }
 }
@@ -150,7 +156,7 @@ fun OmniFilledIconButton(
             disabledContainerColor = disabledContainerColor ?: RadioSurfaceHigh,
             disabledContentColor = disabledContentColor ?: RadioTextMuted,
         ),
-        modifier = modifier,
+        modifier = modifier.sizeIn(minWidth = RadioSizes.button, minHeight = RadioSizes.button),
     ) {
         content()
     }

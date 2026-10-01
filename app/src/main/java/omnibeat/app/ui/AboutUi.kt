@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun AboutPage(modifier: Modifier = Modifier) {
@@ -55,8 +54,8 @@ fun AboutPage(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp)
-                .padding(top = 14.dp, bottom = 20.dp),
+                .padding(horizontal = RadioSpacing.page)
+                .padding(top = RadioSpacing.rowVertical, bottom = RadioSpacing.page),
         ) {
             AboutHeader()
             AboutDivider()
@@ -99,11 +98,11 @@ fun AboutPage(modifier: Modifier = Modifier) {
             Text(
                 text = stringResource(R.string.about_support),
                 color = RadioTextMuted,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
+                fontSize = RadioTextSizes.bodySmall,
+                lineHeight = RadioTextSizes.bodyLineHeight,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 6.dp, bottom = 8.dp),
+                    .padding(top = RadioSpacing.compact, bottom = RadioSpacing.small),
             )
 
             AboutLinkRow(
@@ -115,18 +114,18 @@ fun AboutPage(modifier: Modifier = Modifier) {
             Text(
                 text = "© 2026",
                 color = RadioTextMuted,
-                fontSize = 13.sp,
+                fontSize = RadioTextSizes.caption,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 18.dp),
+                    .padding(vertical = RadioSpacing.groupGap),
             )
         }
         OmniScrollIndicator(
             scrollIndicatorState = scrollState.scrollIndicatorState,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 4.dp),
+                .padding(end = RadioSpacing.extraSmall),
         )
     }
 }
@@ -135,37 +134,37 @@ fun AboutPage(modifier: Modifier = Modifier) {
 private fun AboutHeader(modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.large),
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 18.dp),
+            .padding(bottom = RadioSpacing.groupGap),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_launcher_foreground),
             contentDescription = null,
             tint = Color.Unspecified,
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier.size(RadioSizes.aboutLogo),
         )
         Column(
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+            verticalArrangement = Arrangement.spacedBy(RadioSpacing.labelGap),
             modifier = Modifier.weight(1f),
         ) {
             Text(
                 text = stringResource(R.string.app_name),
                 color = RadioText,
-                fontSize = 26.sp,
+                fontSize = RadioTextSizes.appName,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = stringResource(R.string.about_tagline),
                 color = RadioText,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
             Text(
                 text = stringResource(R.string.about_description),
                 color = RadioTextMuted,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
+                fontSize = RadioTextSizes.bodySmall,
+                lineHeight = RadioTextSizes.bodyLineHeight,
             )
         }
     }
@@ -176,10 +175,10 @@ private fun AboutSectionHeader(title: String, modifier: Modifier = Modifier) {
     Text(
         text = title,
         color = RadioTextMuted,
-        fontSize = 14.sp,
+        fontSize = RadioTextSizes.bodySmall,
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 8.dp),
+            .padding(top = RadioSpacing.fieldGap, bottom = RadioSpacing.small),
     )
 }
 
@@ -187,7 +186,7 @@ private fun AboutSectionHeader(title: String, modifier: Modifier = Modifier) {
 private fun AboutDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
         color = RadioOutline.copy(alpha = 0.65f),
-        modifier = modifier.padding(top = 14.dp, bottom = 8.dp),
+        modifier = modifier.padding(top = RadioSpacing.rowVertical, bottom = RadioSpacing.small),
     )
 }
 
@@ -205,7 +204,7 @@ private fun AboutLinkRow(
     val enabled = url != null
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
@@ -219,7 +218,7 @@ private fun AboutLinkRow(
                     }
                 },
             )
-            .padding(vertical = 10.dp),
+            .padding(vertical = RadioSpacing.fieldGap),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -228,12 +227,12 @@ private fun AboutLinkRow(
             Text(
                 text = label,
                 color = if (enabled) RadioText else RadioTextMuted,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
             Text(
                 text = value,
                 color = RadioTextMuted,
-                fontSize = 14.sp,
+                fontSize = RadioTextSizes.bodySmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -243,7 +242,7 @@ private fun AboutLinkRow(
                 painter = painterResource(R.drawable.ic_open_in_new),
                 contentDescription = null,
                 tint = RadioTextMuted,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(RadioSizes.iconCompact),
             )
         }
     }
@@ -263,43 +262,43 @@ private fun AboutInfoRow(
 ) {
     if (stacked) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(RadioSpacing.extraSmall),
             modifier = modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp),
+                .padding(vertical = RadioSpacing.fieldGap),
         ) {
             Text(
                 text = label,
                 color = RadioText,
-                fontSize = 16.sp,
+                fontSize = RadioTextSizes.bodyLarge,
             )
             Text(
                 text = value,
                 color = RadioTextMuted,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
+                fontSize = RadioTextSizes.bodySmall,
+                lineHeight = RadioTextSizes.bodyLineHeight,
             )
         }
         return
     }
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = RadioSpacing.fieldGap),
     ) {
         Text(
             text = label,
             color = RadioText,
-            fontSize = 16.sp,
+            fontSize = RadioTextSizes.bodyLarge,
             modifier = Modifier.weight(1f),
         )
         Text(
             text = value,
             color = RadioTextMuted,
-            fontSize = 14.sp,
+            fontSize = RadioTextSizes.bodySmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

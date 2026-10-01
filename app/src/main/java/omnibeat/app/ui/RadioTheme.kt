@@ -100,6 +100,7 @@ fun OmniBeatTheme(
     CompositionLocalProvider(LocalRadioColors provides radioColors) {
         MaterialTheme(
             colorScheme = radioColors.toMaterialColorScheme(useDarkTheme),
+            typography = RadioTypography,
             content = content,
         )
     }

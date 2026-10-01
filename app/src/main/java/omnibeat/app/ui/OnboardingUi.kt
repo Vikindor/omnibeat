@@ -44,7 +44,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
@@ -108,7 +107,7 @@ fun OnboardingFlow(
             .fillMaxSize()
             .background(RadioBackground)
             .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(horizontal = 20.dp, vertical = 22.dp),
+            .padding(horizontal = RadioSpacing.page, vertical = RadioSpacing.section),
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -136,10 +135,10 @@ fun OnboardingFlow(
             )
         }
         OnboardingDots(pageCount = OnboardingPages.size, selectedIndex = pageIndex)
-        Spacer(modifier = Modifier.height(22.dp))
+        Spacer(modifier = Modifier.height(RadioSpacing.section))
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(RadioSpacing.medium),
             modifier = Modifier.fillMaxWidth(),
         ) {
             if (pageIndex > 0) {
@@ -199,37 +198,37 @@ private fun OnboardingPageContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxSize(),
         ) {
-            Spacer(modifier = Modifier.height((26f * scale).dp))
+            Spacer(modifier = Modifier.height(RadioSizes.onboardingTopGap * scale))
             OnboardingScreenshot(
                 imageRes = page.imageRes,
-                height = (300f * scale).dp,
+                height = RadioSizes.screenshotHeight * scale,
             )
-            Spacer(modifier = Modifier.height((34f * scale).dp))
+            Spacer(modifier = Modifier.height(RadioSizes.onboardingTitleGap * scale))
 
             Text(
                 text = stringResource(page.titleRes),
                 color = RadioText,
-                fontSize = (28f * scale).sp,
+                fontSize = RadioTextSizes.onboardingTitle * scale,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                lineHeight = (34f * scale).sp,
+                lineHeight = RadioTextSizes.onboardingLineHeight * scale,
             )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = (12f * scale).dp)
+                    .padding(top = RadioSpacing.medium * scale)
                     .weight(1f),
             ) {
                 Text(
                     text = text,
                     color = RadioTextMuted,
-                    fontSize = (16f * scale).sp,
+                    fontSize = RadioTextSizes.bodyLarge * scale,
                     textAlign = TextAlign.Start,
-                    lineHeight = (23f * scale).sp,
+                    lineHeight = RadioTextSizes.onboardingBodyLineHeight * scale,
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(bodyScrollState)
-                        .padding(end = 10.dp),
+                        .padding(end = RadioSpacing.fieldGap),
                 )
                 OmniScrollIndicator(
                     scrollIndicatorState = bodyScrollState.scrollIndicatorState,
@@ -315,9 +314,9 @@ private fun Modifier.onboardingPagerFade(
 private fun OnboardingScreenshot(
     imageRes: Int?,
     modifier: Modifier = Modifier,
-    height: androidx.compose.ui.unit.Dp = 300.dp,
+    height: androidx.compose.ui.unit.Dp = RadioSizes.screenshotHeight,
 ) {
-    val frameShape = RoundedCornerShape(28.dp)
+    val frameShape = RoundedCornerShape(RadioCorners.pill)
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -339,14 +338,14 @@ private fun OnboardingScreenshot(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxWidth(0.74f)
-                    .height(220.dp)
-                    .clip(RoundedCornerShape(22.dp))
+                    .height(RadioSizes.screenshotPlaceholderHeight)
+                    .clip(RoundedCornerShape(RadioCorners.extraLarge))
                     .background(RadioSurfaceHigh),
             ) {
             Text(
                 text = stringResource(R.string.onboarding_screenshot_placeholder),
                 color = RadioTextMuted,
-                fontSize = 14.sp,
+                fontSize = RadioTextSizes.bodySmall,
             )
             }
         }
@@ -360,14 +359,14 @@ private fun OnboardingDots(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.small),
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
     ) {
         repeat(pageCount) { index ->
             Box(
                 modifier = Modifier
-                    .size(if (index == selectedIndex) 10.dp else 8.dp)
+                    .size(if (index == selectedIndex) RadioSizes.selectedPageDot else RadioSizes.pageDot)
                     .clip(CircleShape)
                     .background(if (index == selectedIndex) RadioPrimary else RadioOutline),
             )
