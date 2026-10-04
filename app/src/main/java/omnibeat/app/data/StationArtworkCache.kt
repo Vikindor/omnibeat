@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
@@ -51,6 +52,8 @@ object StationArtworkCache {
     private val revisions = MutableStateFlow<Map<String, Long>>(emptyMap())
 
     fun updates(url: String): Flow<Long> = revisions.map { it[url] ?: 0 }.distinctUntilChanged()
+
+    fun revision(url: String): Long = revisions.value[url] ?: 0
 
     fun get(url: String, width: Int, height: Int): ImageBitmap? =
         images.get(Key(url, width, height))?.image
@@ -150,6 +153,15 @@ object StationArtworkCache {
             is IOException, is IllegalArgumentException, is SecurityException, is JSONException -> Unit
             else -> throw error
         }
+    }
+
+    suspend fun fileForMedia(context: Context, url: String): File = withContext(Dispatchers.IO) {
+        val file = cacheFile(context, url)
+        if (!file.isFile) {
+            images.remove(Key(url, 256, 256))
+            load(context, url, 256, 256).first()
+        }
+        file
     }
 
     private fun cacheFile(context: Context, url: String): File {

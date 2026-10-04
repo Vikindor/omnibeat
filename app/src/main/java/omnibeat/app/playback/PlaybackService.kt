@@ -3,19 +3,15 @@ package omnibeat.app.playback
 import omnibeat.app.data.appString
 import omnibeat.app.R
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Icon
-import android.os.IBinder
+import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Format
-import androidx.media3.common.ForwardingPlayer
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.SimpleBasePlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
@@ -31,6 +27,10 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaLoadData
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.DefaultMediaNotificationProvider
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -40,20 +40,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import omnibeat.app.MainActivity
 import omnibeat.app.data.DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES
 import omnibeat.app.data.StationRepository
+import omnibeat.app.data.StationArtworkCache
 import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
 import omnibeat.app.model.Station
 import omnibeat.app.network.NetworkStatus
 import omnibeat.app.stream.IcyMetadataParser
 import omnibeat.app.stream.StreamResolver
 import java.util.concurrent.CancellationException
-import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -92,22 +95,24 @@ data class PlaybackStreamInfo(
 }
 
 @OptIn(UnstableApi::class)
-class PlaybackService : Service() {
+class PlaybackService : MediaLibraryService() {
     private val serviceJob = SupervisorJob()
     private val scope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
     private lateinit var repository: StationRepository
     private lateinit var player: ExoPlayer
-    private lateinit var sessionPlayer: Player
-    private var mediaSession: MediaSession? = null
+    private lateinit var sessionPlayer: OmniBeatSessionPlayer
+    private var mediaSession: MediaLibrarySession? = null
+    private lateinit var library: StationMediaLibrary
     private var stations: List<Station> = emptyList()
     private var resolveJob: Job? = null
-    private var notificationUpdateJob: Job? = null
     private var noMetadataJob: Job? = null
-    private var lastSessionMetadata: Pair<String, String?>? = null
+    private var playbackRequested = false
+    private var recordedStationId: String? = null
     private var currentStreamIsHls = false
     private var lastPlayedStationId: String? = null
     private var rememberLastStation = true
     private var stopServiceAfterPauseMinutes = DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES
+    private var showAndroidAutoArtwork = false
     private var navigationQueueIds: List<String> = emptyList()
     private var stopAfterPauseJob: Job? = null
 
@@ -130,22 +135,48 @@ class PlaybackService : Service() {
         super.onCreate()
         repository = StationRepository(applicationContext)
         player = buildPlayer()
-        sessionPlayer = OmniBeatSessionPlayer(player)
+        sessionPlayer = OmniBeatSessionPlayer()
         player.addListener(playerListener)
         player.addAnalyticsListener(analyticsListener)
-        mediaSession = MediaSession.Builder(this, sessionPlayer).build()
-        createNotificationChannel()
+        library = StationMediaLibrary(
+            this, repository, scope,
+            onStationsLoaded = { stations = it },
+            onPlaybackRejected = { if (!playbackRequested) stopSelf() },
+        )
+        setMediaNotificationProvider(DefaultMediaNotificationProvider.Builder(this).build().apply {
+            setSmallIcon(R.drawable.ic_play_arrow)
+        })
+        mediaSession = MediaLibrarySession.Builder(this, sessionPlayer, library)
+            .setSessionActivity(activityPendingIntent()).build()
+        addSession(requireNotNull(mediaSession))
+        scope.launch { state.collect { sessionPlayer.syncState() } }
+        scope.launch {
+            combine(state, repository.showAndroidAutoArtwork) { playback, show ->
+                playback.selectedStation?.imageUrl?.takeIf { show }
+            }.distinctUntilChanged().collectLatest { url ->
+                if (url != null) coroutineScope {
+                    launch {
+                        StationArtworkCache.updates(url).collect {
+                            syncSession()
+                            mediaSession?.let { library.notifyChanged(it) }
+                        }
+                    }
+                    StationArtworkCache.load(this@PlaybackService, url, 256, 256).collect {}
+                }
+            }
+        }
 
         scope.launch {
-            repository.stations.collect { savedStations ->
+            repository.stations.distinctUntilChanged().collect { savedStations ->
                 stations = savedStations
+                mediaSession?.let { library.notifyChanged(it) }
                 val currentStation = state.value.selectedStation
                 if (currentStation == null) {
-                    updateNotification()
+                    syncSession()
                     return@collect
                 }
                 if (state.value.previewing) {
-                    updateNotification()
+                    syncSession()
                     return@collect
                 }
                 val current = savedStations.indexOfFirst { it.id == currentStation.id }
@@ -158,7 +189,7 @@ class PlaybackService : Service() {
                             selectedStation = savedStations[current],
                         )
                     }
-                    updateNotification()
+                    syncSession()
                 }
             }
         }
@@ -183,9 +214,22 @@ class PlaybackService : Service() {
                 stopServiceAfterPauseMinutes = minutes
             }
         }
+        scope.launch {
+            repository.showAndroidAutoArtwork.distinctUntilChanged().collect { show ->
+                showAndroidAutoArtwork = show
+                syncSession()
+                mediaSession?.let { library.notifyChanged(it) }
+            }
+        }
+        scope.launch {
+            repository.recentlyPlayedStationIds.distinctUntilChanged().collect {
+                mediaSession?.let { library.notifyChanged(it) }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val result = super.onStartCommand(intent, flags, startId)
         when (intent?.action) {
             ACTION_PLAY_STATION -> playStationAt(
                 index = intent.getIntExtra(EXTRA_INDEX, -1),
@@ -193,28 +237,26 @@ class PlaybackService : Service() {
             )
             ACTION_PLAY_PREVIEW -> playPreviewStation(intent.toPreviewStation())
             ACTION_PLAY_PAUSE -> playOrPause()
-            ACTION_PREVIOUS -> playAdjacentStation(-1)
-            ACTION_NEXT -> playAdjacentStation(1)
-            ACTION_RANDOM -> playRandomStation()
             ACTION_STOP -> {
                 stopPlayback()
                 stopSelf()
             }
         }
-        return START_STICKY
+        return result
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = mediaSession
 
     override fun onDestroy() {
         resolveJob?.cancel()
-        notificationUpdateJob?.cancel()
         noMetadataJob?.cancel()
         stopAfterPauseJob?.cancel()
         player.removeAnalyticsListener(analyticsListener)
         player.removeListener(playerListener)
         mediaSession?.release()
+        sessionPlayer.release()
         player.release()
+        _state.update { it.copy(isPlaying = false, resolving = false, buffering = false) }
         serviceJob.cancel()
         super.onDestroy()
     }
@@ -226,12 +268,19 @@ class PlaybackService : Service() {
         } else {
             playFromCurrentState()
         }
-        updateNotification(immediate = true)
+        syncSession()
     }
 
     private fun playFromCurrentState() {
         val current = state.value
-        if (player.isPlaying || current.resolving || (current.buffering && current.trackStatus != PlaybackTrackStatus.Paused)) return
+        if (player.isPlaying || current.resolving) return
+        if (player.mediaItemCount > 0 && current.errorText == null &&
+            current.trackStatus != PlaybackTrackStatus.Paused
+        ) {
+            playbackRequested = true
+            player.play()
+            return
+        }
         if (current.selectedStation == null) {
             playLastOrFirstStation()
         } else {
@@ -267,6 +316,11 @@ class PlaybackService : Service() {
         val dataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
         return ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+            .setAudioAttributes(
+                AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
+                true,
+            )
+            .setHandleAudioBecomingNoisy(true)
             .build()
     }
 
@@ -287,7 +341,6 @@ class PlaybackService : Service() {
                     errorText = null,
                 ).withTrackStatus(PlaybackTrackStatus.LoadingStations)
             }
-            startForeground(NOTIFICATION_ID, buildNotification())
             scope.launch {
                 stations = repository.stations.first()
                 if (stations.getOrNull(index) == null) {
@@ -299,8 +352,6 @@ class PlaybackService : Service() {
             }
             return
         }
-        lastPlayedStationId = station.id
-        scope.launch { repository.saveLastPlayedStationId(station.id) }
         playStation(station = station, index = index, previewing = false)
     }
 
@@ -313,14 +364,21 @@ class PlaybackService : Service() {
         station: Station,
         index: Int,
         previewing: Boolean,
+        startPlayback: Boolean = true,
     ) {
         resolveJob?.cancel()
         stopAfterPauseJob?.cancel()
         noMetadataJob?.cancel()
         player.stop()
-        lastSessionMetadata = null
+        playbackRequested = startPlayback
+        if (!previewing) {
+            lastPlayedStationId = station.id
+            scope.launch { repository.saveLastPlayedStationId(station.id) }
+        }
+        recordedStationId = null
         currentStreamIsHls = false
         if (!NetworkStatus.isOnline(this)) {
+            playbackRequested = false
             _state.update {
                 it.copy(
                     selectedIndex = index,
@@ -333,7 +391,8 @@ class PlaybackService : Service() {
                     streamInfo = PlaybackStreamInfo(),
                 ).withTrackStatus(PlaybackTrackStatus.Stopped)
             }
-            updateNotification(immediate = true)
+            syncSession()
+            stopSelf()
             return
         }
         _state.update {
@@ -347,7 +406,6 @@ class PlaybackService : Service() {
                 streamInfo = PlaybackStreamInfo(),
             ).withTrackStatus(PlaybackTrackStatus.Resolving)
         }
-        startForeground(NOTIFICATION_ID, buildNotification())
 
         resolveJob = scope.launch {
             runCatching {
@@ -366,18 +424,20 @@ class PlaybackService : Service() {
                 }
                 player.setMediaItem(
                     MediaItem.Builder()
+                        .setMediaId(StationMediaLibrary.stationItem(this@PlaybackService, station).mediaId)
                         .setUri(resolvedStream.playableUrl)
                         .setMimeType(resolvedStream.playableUrl.mediaMimeType())
                         .setLiveConfiguration(MediaItem.LiveConfiguration.Builder().build())
                         .build(),
                 )
                 player.prepare()
-                player.play()
-                updateNotification()
+                player.playWhenReady = playbackRequested
+                syncSession()
             }.onFailure { error ->
                 if (error is CancellationException) {
                     return@onFailure
                 }
+                playbackRequested = false
                 _state.update {
                     it.copy(
                         errorText = "Could not resolve stream: ${error.message}",
@@ -385,7 +445,8 @@ class PlaybackService : Service() {
                         buffering = false,
                     )
                 }
-                updateNotification()
+                syncSession()
+                stopSelf()
             }
         }
     }
@@ -407,24 +468,6 @@ class PlaybackService : Service() {
             ?.let { playStationAt(it) }
     }
 
-    private fun playRandomStation() {
-        val navigationStations = navigationStations()
-        if (navigationStations.isEmpty()) return
-        val currentStationId = state.value.selectedStation?.id
-        val nextStation = if (navigationStations.size == 1) {
-            navigationStations.first()
-        } else {
-            var randomIndex: Int
-            do {
-                randomIndex = Random.nextInt(navigationStations.size)
-            } while (navigationStations[randomIndex].id == currentStationId)
-            navigationStations[randomIndex]
-        }
-        stations.indexOfFirst { it.id == nextStation.id }
-            .takeIf { it >= 0 }
-            ?.let { playStationAt(it) }
-    }
-
     private fun navigationStations(): List<Station> {
         if (navigationQueueIds.isEmpty()) {
             return stations
@@ -436,13 +479,13 @@ class PlaybackService : Service() {
 
     private fun stopPlayback() {
         resolveJob?.cancel()
-        notificationUpdateJob?.cancel()
         noMetadataJob?.cancel()
         stopAfterPauseJob?.cancel()
-        lastSessionMetadata = null
+        playbackRequested = false
         currentStreamIsHls = false
         navigationQueueIds = emptyList()
         player.stop()
+        player.clearMediaItems()
         _state.update {
             it.copy(
                 selectedIndex = -1,
@@ -455,12 +498,11 @@ class PlaybackService : Service() {
                 streamInfo = PlaybackStreamInfo(),
             ).withTrackStatus(PlaybackTrackStatus.Stopped)
         }
-        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     private fun pausePlayback() {
         resolveJob?.cancel()
-        notificationUpdateJob?.cancel()
+        playbackRequested = false
         noMetadataJob?.cancel()
         currentStreamIsHls = false
         player.stop()
@@ -473,7 +515,7 @@ class PlaybackService : Service() {
                 errorText = null,
             ).withTrackStatus(PlaybackTrackStatus.Paused)
         }
-        updateNotification(immediate = true)
+        syncSession()
         scheduleStopAfterPause()
     }
 
@@ -500,13 +542,35 @@ class PlaybackService : Service() {
                 )
             }
             scheduleNoMetadataIfPlaybackStarted()
-            updateNotification()
+            syncSession()
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _state.update { it.copy(isPlaying = isPlaying) }
             scheduleNoMetadataIfPlaybackStarted()
-            updateNotification(immediate = true)
+            val current = state.value
+            val stationId = current.selectedStation?.id
+            if (isPlaying && !current.previewing && stationId != null && recordedStationId != stationId) {
+                recordedStationId = stationId
+                scope.launch { repository.recordStationPlayed(stationId) }
+            }
+        }
+
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            if (!playWhenReady && reason in listOf(
+                    Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS,
+                    Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY,
+                )
+            ) {
+                playbackRequested = false
+                _state.update { it.withTrackStatus(PlaybackTrackStatus.Paused) }
+                scheduleStopAfterPause()
+            }
+            syncSession()
+        }
+
+        override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
+            syncSession()
         }
 
         override fun onTracksChanged(tracks: Tracks) {
@@ -544,8 +608,7 @@ class PlaybackService : Service() {
             val nextTrackText = if (artist.isNotBlank()) "$artist - $title" else title
             noMetadataJob?.cancel()
             _state.update { it.copy(trackText = nextTrackText, trackStatus = null) }
-            refreshCurrentMediaMetadata()
-            updateNotification()
+            syncSession()
         }
 
         override fun onMetadata(metadata: Metadata) {
@@ -554,8 +617,7 @@ class PlaybackService : Service() {
                 if (!streamTitle.isNullOrBlank()) {
                     noMetadataJob?.cancel()
                     _state.update { it.copy(trackText = streamTitle, trackStatus = null) }
-                    refreshCurrentMediaMetadata()
-                    updateNotification()
+                    syncSession()
                     return
                 }
             }
@@ -563,9 +625,8 @@ class PlaybackService : Service() {
 
         override fun onPlayerError(error: PlaybackException) {
             resolveJob?.cancel()
-            notificationUpdateJob?.cancel()
             noMetadataJob?.cancel()
-            lastSessionMetadata = null
+            playbackRequested = false
             currentStreamIsHls = false
             player.stop()
             _state.update {
@@ -577,7 +638,7 @@ class PlaybackService : Service() {
                     streamInfo = PlaybackStreamInfo(),
                 )
             }
-            stopForeground(STOP_FOREGROUND_REMOVE)
+            syncSession()
             stopSelf()
         }
     }
@@ -598,7 +659,7 @@ class PlaybackService : Service() {
         val bitrateKbps = bitrateKbps(bitrate) ?: return
         if (state.value.streamInfo.bitrateKbps != bitrateKbps) {
             _state.update { it.copy(streamInfo = it.streamInfo.copy(bitrateKbps = bitrateKbps)) }
-            updateNotification()
+            syncSession()
         }
     }
 
@@ -610,7 +671,7 @@ class PlaybackService : Service() {
         )
         if (state.value.streamInfo != nextInfo) {
             _state.update { it.copy(streamInfo = nextInfo) }
-            updateNotification()
+            syncSession()
         }
     }
 
@@ -632,8 +693,7 @@ class PlaybackService : Service() {
                 latest.trackStatus == PlaybackTrackStatus.WaitingMetadata
             ) {
                 _state.update { it.withTrackStatus(PlaybackTrackStatus.NoMetadata) }
-                refreshCurrentMediaMetadata()
-                updateNotification()
+                syncSession()
             }
             noMetadataJob = null
         }
@@ -659,45 +719,14 @@ class PlaybackService : Service() {
         }
     }
 
-    private fun updateNotification(immediate: Boolean = false) {
-        if (state.value.selectedStation != null) {
-            if (immediate) {
-                notificationUpdateJob?.cancel()
-                notificationUpdateJob = null
-                startForeground(NOTIFICATION_ID, buildNotification())
-                return
-            }
-
-            if (notificationUpdateJob?.isActive == true) {
-                return
-            }
-            notificationUpdateJob = scope.launch {
-                delay(NOTIFICATION_UPDATE_DELAY)
-                if (state.value.selectedStation != null) {
-                    startForeground(NOTIFICATION_ID, buildNotification())
-                }
-                notificationUpdateJob = null
-            }
-        }
-    }
-
-    private fun refreshCurrentMediaMetadata() {
-        val current = state.value
-        val station = current.selectedStation ?: return
-        val publicTrackText = current.trackText.takeIf { current.trackStatus == null }
-        val metadataKey = station.title to publicTrackText
-        if (lastSessionMetadata == metadataKey) {
-            return
-        }
-        lastSessionMetadata = metadataKey
-        player.playlistMetadata = buildSessionMetadata(station, publicTrackText)
+    private fun syncSession() {
+        sessionPlayer.syncState()
     }
 
     private fun buildSessionMetadata(station: Station, trackText: String?): MediaMetadata {
-        return MediaMetadata.Builder()
-            .setTitle(station.title)
-            .setArtist(trackText?.takeIf { it.isPublicTrackText() })
-            .build()
+        val metadata = StationMediaLibrary.stationMetadata(this, station, trackText, showAndroidAutoArtwork)
+        return if (state.value.previewing) metadata.buildUpon()
+            .setArtworkUri(station.imageUrl?.takeIf { showAndroidAutoArtwork }?.let(Uri::parse)).build() else metadata
     }
 
     private fun saveCurrentStationImageUrl(imageUrl: String) {
@@ -713,59 +742,6 @@ class PlaybackService : Service() {
         scope.launch { repository.saveStationImageUrl(stationId, imageUrl) }
     }
 
-    private fun String.isPublicTrackText(): Boolean {
-        return isNotBlank()
-    }
-
-    private fun buildNotification(): Notification {
-        val current = state.value
-        val playPauseAction = if (current.isPlaying || current.resolving || current.buffering) {
-            notificationAction(R.drawable.ic_pause, "Pause", ACTION_PLAY_PAUSE)
-        } else {
-            notificationAction(R.drawable.ic_play_arrow, "Play", ACTION_PLAY_PAUSE)
-        }
-
-        return Notification.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_play_arrow)
-            .setContentTitle(current.selectedStation?.title ?: "OmniBeat")
-            .setContentText(current.errorText ?: current.trackText)
-            .setContentIntent(activityPendingIntent())
-            .setOngoing(current.isPlaying || current.resolving || current.buffering)
-            .setOnlyAlertOnce(true)
-            .setShowWhen(false)
-            .setColor(0xFF8F5CFF.toInt())
-            .addAction(notificationAction(R.drawable.ic_skip_previous, "Previous", ACTION_PREVIOUS))
-            .addAction(playPauseAction)
-            .addAction(notificationAction(R.drawable.ic_skip_next, "Next", ACTION_NEXT))
-            .setStyle(
-                Notification.MediaStyle()
-                    .setShowActionsInCompactView(0, 1, 2)
-                    .setMediaSession(mediaSession?.platformToken),
-            )
-            .build()
-    }
-
-    private fun notificationAction(
-        iconResId: Int,
-        title: String,
-        action: String,
-    ): Notification.Action {
-        return Notification.Action.Builder(
-            Icon.createWithResource(this, iconResId),
-            title,
-            servicePendingIntent(action),
-        ).build()
-    }
-
-    private fun servicePendingIntent(action: String): PendingIntent {
-        return PendingIntent.getService(
-            this,
-            action.hashCode(),
-            Intent(this, PlaybackService::class.java).setAction(action),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
-    }
-
     private fun activityPendingIntent(): PendingIntent {
         return PendingIntent.getActivity(
             this,
@@ -775,79 +751,136 @@ class PlaybackService : Service() {
         )
     }
 
-    private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Playback",
-            NotificationManager.IMPORTANCE_LOW,
-        )
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-    }
+    private inner class OmniBeatSessionPlayer : SimpleBasePlayer(mainLooper) {
+        private var reportedError: PlaybackException? = null
 
-    private inner class OmniBeatSessionPlayer(player: Player) : ForwardingPlayer(player) {
-        override fun getAvailableCommands(): Player.Commands {
-            return super.getAvailableCommands()
-                .buildUpon()
-                .addAll(
-                    COMMAND_SEEK_TO_PREVIOUS,
-                    COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
-                    COMMAND_SEEK_TO_NEXT,
-                    COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+        fun syncState() = invalidateState()
+
+        override fun getState(): State {
+            val current = PlaybackService.state.value
+            val selected = current.selectedStation
+            val queue = when {
+                selected == null -> emptyList()
+                current.previewing -> listOf(selected)
+                else -> navigationStations().let { stations ->
+                    if (stations.any { it.id == selected.id }) stations else listOf(selected)
+                }
+            }
+            if (current.errorText != reportedError?.message) {
+                reportedError = current.errorText?.let {
+                    player.playerError ?: PlaybackException(it, null, PlaybackException.ERROR_CODE_IO_UNSPECIFIED)
+                }
+            }
+            val error = reportedError
+            return State.Builder()
+                .setAvailableCommands(Player.Commands.Builder().addAll(
+                    COMMAND_PLAY_PAUSE, COMMAND_PREPARE, COMMAND_STOP, COMMAND_RELEASE,
+                    COMMAND_SET_MEDIA_ITEM, COMMAND_GET_CURRENT_MEDIA_ITEM, COMMAND_SEEK_TO_MEDIA_ITEM,
+                    COMMAND_GET_TIMELINE, COMMAND_GET_METADATA,
+                    COMMAND_SEEK_TO_PREVIOUS, COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                    COMMAND_SEEK_TO_NEXT, COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                ).build())
+                .setPlaylist(queue.map { station ->
+                    MediaItemData.Builder(station.id)
+                        .setMediaItem(StationMediaLibrary.stationItem(
+                            this@PlaybackService, station, showArtwork = showAndroidAutoArtwork,
+                        ))
+                        .setMediaMetadata(buildSessionMetadata(
+                            station, current.trackText.takeIf { station.id == selected?.id && current.trackStatus == null },
+                        ))
+                        .setLiveConfiguration(MediaItem.LiveConfiguration.Builder().build())
+                        .setIsDynamic(true).setIsSeekable(false).build()
+                })
+                .setCurrentMediaItemIndex(queue.indexOfFirst { it.id == selected?.id })
+                .setRepeatMode(REPEAT_MODE_ALL)
+                .setPlayWhenReady(
+                    error == null && playbackRequested && (current.resolving || player.playWhenReady),
+                    PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST,
                 )
-                .remove(COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
-                .remove(COMMAND_SEEK_TO_DEFAULT_POSITION)
-                .remove(COMMAND_SEEK_TO_MEDIA_ITEM)
-                .remove(COMMAND_SEEK_BACK)
-                .remove(COMMAND_SEEK_FORWARD)
+                .setPlaybackState(when {
+                    error != null || queue.isEmpty() -> STATE_IDLE
+                    current.resolving -> STATE_BUFFERING
+                    else -> player.playbackState
+                })
+                .setPlaybackSuppressionReason(player.playbackSuppressionReason)
+                .setPlayerError(error)
+                .setAudioAttributes(player.audioAttributes)
+                .setVolume(player.volume)
+                .setContentPositionMs(0)
                 .build()
         }
 
-        override fun isCommandAvailable(command: Int): Boolean {
-            return availableCommands.contains(command)
+        override fun handleSetMediaItems(
+            mediaItems: List<MediaItem>, startIndex: Int, startPositionMs: Long,
+        ): ListenableFuture<*> {
+            val selected = mediaItems.getOrNull(if (startIndex == C.INDEX_UNSET) 0 else startIndex)
+            val station = stations.find { it.id == selected?.mediaId?.let(StationMediaLibrary::stationId) }
+            if (station == null) {
+                stopPlayback()
+                return Futures.immediateVoidFuture()
+            }
+            resolveJob?.cancel()
+            stopAfterPauseJob?.cancel()
+            noMetadataJob?.cancel()
+            playbackRequested = false
+            player.stop()
+            player.clearMediaItems()
+            navigationQueueIds = mediaItems.mapNotNull { StationMediaLibrary.stationId(it.mediaId) }
+            _state.update {
+                it.copy(
+                    selectedStation = station, selectedIndex = stations.indexOfFirst { item -> item.id == station.id },
+                    previewing = false, resolving = false, buffering = false, isPlaying = false,
+                    errorText = null, streamInfo = PlaybackStreamInfo(),
+                ).withTrackStatus(PlaybackTrackStatus.Paused)
+            }
+            return Futures.immediateVoidFuture()
         }
 
-        override fun seekToPrevious() {
-            playAdjacentStation(-1)
+        override fun handlePrepare(): ListenableFuture<*> {
+            val current = PlaybackService.state.value
+            if (!current.resolving && player.playbackState == STATE_IDLE) {
+                current.selectedStation?.let {
+                    playStation(it, current.selectedIndex, current.previewing, startPlayback = playbackRequested)
+                }
+            }
+            return Futures.immediateVoidFuture()
         }
 
-        override fun seekToPreviousMediaItem() {
-            playAdjacentStation(-1)
+        override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
+            if (playWhenReady) {
+                if (PlaybackService.state.value.resolving) {
+                    playbackRequested = true
+                } else {
+                    playFromCurrentState()
+                }
+            } else {
+                pausePlayback()
+            }
+            return Futures.immediateVoidFuture()
         }
 
-        override fun seekToNext() {
-            playAdjacentStation(1)
+        override fun handleSeek(mediaItemIndex: Int, positionMs: Long, seekCommand: Int): ListenableFuture<*> {
+            when (seekCommand) {
+                COMMAND_SEEK_TO_PREVIOUS, COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> playAdjacentStation(-1)
+                COMMAND_SEEK_TO_NEXT, COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> playAdjacentStation(1)
+                COMMAND_SEEK_TO_MEDIA_ITEM -> navigationStations().getOrNull(mediaItemIndex)?.let { station ->
+                    val index = stations.indexOfFirst { it.id == station.id }
+                    if (index >= 0) playStationAt(index)
+                }
+                else -> Unit
+            }
+            return Futures.immediateVoidFuture()
         }
 
-        override fun seekToNextMediaItem() {
-            playAdjacentStation(1)
+        override fun handleStop(): ListenableFuture<*> {
+            stopPlayback()
+            return Futures.immediateVoidFuture()
         }
 
-        override fun play() {
-            playFromCurrentState()
-        }
-
-        override fun pause() {
-            pausePlayback()
-        }
-
-        override fun getMediaMetadata(): MediaMetadata {
-            val current = state.value
-            val station = current.selectedStation ?: return super.mediaMetadata
-            return buildSessionMetadata(
-                station = station,
-                trackText = current.trackText.takeIf { current.trackStatus == null },
-            )
-        }
-
-        override fun isCurrentMediaItemLive(): Boolean = true
-
-        override fun getDuration(): Long = C.TIME_UNSET
+        override fun handleRelease(): ListenableFuture<*> = Futures.immediateVoidFuture()
     }
 
     companion object {
-        private const val CHANNEL_ID = "playback"
-        private const val NOTIFICATION_ID = 1001
-        private val NOTIFICATION_UPDATE_DELAY = 500.milliseconds
         private val METADATA_WAIT_TIMEOUT = 15.seconds
         private const val EXTRA_INDEX = "index"
         private const val EXTRA_QUEUE_IDS = "queue_ids"
@@ -859,9 +892,6 @@ class PlaybackService : Service() {
         private const val ACTION_PLAY_STATION = "omnibeat.app.action.PLAY_STATION"
         private const val ACTION_PLAY_PREVIEW = "omnibeat.app.action.PLAY_PREVIEW"
         private const val ACTION_PLAY_PAUSE = "omnibeat.app.action.PLAY_PAUSE"
-        private const val ACTION_PREVIOUS = "omnibeat.app.action.PREVIOUS"
-        private const val ACTION_NEXT = "omnibeat.app.action.NEXT"
-        private const val ACTION_RANDOM = "omnibeat.app.action.RANDOM"
         private const val ACTION_STOP = "omnibeat.app.action.STOP"
 
         private val _state = MutableStateFlow(PlaybackState())
@@ -872,7 +902,7 @@ class PlaybackService : Service() {
             index: Int,
             queueIds: List<String> = emptyList(),
         ) {
-            context.startForegroundService(
+            context.startService(
                 Intent(context, PlaybackService::class.java)
                     .setAction(ACTION_PLAY_STATION)
                     .putExtra(EXTRA_INDEX, index)
@@ -881,7 +911,7 @@ class PlaybackService : Service() {
         }
 
         fun playPreview(context: Context, station: Station) {
-            context.startForegroundService(
+            context.startService(
                 Intent(context, PlaybackService::class.java)
                     .setAction(ACTION_PLAY_PREVIEW)
                     .putExtra(EXTRA_PREVIEW_ID, station.id)

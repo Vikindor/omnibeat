@@ -85,8 +85,17 @@
     <string name="settings_remove_tracking_title">Удалять трекеры из URL</string>
     <string name="settings_remove_tracking_on">Из URL новых станций будут удаляться метки трекеров</string>
     <string name="settings_remove_tracking_off">URL новых станций будут сохраняться без изменений</string>
+    <string name="settings_android_auto_artwork_title">Обложки станций</string>
+    <string name="settings_android_auto_artwork_on">Android Auto и уведомление плеера будут показывать обложки</string>
+    <string name="settings_android_auto_artwork_off">Android Auto и уведомление плеера будут скрывать обложки</string>
     <string name="settings_section_danger_zone">Опасная зона</string>
     <string name="settings_clear_library_title">Очистить библиотеку</string>
+
+    <string name="auto_all_stations">Все станции</string>
+    <string name="auto_recently_played">Недавно прослушанные</string>
+    <string name="auto_tags">Теги / жанры</string>
+    <string name="auto_no_stations">Библиотека пуста. Добавьте станции на телефоне, когда это будет безопасно.</string>
+    <string name="auto_station_not_found">Станция не найдена в библиотеке</string>
 
     <string name="dialog_clear_library_title">Очистить библиотеку?</string>
     <string name="dialog_clear_library_text">Все станции, избранное и сортировка будут удалены</string>

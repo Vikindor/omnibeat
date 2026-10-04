@@ -27,23 +27,25 @@ private const val DEFAULT_APP_VOLUME = 0.75f
 const val STOP_SERVICE_AFTER_PAUSE_NEVER = 0
 const val DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES = 5
 private val appVolumeKey = floatPreferencesKey("app_volume")
-private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
-private val addRadioBrowserTagsKey = booleanPreferencesKey("add_radio_browser_tags")
-private val removeTrackingParametersKey = booleanPreferencesKey("remove_tracking_parameters")
+private val themeModeKey = stringPreferencesKey("theme_mode")
 private val rememberLastStationKey = booleanPreferencesKey("remember_last_station")
+private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
+private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
+private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
+private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
 private val showBitrateInControlPanelKey = booleanPreferencesKey("show_bitrate_in_control_panel")
 private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_bitrate")
 private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
-private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
-private val playerPanelCollapsedKey = booleanPreferencesKey("player_panel_collapsed")
 private val autoExpandPlayerPanelOnPlaybackKey = booleanPreferencesKey("auto_expand_player_panel_on_playback")
 private val collapsePlayerPanelInSearchKey = booleanPreferencesKey("collapse_player_panel_in_search")
-private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
-private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
+private val addRadioBrowserTagsKey = booleanPreferencesKey("add_radio_browser_tags")
+private val removeTrackingParametersKey = booleanPreferencesKey("remove_tracking_parameters")
+private val showAndroidAutoArtworkKey = booleanPreferencesKey("show_android_auto_artwork")
+private val playerPanelCollapsedKey = booleanPreferencesKey("player_panel_collapsed")
 private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
-private val themeModeKey = stringPreferencesKey("theme_mode")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
+private val recentlyPlayedStationIdsKey = stringPreferencesKey("recently_played_station_ids")
 private val stationSortKey = stringPreferencesKey("station_sort")
 private val customStationOrderKey = stringPreferencesKey("custom_station_order")
 private val customFavoriteOrderKey = stringPreferencesKey("custom_favorite_order")
@@ -91,17 +93,27 @@ class StationRepository(private val context: Context) {
     val appVolume: Flow<Float> = context.stationDataStore.data
         .map { preferences -> preferences[appVolumeKey] ?: DEFAULT_APP_VOLUME }
 
-    val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[showStationArtworkKey] ?: true }
-
-    val addRadioBrowserTags: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[addRadioBrowserTagsKey] ?: true }
-
-    val removeTrackingParameters: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[removeTrackingParametersKey] ?: true }
+    val themeMode: Flow<ThemeMode> = context.stationDataStore.data
+        .map { preferences ->
+            preferences[themeModeKey]
+                ?.let { savedMode -> ThemeMode.entries.firstOrNull { it.name == savedMode } }
+                ?: ThemeMode.System
+        }
 
     val rememberLastStation: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[rememberLastStationKey] ?: true }
+
+    val stopServiceAfterPauseMinutes: Flow<Int> = context.stationDataStore.data
+        .map { preferences -> preferences[stopServiceAfterPauseMinutesKey] ?: DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES }
+
+    val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showStationArtworkKey] ?: true }
+
+    val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
+
+    val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
 
     val showBitrateInControlPanel: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showBitrateInControlPanelKey] ?: true }
@@ -112,39 +124,35 @@ class StationRepository(private val context: Context) {
     val marqueeTrackTitle: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[marqueeTrackTitleKey] ?: true }
 
-    val stopServiceAfterPauseMinutes: Flow<Int> = context.stationDataStore.data
-        .map { preferences -> preferences[stopServiceAfterPauseMinutesKey] ?: DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES }
-
-    val playerPanelCollapsed: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[playerPanelCollapsedKey] ?: false }
-
     val autoExpandPlayerPanelOnPlayback: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[autoExpandPlayerPanelOnPlaybackKey] ?: true }
 
     val collapsePlayerPanelInSearch: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[collapsePlayerPanelInSearchKey] ?: true }
 
-    val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
+    val addRadioBrowserTags: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[addRadioBrowserTagsKey] ?: true }
 
-    val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
+    val removeTrackingParameters: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[removeTrackingParametersKey] ?: true }
+
+    val showAndroidAutoArtwork: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showAndroidAutoArtworkKey] ?: true }
+
+    val playerPanelCollapsed: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[playerPanelCollapsedKey] ?: false }
 
     val onboardingCompleted: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[onboardingCompletedKey] ?: false }
-
-    val themeMode: Flow<ThemeMode> = context.stationDataStore.data
-        .map { preferences ->
-            preferences[themeModeKey]
-                ?.let { savedMode -> ThemeMode.entries.firstOrNull { it.name == savedMode } }
-                ?: ThemeMode.System
-        }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
 
     val lastPlayedStationId: Flow<String?> = context.stationDataStore.data
         .map { preferences -> preferences[lastPlayedStationIdKey]?.takeIf { it.isNotBlank() } }
+
+    val recentlyPlayedStationIds: Flow<List<String>> = context.stationDataStore.data
+        .map { preferences -> decodeStringList(preferences[recentlyPlayedStationIdsKey]) }
 
     val lastMainPage: Flow<String?> = context.stationDataStore.data
         .map { preferences -> preferences[lastMainPageKey]?.takeIf { it.isNotBlank() } }
@@ -166,27 +174,39 @@ class StationRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveShowStationArtwork(show: Boolean) {
+    suspend fun saveThemeMode(themeMode: ThemeMode) {
         context.stationDataStore.edit { preferences ->
-            preferences[showStationArtworkKey] = show
-        }
-    }
-
-    suspend fun saveAddRadioBrowserTags(add: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[addRadioBrowserTagsKey] = add
-        }
-    }
-
-    suspend fun saveRemoveTrackingParameters(remove: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[removeTrackingParametersKey] = remove
+            preferences[themeModeKey] = themeMode.name
         }
     }
 
     suspend fun saveRememberLastStation(remember: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[rememberLastStationKey] = remember
+        }
+    }
+
+    suspend fun saveStopServiceAfterPauseMinutes(minutes: Int) {
+        context.stationDataStore.edit { preferences ->
+            preferences[stopServiceAfterPauseMinutesKey] = minutes
+        }
+    }
+
+    suspend fun saveShowStationArtwork(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showStationArtworkKey] = show
+        }
+    }
+
+    suspend fun saveShowEmptyFavoritesTab(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showEmptyFavoritesTabKey] = show
+        }
+    }
+
+    suspend fun saveConfirmStationDeletion(confirm: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[confirmStationDeletionKey] = confirm
         }
     }
 
@@ -208,18 +228,6 @@ class StationRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveStopServiceAfterPauseMinutes(minutes: Int) {
-        context.stationDataStore.edit { preferences ->
-            preferences[stopServiceAfterPauseMinutesKey] = minutes
-        }
-    }
-
-    suspend fun savePlayerPanelCollapsed(collapsed: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[playerPanelCollapsedKey] = collapsed
-        }
-    }
-
     suspend fun saveAutoExpandPlayerPanelOnPlayback(autoExpand: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[autoExpandPlayerPanelOnPlaybackKey] = autoExpand
@@ -232,15 +240,25 @@ class StationRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveShowEmptyFavoritesTab(show: Boolean) {
+    suspend fun saveAddRadioBrowserTags(add: Boolean) {
         context.stationDataStore.edit { preferences ->
-            preferences[showEmptyFavoritesTabKey] = show
+            preferences[addRadioBrowserTagsKey] = add
         }
     }
 
-    suspend fun saveConfirmStationDeletion(confirm: Boolean) {
+    suspend fun saveRemoveTrackingParameters(remove: Boolean) {
         context.stationDataStore.edit { preferences ->
-            preferences[confirmStationDeletionKey] = confirm
+            preferences[removeTrackingParametersKey] = remove
+        }
+    }
+
+    suspend fun saveShowAndroidAutoArtwork(show: Boolean) {
+        context.stationDataStore.edit { preferences -> preferences[showAndroidAutoArtworkKey] = show }
+    }
+
+    suspend fun savePlayerPanelCollapsed(collapsed: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[playerPanelCollapsedKey] = collapsed
         }
     }
 
@@ -250,15 +268,18 @@ class StationRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveThemeMode(themeMode: ThemeMode) {
-        context.stationDataStore.edit { preferences ->
-            preferences[themeModeKey] = themeMode.name
-        }
-    }
-
     suspend fun saveLastPlayedStationId(stationId: String) {
         context.stationDataStore.edit { preferences ->
             preferences[lastPlayedStationIdKey] = stationId
+        }
+    }
+
+    suspend fun recordStationPlayed(stationId: String) {
+        context.stationDataStore.edit { preferences ->
+            val recent = decodeStringList(preferences[recentlyPlayedStationIdsKey])
+            preferences[recentlyPlayedStationIdsKey] = encodeStringList(
+                (listOf(stationId) + recent.filter { it != stationId }).take(50),
+            )
         }
     }
 
@@ -307,6 +328,7 @@ class StationRepository(private val context: Context) {
             preferences[customStationOrderKey] = encodeStringList(emptyList())
             preferences[customFavoriteOrderKey] = encodeStringList(emptyList())
             preferences.remove(lastPlayedStationIdKey)
+            preferences.remove(recentlyPlayedStationIdsKey)
         }
     }
 

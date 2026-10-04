@@ -148,20 +148,21 @@ fun OmniBeatApp() {
 
         var stations by remember { mutableStateOf(emptyList<Station>()) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
-        var showStationArtwork by remember { mutableStateOf(true) }
-        var addRadioBrowserTags by remember { mutableStateOf(true) }
-        var removeTrackingParametersFromUrls by remember { mutableStateOf(true) }
         var rememberLastStation by remember { mutableStateOf(true) }
+        var stopServiceAfterPauseMinutes by remember { mutableIntStateOf(DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES) }
+        var showStationArtwork by remember { mutableStateOf(true) }
+        var syncingStationArtwork by remember { mutableStateOf(false) }
+        var showEmptyFavoritesTab by remember { mutableStateOf(true) }
+        var confirmStationDeletion by remember { mutableStateOf(true) }
         var showBitrateInControlPanel by remember { mutableStateOf(true) }
         var showUnavailableBitrate by remember { mutableStateOf(false) }
         var marqueeTrackTitle by remember { mutableStateOf(true) }
-        var stopServiceAfterPauseMinutes by remember { mutableIntStateOf(DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES) }
-        var playerPanelCollapsed by remember { mutableStateOf(false) }
         var autoExpandPlayerPanelOnPlayback by remember { mutableStateOf(true) }
         var collapsePlayerPanelInSearch by remember { mutableStateOf(true) }
-        var showEmptyFavoritesTab by remember { mutableStateOf(true) }
-        var confirmStationDeletion by remember { mutableStateOf(true) }
-        var syncingStationArtwork by remember { mutableStateOf(false) }
+        var addRadioBrowserTags by remember { mutableStateOf(true) }
+        var removeTrackingParametersFromUrls by remember { mutableStateOf(true) }
+        var showAndroidAutoArtwork by remember { mutableStateOf(true) }
+        var playerPanelCollapsed by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf(MainPage.Stations) }
         var lastMainPage by remember { mutableStateOf(MainPage.Stations) }
@@ -208,19 +209,20 @@ fun OmniBeatApp() {
             visibleTabPages = visibleTabPages,
             onStationsChange = { stations = it },
             onAppVolumeChange = { appVolume = it },
-            onShowStationArtworkChange = { showStationArtwork = it },
-            onAddRadioBrowserTagsChange = { addRadioBrowserTags = it },
-            onRemoveTrackingParametersChange = { removeTrackingParametersFromUrls = it },
             onRememberLastStationChange = { rememberLastStation = it },
+            onStopServiceAfterPauseMinutesChange = { stopServiceAfterPauseMinutes = it },
+            onShowStationArtworkChange = { showStationArtwork = it },
+            onShowEmptyFavoritesTabChange = { showEmptyFavoritesTab = it },
+            onConfirmStationDeletionChange = { confirmStationDeletion = it },
             onShowBitrateInControlPanelChange = { showBitrateInControlPanel = it },
             onShowUnavailableBitrateChange = { showUnavailableBitrate = it },
             onMarqueeTrackTitleChange = { marqueeTrackTitle = it },
-            onStopServiceAfterPauseMinutesChange = { stopServiceAfterPauseMinutes = it },
-            onPlayerPanelCollapsedChange = { playerPanelCollapsed = it },
             onAutoExpandPlayerPanelOnPlaybackChange = { autoExpandPlayerPanelOnPlayback = it },
             onCollapsePlayerPanelInSearchChange = { collapsePlayerPanelInSearch = it },
-            onShowEmptyFavoritesTabChange = { showEmptyFavoritesTab = it },
-            onConfirmStationDeletionChange = { confirmStationDeletion = it },
+            onAddRadioBrowserTagsChange = { addRadioBrowserTags = it },
+            onRemoveTrackingParametersChange = { removeTrackingParametersFromUrls = it },
+            onShowAndroidAutoArtworkChange = { showAndroidAutoArtwork = it },
+            onPlayerPanelCollapsedChange = { playerPanelCollapsed = it },
             onLastMainPageChange = { lastMainPage = it },
             onSelectedPageRestore = { selectedPage = it },
             onStationSortStateChange = { sortState = it },
@@ -1061,34 +1063,46 @@ fun OmniBeatApp() {
                             SettingsPage(
                                 themeMode = themeMode,
                                 appLanguage = appLanguage,
-                                showStationArtwork = showStationArtwork,
-                                addRadioBrowserTags = addRadioBrowserTags,
-                                removeTrackingParameters = removeTrackingParametersFromUrls,
                                 rememberLastStation = rememberLastStation,
+                                stopServiceAfterPauseMinutes = stopServiceAfterPauseMinutes,
+                                showStationArtwork = showStationArtwork,
+                                syncingStationArtwork = syncingStationArtwork,
+                                showEmptyFavoritesTab = showEmptyFavoritesTab,
+                                confirmStationDeletion = confirmStationDeletion,
                                 showBitrateInControlPanel = showBitrateInControlPanel,
                                 showUnavailableBitrate = showUnavailableBitrate,
                                 marqueeTrackTitle = marqueeTrackTitle,
-                                stopServiceAfterPauseMinutes = stopServiceAfterPauseMinutes,
                                 autoExpandPlayerPanelOnPlayback = autoExpandPlayerPanelOnPlayback,
                                 collapsePlayerPanelInSearch = collapsePlayerPanelInSearch,
-                                showEmptyFavoritesTab = showEmptyFavoritesTab,
-                                confirmStationDeletion = confirmStationDeletion,
-                                syncingStationArtwork = syncingStationArtwork,
-                                onShowStationArtworkChange = { show ->
-                                    showStationArtwork = show
-                                    scope.launch { repository.saveShowStationArtwork(show) }
+                                addRadioBrowserTags = addRadioBrowserTags,
+                                removeTrackingParameters = removeTrackingParametersFromUrls,
+                                showAndroidAutoArtwork = showAndroidAutoArtwork,
+                                onThemeModeChange = { nextThemeMode ->
+                                    scope.launch { repository.saveThemeMode(nextThemeMode) }
                                 },
-                                onAddRadioBrowserTagsChange = { add ->
-                                    addRadioBrowserTags = add
-                                    scope.launch { repository.saveAddRadioBrowserTags(add) }
-                                },
-                                onRemoveTrackingParametersChange = { remove ->
-                                    removeTrackingParametersFromUrls = remove
-                                    scope.launch { repository.saveRemoveTrackingParameters(remove) }
+                                onAppLanguageChange = { nextAppLanguage ->
+                                    context.applicationContext.applyAppLanguage(nextAppLanguage)
                                 },
                                 onRememberLastStationChange = { remember ->
                                     rememberLastStation = remember
                                     scope.launch { repository.saveRememberLastStation(remember) }
+                                },
+                                onStopServiceAfterPauseMinutesChange = { minutes ->
+                                    stopServiceAfterPauseMinutes = minutes
+                                    scope.launch { repository.saveStopServiceAfterPauseMinutes(minutes) }
+                                },
+                                onShowStationArtworkChange = { show ->
+                                    showStationArtwork = show
+                                    scope.launch { repository.saveShowStationArtwork(show) }
+                                },
+                                onSyncStationArtwork = { syncStationArtwork() },
+                                onShowEmptyFavoritesTabChange = { show ->
+                                    showEmptyFavoritesTab = show
+                                    scope.launch { repository.saveShowEmptyFavoritesTab(show) }
+                                },
+                                onConfirmStationDeletionChange = { confirm ->
+                                    confirmStationDeletion = confirm
+                                    scope.launch { repository.saveConfirmStationDeletion(confirm) }
                                 },
                                 onShowBitrateInControlPanelChange = { show ->
                                     showBitrateInControlPanel = show
@@ -1102,10 +1116,6 @@ fun OmniBeatApp() {
                                     marqueeTrackTitle = marquee
                                     scope.launch { repository.saveMarqueeTrackTitle(marquee) }
                                 },
-                                onStopServiceAfterPauseMinutesChange = { minutes ->
-                                    stopServiceAfterPauseMinutes = minutes
-                                    scope.launch { repository.saveStopServiceAfterPauseMinutes(minutes) }
-                                },
                                 onAutoExpandPlayerPanelOnPlaybackChange = { autoExpand ->
                                     autoExpandPlayerPanelOnPlayback = autoExpand
                                     scope.launch { repository.saveAutoExpandPlayerPanelOnPlayback(autoExpand) }
@@ -1114,22 +1124,19 @@ fun OmniBeatApp() {
                                     collapsePlayerPanelInSearch = collapse
                                     scope.launch { repository.saveCollapsePlayerPanelInSearch(collapse) }
                                 },
-                                onShowEmptyFavoritesTabChange = { show ->
-                                    showEmptyFavoritesTab = show
-                                    scope.launch { repository.saveShowEmptyFavoritesTab(show) }
+                                onAddRadioBrowserTagsChange = { add ->
+                                    addRadioBrowserTags = add
+                                    scope.launch { repository.saveAddRadioBrowserTags(add) }
                                 },
-                                onConfirmStationDeletionChange = { confirm ->
-                                    confirmStationDeletion = confirm
-                                    scope.launch { repository.saveConfirmStationDeletion(confirm) }
+                                onRemoveTrackingParametersChange = { remove ->
+                                    removeTrackingParametersFromUrls = remove
+                                    scope.launch { repository.saveRemoveTrackingParameters(remove) }
                                 },
-                                onSyncStationArtwork = { syncStationArtwork() },
+                                onShowAndroidAutoArtworkChange = { show ->
+                                    showAndroidAutoArtwork = show
+                                    scope.launch { repository.saveShowAndroidAutoArtwork(show) }
+                                },
                                 onClearLibrary = { clearLibrary() },
-                                onThemeModeChange = { nextThemeMode ->
-                                    scope.launch { repository.saveThemeMode(nextThemeMode) }
-                                },
-                                onAppLanguageChange = { nextAppLanguage ->
-                                    context.applicationContext.applyAppLanguage(nextAppLanguage)
-                                },
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }

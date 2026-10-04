@@ -14,19 +14,20 @@ fun RepositoryStateEffects(
     visibleTabPages: List<MainPage>,
     onStationsChange: (List<Station>) -> Unit,
     onAppVolumeChange: (Float) -> Unit,
-    onShowStationArtworkChange: (Boolean) -> Unit,
-    onAddRadioBrowserTagsChange: (Boolean) -> Unit,
-    onRemoveTrackingParametersChange: (Boolean) -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
+    onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
+    onShowStationArtworkChange: (Boolean) -> Unit,
+    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
+    onConfirmStationDeletionChange: (Boolean) -> Unit,
     onShowBitrateInControlPanelChange: (Boolean) -> Unit,
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
-    onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
-    onPlayerPanelCollapsedChange: (Boolean) -> Unit,
     onAutoExpandPlayerPanelOnPlaybackChange: (Boolean) -> Unit,
     onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
-    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
-    onConfirmStationDeletionChange: (Boolean) -> Unit,
+    onAddRadioBrowserTagsChange: (Boolean) -> Unit,
+    onRemoveTrackingParametersChange: (Boolean) -> Unit,
+    onShowAndroidAutoArtworkChange: (Boolean) -> Unit,
+    onPlayerPanelCollapsedChange: (Boolean) -> Unit,
     onLastMainPageChange: (MainPage) -> Unit,
     onSelectedPageRestore: (MainPage) -> Unit,
     onStationSortStateChange: (StationSortState) -> Unit,
@@ -47,26 +48,32 @@ fun RepositoryStateEffects(
     }
 
     LaunchedEffect(repository) {
+        repository.rememberLastStation.collect { savedRememberLastStation ->
+            onRememberLastStationChange(savedRememberLastStation)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.stopServiceAfterPauseMinutes.collect { savedMinutes ->
+            onStopServiceAfterPauseMinutesChange(savedMinutes)
+        }
+    }
+
+    LaunchedEffect(repository) {
         repository.showStationArtwork.collect { savedShowStationArtwork ->
             onShowStationArtworkChange(savedShowStationArtwork)
         }
     }
 
     LaunchedEffect(repository) {
-        repository.addRadioBrowserTags.collect { savedAddRadioBrowserTags ->
-            onAddRadioBrowserTagsChange(savedAddRadioBrowserTags)
+        repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
+            onShowEmptyFavoritesTabChange(savedShowEmptyFavoritesTab)
         }
     }
 
     LaunchedEffect(repository) {
-        repository.removeTrackingParameters.collect { savedRemoveTrackingParameters ->
-            onRemoveTrackingParametersChange(savedRemoveTrackingParameters)
-        }
-    }
-
-    LaunchedEffect(repository) {
-        repository.rememberLastStation.collect { savedRememberLastStation ->
-            onRememberLastStationChange(savedRememberLastStation)
+        repository.confirmStationDeletion.collect { savedConfirmStationDeletion ->
+            onConfirmStationDeletionChange(savedConfirmStationDeletion)
         }
     }
 
@@ -89,18 +96,6 @@ fun RepositoryStateEffects(
     }
 
     LaunchedEffect(repository) {
-        repository.stopServiceAfterPauseMinutes.collect { savedMinutes ->
-            onStopServiceAfterPauseMinutesChange(savedMinutes)
-        }
-    }
-
-    LaunchedEffect(repository) {
-        repository.playerPanelCollapsed.collect { savedPlayerPanelCollapsed ->
-            onPlayerPanelCollapsedChange(savedPlayerPanelCollapsed)
-        }
-    }
-
-    LaunchedEffect(repository) {
         repository.autoExpandPlayerPanelOnPlayback.collect { savedAutoExpand ->
             onAutoExpandPlayerPanelOnPlaybackChange(savedAutoExpand)
         }
@@ -113,14 +108,24 @@ fun RepositoryStateEffects(
     }
 
     LaunchedEffect(repository) {
-        repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
-            onShowEmptyFavoritesTabChange(savedShowEmptyFavoritesTab)
+        repository.addRadioBrowserTags.collect { savedAddRadioBrowserTags ->
+            onAddRadioBrowserTagsChange(savedAddRadioBrowserTags)
         }
     }
 
     LaunchedEffect(repository) {
-        repository.confirmStationDeletion.collect { savedConfirmStationDeletion ->
-            onConfirmStationDeletionChange(savedConfirmStationDeletion)
+        repository.removeTrackingParameters.collect { savedRemoveTrackingParameters ->
+            onRemoveTrackingParametersChange(savedRemoveTrackingParameters)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.showAndroidAutoArtwork.collect(onShowAndroidAutoArtworkChange)
+    }
+
+    LaunchedEffect(repository) {
+        repository.playerPanelCollapsed.collect { savedPlayerPanelCollapsed ->
+            onPlayerPanelCollapsedChange(savedPlayerPanelCollapsed)
         }
     }
 
