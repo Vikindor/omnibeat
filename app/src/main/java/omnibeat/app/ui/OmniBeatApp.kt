@@ -266,6 +266,34 @@ fun OmniBeatApp() {
             writePendingExport(uri, resources.appString(R.string.toast_export_txt))
         }
 
+        fun importStations(mode: StationImportMode) {
+            val importData = pendingImportData ?: return
+            val importResult = StationExportCodec.buildImportResult(
+                importedData = importData,
+                currentStations = stations,
+                currentSortState = sortState,
+                currentCustomStationOrder = customStationOrder,
+                currentCustomFavoriteOrder = customFavoriteOrder,
+                mode = mode,
+            )
+            pendingImportData = null
+            stations = importResult.stations
+            sortState = importResult.sortState
+            customStationOrder = importResult.customStationOrder
+            customFavoriteOrder = importResult.customFavoriteOrder
+            reorderDraft = null
+            if (
+                playbackState.selectedStation != null &&
+                importResult.stations.none { it.id == playbackState.selectedStation?.id }
+            ) {
+                PlaybackService.stop(context)
+            }
+            scope.launch {
+                repository.saveImportedLibrary(importResult)
+                Toast.makeText(context, resources.appString(R.string.toast_stations_imported), Toast.LENGTH_SHORT).show()
+            }
+        }
+
         val importLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument(),
         ) { uri ->
@@ -289,6 +317,9 @@ fun OmniBeatApp() {
                     }
                 }.onSuccess { importData ->
                     pendingImportData = importData
+                    if (stations.isEmpty()) {
+                        importStations(StationImportMode.Replace)
+                    }
                 }.onFailure { error ->
                     Toast.makeText(
                         context,
@@ -421,34 +452,6 @@ fun OmniBeatApp() {
                 pendingExportContent = SimpleStationTextCodec.encode(stations)
                 val exportDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd"))
                 textExportLauncher.launch("omnibeat_stations_$exportDate.txt")
-            }
-        }
-
-        fun importStations(mode: StationImportMode) {
-            val importData = pendingImportData ?: return
-            val importResult = StationExportCodec.buildImportResult(
-                importedData = importData,
-                currentStations = stations,
-                currentSortState = sortState,
-                currentCustomStationOrder = customStationOrder,
-                currentCustomFavoriteOrder = customFavoriteOrder,
-                mode = mode,
-            )
-            pendingImportData = null
-            stations = importResult.stations
-            sortState = importResult.sortState
-            customStationOrder = importResult.customStationOrder
-            customFavoriteOrder = importResult.customFavoriteOrder
-            reorderDraft = null
-            if (
-                playbackState.selectedStation != null &&
-                importResult.stations.none { it.id == playbackState.selectedStation?.id }
-            ) {
-                PlaybackService.stop(context)
-            }
-            scope.launch {
-                repository.saveImportedLibrary(importResult)
-                Toast.makeText(context, resources.appString(R.string.toast_stations_imported), Toast.LENGTH_SHORT).show()
             }
         }
 

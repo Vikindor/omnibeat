@@ -95,7 +95,7 @@
     <string name="dialog_error_title">Error</string>
     <string name="toast_error_copied">Error copied</string>
     <string name="dialog_import_stations_title">Import stations</string>
-    <string name="dialog_import_stations_text">Import %1$d stations?\nMerge keeps your current library and updates stations with matching stream URLs.\nReplace clears the current library first.</string>
+    <string name="dialog_import_stations_text">Import %1$d stations?&lt;br/&gt;&lt;b&gt;Replace&lt;/b&gt; clears the current library first.&lt;br/&gt;&lt;b&gt;Merge&lt;/b&gt; keeps your current library and updates stations with matching stream URLs.</string>
 
     <string name="toast_export_json">JSON exported</string>
     <string name="toast_export_txt">TXT exported</string>

@@ -93,7 +93,7 @@
     <string name="dialog_error_title">Ошибка</string>
     <string name="toast_error_copied">Ошибка скопирована</string>
     <string name="dialog_import_stations_title">Импорт станций</string>
-    <string name="dialog_import_stations_text">Импортировать %1$d станций?\nПри объединении текущая библиотека сохранится, а станции с совпадающими URL стримов обновятся.\nПри замене текущая библиотека сначала будет очищена.</string>
+    <string name="dialog_import_stations_text">Импортировать %1$d станций?&lt;br/&gt;&lt;b&gt;Замена&lt;/b&gt; сначала очищает текущую библиотеку.&lt;br/&gt;&lt;b&gt;Объединение&lt;/b&gt; сохраняет текущую библиотеку и обновляет станции с совпадающими URL стримов.</string>
 
     <string name="toast_export_json">JSON-файл экспортирован</string>
     <string name="toast_export_txt">TXT-файл экспортирован</string>

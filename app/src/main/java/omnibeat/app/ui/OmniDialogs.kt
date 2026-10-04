@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import omnibeat.app.R
@@ -104,6 +106,7 @@ fun ErrorDialog(
                     text = stringResource(R.string.action_copy),
                     onClick = {
                         val clipboard = context.getSystemService(ClipboardManager::class.java)
+                        @Suppress("UsePropertyAccessSyntax")
                         clipboard.setPrimaryClip(ClipData.newPlainText(dialogTitle, message))
                         Toast.makeText(context, errorCopiedText, Toast.LENGTH_SHORT).show()
                     },
@@ -138,7 +141,7 @@ fun ImportStationsDialog(
         },
         text = {
             Text(
-                text = stringResource(R.string.dialog_import_stations_text, stationCount),
+                text = AnnotatedString.fromHtml(stringResource(R.string.dialog_import_stations_text, stationCount)),
                 color = RadioTextMuted,
                 lineHeight = RadioTextSizes.bodyLineHeight,
             )
