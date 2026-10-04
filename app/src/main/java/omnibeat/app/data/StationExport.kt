@@ -163,7 +163,7 @@ object StationExportCodec {
         return buildList {
             repeat(stationsJson.length()) { index ->
                 val item = stationsJson.optJSONObject(index) ?: return@repeat
-                val streamUrl = item.optString("streamUrl").trim().take(STATION_STREAM_URL_MAX_LENGTH)
+                val streamUrl = normalizeStreamUrl(item.optString("streamUrl").trim().take(STATION_STREAM_URL_MAX_LENGTH))
                 if (streamUrl.isBlank()) {
                     return@repeat
                 }
@@ -283,6 +283,7 @@ object SimpleStationTextCodec {
         val streamUrl = lines[1]
             .let { if (cleanTrackingParameters) removeTrackingParameters(it) else it }
             .take(STATION_STREAM_URL_MAX_LENGTH)
+            .let(::normalizeStreamUrl)
         require(streamUrl.isNotBlank()) {
             "Station ${index + 1} has no stream URL"
         }

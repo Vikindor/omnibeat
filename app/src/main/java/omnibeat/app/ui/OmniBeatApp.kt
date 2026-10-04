@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
@@ -57,9 +56,11 @@ import omnibeat.app.data.SimpleStationTextCodec
 import omnibeat.app.data.StationExportCodec
 import omnibeat.app.data.StationImportMode
 import omnibeat.app.data.StationRepository
+import omnibeat.app.data.StationArtworkCache
 import omnibeat.app.data.TranslationLanguage
 import omnibeat.app.data.appString
 import omnibeat.app.data.removeTrackingParameters
+import omnibeat.app.data.normalizeStreamUrl
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationEditorState
@@ -79,7 +80,6 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.random.Random
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OmniBeatApp() {
     val context = LocalContext.current
@@ -517,6 +517,7 @@ fun OmniBeatApp() {
             val streamUrl = radioStation.streamUrl
                 .trim()
                 .let { if (removeTrackingParametersFromUrls) removeTrackingParameters(it) else it }
+                .let(::normalizeStreamUrl)
             return Station(
                 id = radioStation.stationUuid.takeIf { it.isNotBlank() } ?: streamUrl,
                 title = radioStation.title.trim().take(STATION_TITLE_MAX_LENGTH)
@@ -553,46 +554,46 @@ fun OmniBeatApp() {
             }
         }
 
+        suspend fun refreshStationArtwork(station: Station): Boolean {
+            val imageUrl = radioBrowserClient.findStationByStreamUrl(station.streamUrl)
+                ?.imageUrl
+                ?.takeIf { it.isNotBlank() }
+                ?: return false
+            StationArtworkCache.refresh(context, imageUrl)
+            val currentStation = stations.firstOrNull { it.id == station.id } ?: return false
+            if (currentStation.streamUrl != station.streamUrl) return false
+            if (currentStation.imageUrl != imageUrl) {
+                val nextStations = stations.map { savedStation ->
+                    if (savedStation.id == station.id) savedStation.copy(imageUrl = imageUrl) else savedStation
+                }
+                stations = nextStations
+                repository.saveStations(nextStations)
+            }
+            return true
+        }
+
         fun syncStationArtwork() {
             if (syncingStationArtwork) return
             if (!hasInternetOrToast()) return
             syncingStationArtwork = true
             scope.launch {
-                runCatching {
-                    withContext(Dispatchers.IO) {
-                        stations.mapNotNull { station ->
-                            if (!station.imageUrl.isNullOrBlank()) return@mapNotNull null
-                            val imageUrl = radioBrowserClient.findStationByStreamUrl(station.streamUrl)
-                                ?.imageUrl
-                                ?.takeIf { it.isNotBlank() }
-                                ?: return@mapNotNull null
-                            station.id to imageUrl
+                var updatedCount = 0
+                try {
+                    stations.toList().forEach { station ->
+                        runCatching {
+                            if (refreshStationArtwork(station)) updatedCount++
+                        }.onFailure { error ->
+                            if (error is CancellationException) throw error
                         }
-                    }
-                }.onSuccess { updates ->
-                    if (updates.isNotEmpty()) {
-                        val imageByStationId = updates.toMap()
-                        val nextStations = stations.map { station ->
-                            imageByStationId[station.id]?.let { imageUrl ->
-                                station.copy(imageUrl = imageUrl)
-                            } ?: station
-                        }
-                        stations = nextStations
-                        repository.saveStations(nextStations)
                     }
                     Toast.makeText(
                         context,
-                        resources.appString(R.string.toast_artwork_synced_count, updates.size),
+                        resources.appString(R.string.toast_artwork_synced_count, updatedCount),
                         Toast.LENGTH_SHORT,
                     ).show()
-                }.onFailure { error ->
-                    Toast.makeText(
-                        context,
-                        resources.appString(R.string.toast_artwork_sync_failed, error.message.orEmpty()),
-                        Toast.LENGTH_LONG,
-                    ).show()
+                } finally {
+                    syncingStationArtwork = false
                 }
-                syncingStationArtwork = false
             }
         }
 
@@ -626,26 +627,15 @@ fun OmniBeatApp() {
             Toast.makeText(context, resources.appString(R.string.toast_artwork_searching), Toast.LENGTH_SHORT).show()
             scope.launch {
                 runCatching {
-                    withContext(Dispatchers.IO) {
-                        radioBrowserClient.findStationByStreamUrl(station.streamUrl)
-                            ?.imageUrl
-                            ?.takeIf { it.isNotBlank() }
-                    }
-                }.onSuccess { imageUrl ->
-                    if (imageUrl == null) {
+                    refreshStationArtwork(station)
+                }.onSuccess { refreshed ->
+                    if (!refreshed) {
                         Toast.makeText(context, resources.appString(R.string.toast_artwork_not_found), Toast.LENGTH_SHORT).show()
                         return@onSuccess
                     }
-                    val nextStations = stations.toMutableList().also { list ->
-                        val currentIndex = list.indexOfFirst { it.id == station.id }
-                        if (currentIndex != -1) {
-                            list[currentIndex] = list[currentIndex].copy(imageUrl = imageUrl)
-                        }
-                    }
-                    stations = nextStations
-                    repository.saveStations(nextStations)
                     Toast.makeText(context, resources.appString(R.string.toast_artwork_synced), Toast.LENGTH_SHORT).show()
                 }.onFailure { error ->
+                    if (error is CancellationException) throw error
                     Toast.makeText(
                         context,
                         resources.appString(R.string.toast_artwork_sync_failed, error.message.orEmpty()),
@@ -1185,11 +1175,12 @@ fun OmniBeatApp() {
                 },
                 onSave = { title, streamUrl, tags ->
                     val trimmedStreamUrl = streamUrl.trim()
-                    val savedStreamUrl = if (state.stationIndex == null && removeTrackingParametersFromUrls) {
+                    val cleanedStreamUrl = if (state.stationIndex == null && removeTrackingParametersFromUrls) {
                         removeTrackingParameters(trimmedStreamUrl)
                     } else {
                         trimmedStreamUrl
                     }
+                    val savedStreamUrl = normalizeStreamUrl(cleanedStreamUrl)
                     val updatedStation = Station(
                         id = state.stationIndex?.let { stations[it].id } ?: UUID.randomUUID().toString(),
                         title = title.trim().ifBlank { savedStreamUrl.take(STATION_TITLE_MAX_LENGTH) },

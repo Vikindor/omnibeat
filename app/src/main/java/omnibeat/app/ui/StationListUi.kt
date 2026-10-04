@@ -3,15 +3,13 @@ package omnibeat.app.ui
 import omnibeat.app.R
 import omnibeat.app.model.Station
 
-import android.graphics.BitmapFactory
-import android.util.LruCache
+import omnibeat.app.data.StationArtworkCache
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -29,9 +27,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,12 +49,10 @@ import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.flow.collectLatest
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import java.net.HttpURLConnection
-import java.net.URL
 
 @Composable
 fun EmptyStationsState(modifier: Modifier = Modifier) {
@@ -200,7 +196,6 @@ fun StationList(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StationListItem(
     title: String,
@@ -297,13 +292,23 @@ private fun StationArtwork(
     imageUrl: String?,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current.applicationContext
     val normalizedUrl = imageUrl?.takeIf { it.isNotBlank() }
-    var imageBitmap by remember(normalizedUrl) { mutableStateOf(StationArtworkMemoryCache[normalizedUrl]) }
+    var artworkSize by remember { mutableStateOf(IntSize.Zero) }
+    var imageBitmap by remember(normalizedUrl, artworkSize) {
+        mutableStateOf(normalizedUrl?.let { url ->
+            StationArtworkCache.get(url, artworkSize.width, artworkSize.height)
+        })
+    }
 
-    LaunchedEffect(normalizedUrl) {
-        if (normalizedUrl == null || imageBitmap != null) return@LaunchedEffect
-        imageBitmap = loadStationArtwork(normalizedUrl)?.also { bitmap ->
-            StationArtworkMemoryCache[normalizedUrl] = bitmap
+    LaunchedEffect(normalizedUrl, artworkSize) {
+        if (normalizedUrl == null || artworkSize.width <= 0 || artworkSize.height <= 0) {
+            return@LaunchedEffect
+        }
+        StationArtworkCache.updates(normalizedUrl).collectLatest {
+            StationArtworkCache.load(context, normalizedUrl, artworkSize.width, artworkSize.height).collect {
+                imageBitmap = it
+            }
         }
     }
 
@@ -311,6 +316,7 @@ private fun StationArtwork(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .size(RadioSizes.artwork)
+            .onSizeChanged { artworkSize = it }
             .clip(RoundedCornerShape(RadioCorners.small))
             .background(RadioSurfaceHigh.copy(alpha = 0.72f)),
     ) {
@@ -332,40 +338,6 @@ private fun StationArtwork(
     }
 }
 
-private object StationArtworkMemoryCache {
-    private const val MAX_ENTRIES = 32
-    private val images = LruCache<String, ImageBitmap>(MAX_ENTRIES)
-
-    operator fun get(url: String?): ImageBitmap? {
-        if (url == null) return null
-        return synchronized(images) { images.get(url) }
-    }
-
-    operator fun set(url: String, bitmap: ImageBitmap) {
-        synchronized(images) { images.put(url, bitmap) }
-    }
-}
-
-private suspend fun loadStationArtwork(imageUrl: String): ImageBitmap? {
-    return withContext(Dispatchers.IO) {
-        runCatching {
-            val connection = URL(imageUrl).openConnection() as HttpURLConnection
-            connection.connectTimeout = 6_000
-            connection.readTimeout = 6_000
-            connection.instanceFollowRedirects = true
-            connection.setRequestProperty("User-Agent", "OmniBeat Android")
-            try {
-                connection.inputStream.use { inputStream ->
-                    BitmapFactory.decodeStream(inputStream)?.asImageBitmap()
-                }
-            } finally {
-                connection.disconnect()
-            }
-        }.getOrNull()
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StationRow(
     station: Station,
