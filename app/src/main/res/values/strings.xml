@@ -87,8 +87,18 @@
     <string name="settings_remove_tracking_title">Remove tracking from URLs</string>
     <string name="settings_remove_tracking_on">Tracking parameters will be cleaned for new stations</string>
     <string name="settings_remove_tracking_off">New station URLs will be saved unchanged</string>
+    <string name="settings_section_android_auto" translatable="false">Android Auto</string>
+    <string name="settings_android_auto_artwork_title">Station artwork</string>
+    <string name="settings_android_auto_artwork_on">Android Auto and the media notification will show artwork</string>
+    <string name="settings_android_auto_artwork_off">Android Auto and the media notification will hide artwork</string>
     <string name="settings_section_danger_zone">Danger zone</string>
     <string name="settings_clear_library_title">Clear library</string>
+
+    <string name="auto_all_stations">All stations</string>
+    <string name="auto_recently_played">Recently played</string>
+    <string name="auto_tags">Tags / genres</string>
+    <string name="auto_no_stations">Your library is empty. Add stations on your phone when it is safe to do so.</string>
+    <string name="auto_station_not_found">Station not found in your library</string>
 
     <string name="dialog_clear_library_title">Clear library?</string>
     <string name="dialog_clear_library_text">All stations, favorites, and custom order will be removed</string>

@@ -140,35 +140,37 @@ private fun pauseTimeoutLabel(minutes: Int): String {
 fun SettingsPage(
     themeMode: ThemeMode,
     appLanguage: AppLanguage,
-    showStationArtwork: Boolean,
-    addRadioBrowserTags: Boolean,
-    removeTrackingParameters: Boolean,
     rememberLastStation: Boolean,
+    stopServiceAfterPauseMinutes: Int,
+    showStationArtwork: Boolean,
+    syncingStationArtwork: Boolean,
+    showEmptyFavoritesTab: Boolean,
+    confirmStationDeletion: Boolean,
     showBitrateInControlPanel: Boolean,
     showUnavailableBitrate: Boolean,
     marqueeTrackTitle: Boolean,
-    stopServiceAfterPauseMinutes: Int,
     autoExpandPlayerPanelOnPlayback: Boolean,
     collapsePlayerPanelInSearch: Boolean,
-    showEmptyFavoritesTab: Boolean,
-    confirmStationDeletion: Boolean,
-    syncingStationArtwork: Boolean,
-    onShowStationArtworkChange: (Boolean) -> Unit,
-    onAddRadioBrowserTagsChange: (Boolean) -> Unit,
-    onRemoveTrackingParametersChange: (Boolean) -> Unit,
+    addRadioBrowserTags: Boolean,
+    removeTrackingParameters: Boolean,
+    showAndroidAutoArtwork: Boolean,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    onAppLanguageChange: (AppLanguage) -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
+    onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
+    onShowStationArtworkChange: (Boolean) -> Unit,
+    onSyncStationArtwork: () -> Unit,
+    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
+    onConfirmStationDeletionChange: (Boolean) -> Unit,
     onShowBitrateInControlPanelChange: (Boolean) -> Unit,
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
-    onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
     onAutoExpandPlayerPanelOnPlaybackChange: (Boolean) -> Unit,
     onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
-    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
-    onConfirmStationDeletionChange: (Boolean) -> Unit,
-    onSyncStationArtwork: () -> Unit,
+    onAddRadioBrowserTagsChange: (Boolean) -> Unit,
+    onRemoveTrackingParametersChange: (Boolean) -> Unit,
+    onShowAndroidAutoArtworkChange: (Boolean) -> Unit,
     onClearLibrary: () -> Unit,
-    onThemeModeChange: (ThemeMode) -> Unit,
-    onAppLanguageChange: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -347,6 +349,19 @@ fun SettingsPage(
                 },
                 checked = removeTrackingParameters,
                 onCheckedChange = onRemoveTrackingParametersChange,
+            )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_android_auto))
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_android_auto_artwork_title),
+                subtitle = if (showAndroidAutoArtwork) {
+                    stringResource(R.string.settings_android_auto_artwork_on)
+                } else {
+                    stringResource(R.string.settings_android_auto_artwork_off)
+                },
+                checked = showAndroidAutoArtwork,
+                onCheckedChange = onShowAndroidAutoArtworkChange,
             )
             SettingsDivider()
 
