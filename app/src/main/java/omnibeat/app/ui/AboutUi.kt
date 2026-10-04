@@ -7,7 +7,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -190,7 +189,6 @@ private fun AboutDivider(modifier: Modifier = Modifier) {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AboutLinkRow(
     label: String,
@@ -250,6 +248,7 @@ private fun AboutLinkRow(
 
 private fun copyLinkToClipboard(context: Context, label: String, url: String) {
     val clipboardManager = context.getSystemService(ClipboardManager::class.java)
+    @Suppress("UsePropertyAccessSyntax")
     clipboardManager.setPrimaryClip(ClipData.newPlainText(label, url))
 }
 

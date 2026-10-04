@@ -14,7 +14,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
@@ -72,7 +71,6 @@ import omnibeat.app.playback.PlaybackStreamInfo
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlayerPanel(
     station: Station?,
@@ -427,6 +425,7 @@ private fun StreamInfoRow(label: String, value: String) {
 
 private fun copyTextToClipboard(context: Context, label: String, text: String) {
     val clipboardManager = context.getSystemService(ClipboardManager::class.java)
+    @Suppress("UsePropertyAccessSyntax")
     clipboardManager.setPrimaryClip(ClipData.newPlainText(label, text))
 }
 
