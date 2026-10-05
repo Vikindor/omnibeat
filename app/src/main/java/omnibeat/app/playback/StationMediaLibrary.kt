@@ -22,7 +22,9 @@ import kotlinx.coroutines.launch
 import omnibeat.app.R
 import omnibeat.app.data.StationRepository
 import omnibeat.app.data.appString
+import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
+import omnibeat.app.model.sortedStations
 
 @OptIn(UnstableApi::class)
 internal class StationMediaLibrary(
@@ -34,20 +36,19 @@ internal class StationMediaLibrary(
 ) : MediaLibrarySession.Callback {
     private data class Library(
         val stations: List<Station>,
+        val allStations: List<Station>,
+        val favoriteStations: List<Station>,
         val recentIds: List<String>,
         val showArtwork: Boolean,
     ) {
-        private fun favorites(): List<Station> =
-            stations.filter { it.isFavorite }.sortedBy { it.title.lowercase() }
-
         private fun recentlyPlayed(): List<Station> =
             recentIds.mapNotNull { id -> stations.find { it.id == id } }
 
         fun stationsIn(parent: String): List<Station>? = when {
-            parent == ALL -> stations.sortedBy { it.title.lowercase() }
-            parent == FAVORITES -> favorites()
+            parent == ALL -> allStations
+            parent == FAVORITES -> favoriteStations
             parent == RECENT -> recentlyPlayed()
-            parent == SUGGESTED -> (recentlyPlayed() + favorites()).distinctBy { it.id }
+            parent == SUGGESTED -> (recentlyPlayed() + favoriteStations).distinctBy { it.id }
             parent.startsWith(TAG_PREFIX) -> {
                 val tag = Uri.decode(parent.removePrefix(TAG_PREFIX))
                 stations.filter { station -> station.tags.any { it.equals(tag, ignoreCase = true) } }
@@ -65,8 +66,19 @@ internal class StationMediaLibrary(
     private suspend fun library(): Library {
         val stations = repository.stations.first()
         onStationsLoaded(stations)
+        val sortState = repository.stationSortState.first()
+        val customStationOrder = repository.customStationOrder.first()
+        val customFavoriteOrder = repository.customFavoriteOrder.first()
         return Library(
-            stations, repository.recentlyPlayedStationIds.first(), repository.showAndroidAutoArtwork.first(),
+            stations = stations,
+            allStations = sortedStations(
+                stations, MainPage.Stations, sortState, customStationOrder, customFavoriteOrder,
+            ),
+            favoriteStations = sortedStations(
+                stations.filter { it.isFavorite }, MainPage.Favorites, sortState, customStationOrder, customFavoriteOrder,
+            ),
+            recentIds = repository.recentlyPlayedStationIds.first(),
+            showArtwork = repository.showAndroidAutoArtwork.first(),
         )
     }
 
