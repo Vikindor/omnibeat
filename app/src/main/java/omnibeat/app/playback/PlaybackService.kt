@@ -226,6 +226,17 @@ class PlaybackService : MediaLibraryService() {
                 mediaSession?.let { library.notifyChanged(it) }
             }
         }
+        scope.launch {
+            combine(
+                repository.stationSortState,
+                repository.customStationOrder,
+                repository.customFavoriteOrder,
+            ) { sortState, stationOrder, favoriteOrder ->
+                Triple(sortState, stationOrder, favoriteOrder)
+            }.distinctUntilChanged().collect {
+                mediaSession?.let { library.notifyChanged(it) }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -369,7 +380,6 @@ class PlaybackService : MediaLibraryService() {
         resolveJob?.cancel()
         stopAfterPauseJob?.cancel()
         noMetadataJob?.cancel()
-        player.stop()
         playbackRequested = startPlayback
         if (!previewing) {
             lastPlayedStationId = station.id
@@ -379,6 +389,7 @@ class PlaybackService : MediaLibraryService() {
         currentStreamIsHls = false
         if (!NetworkStatus.isOnline(this)) {
             playbackRequested = false
+            player.stop()
             _state.update {
                 it.copy(
                     selectedIndex = index,
@@ -402,10 +413,13 @@ class PlaybackService : MediaLibraryService() {
                 previewing = previewing,
                 resolving = true,
                 buffering = false,
+                isPlaying = false,
                 errorText = null,
                 streamInfo = PlaybackStreamInfo(),
             ).withTrackStatus(PlaybackTrackStatus.Resolving)
         }
+        player.stop()
+        syncSession()
 
         resolveJob = scope.launch {
             runCatching {
@@ -416,7 +430,6 @@ class PlaybackService : MediaLibraryService() {
                 currentStreamIsHls = resolvedStream.playableUrl.lowercase().contains(".m3u8")
                 _state.update {
                     it.copy(
-                        resolving = false,
                         streamInfo = PlaybackStreamInfo(
                             bitrateKbps = resolvedStream.bitrateKbps,
                         ),
@@ -432,6 +445,8 @@ class PlaybackService : MediaLibraryService() {
                 )
                 player.prepare()
                 player.playWhenReady = playbackRequested
+                _state.update { it.copy(resolving = false) }
+                scheduleNoMetadataIfPlaybackStarted()
                 syncSession()
             }.onFailure { error ->
                 if (error is CancellationException) {
@@ -775,7 +790,8 @@ class PlaybackService : MediaLibraryService() {
             return State.Builder()
                 .setAvailableCommands(Player.Commands.Builder().addAll(
                     COMMAND_PLAY_PAUSE, COMMAND_PREPARE, COMMAND_STOP, COMMAND_RELEASE,
-                    COMMAND_SET_MEDIA_ITEM, COMMAND_GET_CURRENT_MEDIA_ITEM, COMMAND_SEEK_TO_MEDIA_ITEM,
+                    COMMAND_SET_MEDIA_ITEM, COMMAND_CHANGE_MEDIA_ITEMS,
+                    COMMAND_GET_CURRENT_MEDIA_ITEM, COMMAND_SEEK_TO_MEDIA_ITEM,
                     COMMAND_GET_TIMELINE, COMMAND_GET_METADATA,
                     COMMAND_SEEK_TO_PREVIOUS, COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
                     COMMAND_SEEK_TO_NEXT, COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
