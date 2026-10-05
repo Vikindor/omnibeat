@@ -31,7 +31,10 @@ android {
     productFlavors {
         create("fdroid") { dimension = "distribution" }
         create("play") { dimension = "distribution" }
-        create("github") { dimension = "distribution" }
+        create("github") {
+            dimension = "distribution"
+            isDefault = true
+        }
     }
     buildTypes {
         release {

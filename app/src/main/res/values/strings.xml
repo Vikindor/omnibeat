@@ -257,7 +257,7 @@
     <string name="update_checking">Checking for updates...</string>
     <string name="update_latest">You are using the latest version</string>
     <string name="update_downloading">Downloading update to Downloads</string>
-    <string name="update_failed">Unable to update OmniBeat: %1$s</string>
+    <string name="update_failed">Unable to update OmniBeat\n%1$s</string>
 
     <string name="page_translation">Translation</string>
     <string name="translation_enabled">Translation menu enabled</string>

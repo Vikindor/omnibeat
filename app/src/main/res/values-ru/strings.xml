@@ -254,7 +254,7 @@
     <string name="update_checking">Проверка обновлений...</string>
     <string name="update_latest">У вас установлена последняя версия</string>
     <string name="update_downloading">Обновление скачивается в Downloads</string>
-    <string name="update_failed">Не удалось обновить OmniBeat: %1$s</string>
+    <string name="update_failed">Не удалось обновить OmniBeat\n%1$s</string>
 
     <string name="page_translation">Перевод</string>
     <string name="translation_enabled">Раздел перевода включён</string>
