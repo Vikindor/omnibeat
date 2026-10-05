@@ -7,6 +7,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,9 +32,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import omnibeat.app.ui.appStringResource as stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,7 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AboutPage(modifier: Modifier = Modifier) {
+fun AboutPage(modifier: Modifier = Modifier, updates: AppUpdateActions? = null) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     val packageInfo = remember(context) {
@@ -60,12 +69,17 @@ fun AboutPage(modifier: Modifier = Modifier) {
             AboutDivider()
 
             AboutSectionHeader(stringResource(R.string.about_section_app))
-            AboutInfoRow(label = stringResource(R.string.about_version), value = versionName)
+            AboutInfoRow(
+                label = stringResource(R.string.about_version),
+                value = versionName,
+                action = {
+                    if (updates != null) AboutUpdateButton(updates)
+                },
+            )
             AboutInfoRow(label = stringResource(R.string.about_build), value = versionCode.toString())
             AboutInfoRow(
                 label = stringResource(R.string.about_formats),
                 value = "Direct stream, PLS, M3U, HLS, XSPF, ASX/WAX/WMX, DASH",
-                stacked = true,
             )
             AboutDivider()
 
@@ -240,7 +254,9 @@ private fun AboutLinkRow(
                 painter = painterResource(R.drawable.ic_open_in_new),
                 contentDescription = null,
                 tint = RadioTextMuted,
-                modifier = Modifier.size(RadioSizes.iconCompact),
+                modifier = Modifier
+                    .padding(horizontal = (RadioSizes.button - RadioSizes.icon) / 2)
+                    .size(RadioSizes.icon),
             )
         }
     }
@@ -253,18 +269,50 @@ private fun copyLinkToClipboard(context: Context, label: String, url: String) {
 }
 
 @Composable
+private fun AboutUpdateButton(updates: AppUpdateActions) {
+    val busy = updates.statusText != null
+    val description = updates.statusText ?: stringResource(R.string.about_check_updates)
+    val transition = rememberInfiniteTransition(label = "update check")
+    val rotation = if (busy) {
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 900, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "update rotation",
+        ).value
+    } else {
+        0f
+    }
+    OmniIconButton(
+        painter = painterResource(R.drawable.ic_sync),
+        onClick = updates.onCheck,
+        enabled = !busy,
+        tint = RadioPrimary,
+        modifier = Modifier.semantics { contentDescription = description },
+        iconModifier = Modifier.rotate(rotation),
+    )
+}
+
+@Composable
 private fun AboutInfoRow(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    stacked: Boolean = false,
+    action: (@Composable () -> Unit)? = null,
 ) {
-    if (stacked) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = RadioSpacing.fieldGap),
+    ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(RadioSpacing.extraSmall),
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(vertical = RadioSpacing.fieldGap),
+            modifier = Modifier.weight(1f),
         ) {
             Text(
                 text = label,
@@ -278,28 +326,6 @@ private fun AboutInfoRow(
                 lineHeight = RadioTextSizes.bodyLineHeight,
             )
         }
-        return
-    }
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = RadioSpacing.fieldGap),
-    ) {
-        Text(
-            text = label,
-            color = RadioText,
-            fontSize = RadioTextSizes.bodyLarge,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = value,
-            color = RadioTextMuted,
-            fontSize = RadioTextSizes.bodySmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        action?.invoke()
     }
 }

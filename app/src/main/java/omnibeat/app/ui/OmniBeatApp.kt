@@ -142,6 +142,7 @@ fun OmniBeatApp() {
             return@OmniBeatTheme
         }
 
+        val updates = (context.applicationContext as? AppUpdateProvider)?.rememberUpdates()
         val radioBrowserClient = remember { RadioBrowserClient(context.applicationContext) }
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val playbackState by PlaybackService.state.collectAsState()
@@ -1142,7 +1143,7 @@ fun OmniBeatApp() {
                         }
 
                         MainPage.About -> {
-                            AboutPage(modifier = Modifier.fillMaxSize())
+                            AboutPage(modifier = Modifier.fillMaxSize(), updates = updates)
                         }
                     }
                 }

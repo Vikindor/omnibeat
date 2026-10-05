@@ -6,6 +6,8 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
     <string name="action_copy">Copy</string>
+    <string name="action_download">Download</string>
+    <string name="action_open">Open</string>
     <string name="action_delete">Delete</string>
     <string name="action_replace">Replace</string>
     <string name="action_merge">Merge</string>
@@ -235,6 +237,7 @@
     <string name="about_section_app">App</string>
     <string name="about_version">Version</string>
     <string name="about_build">Build</string>
+    <string name="about_check_updates">Check for updates</string>
     <string name="about_formats">Formats</string>
     <string name="about_section_project">Project</string>
     <string name="about_source_code">Source Code</string>
@@ -246,6 +249,16 @@
     <string name="about_support">Problems, suggestions, or want to help with translation? Get in touch!</string>
     <string name="about_section_translators">Translators</string>
     <string name="toast_link_copied">Link copied</string>
+
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_text">OmniBeat %1$s is available. Download the new version?</string>
+    <string name="update_downloaded_title">Update downloaded</string>
+    <string name="update_downloaded_text">The APK has been saved to Downloads. Open it to install the update?</string>
+    <string name="update_checking">Checking for updates...</string>
+    <string name="update_latest">You are using the latest version</string>
+    <string name="update_downloading">Downloading update to Downloads</string>
+    <string name="update_failed">Unable to update OmniBeat: %1$s</string>
+
     <string name="page_translation">Translation</string>
     <string name="translation_enabled">Translation menu enabled</string>
     <string name="translation_disabled">Translation menu disabled</string>

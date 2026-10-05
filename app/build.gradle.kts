@@ -27,6 +27,12 @@ android {
         }
     }
 
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("fdroid") { dimension = "distribution" }
+        create("play") { dimension = "distribution" }
+        create("github") { dimension = "distribution" }
+    }
     buildTypes {
         release {
             isMinifyEnabled = true
