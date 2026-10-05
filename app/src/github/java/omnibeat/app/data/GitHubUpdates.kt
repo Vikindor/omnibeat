@@ -7,7 +7,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URI
 
-data class GitHubRelease(val version: String, val apkUrl: String)
+data class GitHubRelease(val version: String, val apkUrl: String, val apkName: String)
 
 class GitHubUpdates {
     suspend fun newerRelease(installedVersion: String): GitHubRelease? = withContext(Dispatchers.IO) {
@@ -40,7 +40,7 @@ class GitHubUpdates {
             if (uri.scheme != "https" || uri.host != "github.com" ||
                 !uri.path.startsWith("/Vikindor/omnibeat/releases/download/")
             ) throw IOException("Invalid GitHub APK URL")
-            GitHubRelease(version, url)
+            GitHubRelease(version, url, apk.getString("name"))
         } finally {
             connection.disconnect()
         }

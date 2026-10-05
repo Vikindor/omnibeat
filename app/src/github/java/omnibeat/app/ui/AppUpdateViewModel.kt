@@ -13,6 +13,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -27,6 +29,8 @@ import java.io.IOException
 data class AppUpdateState(
     val checking: Boolean = false,
     val downloading: Boolean = false,
+    val downloadProgress: Float? = null,
+    val showDownloadProgress: Boolean = false,
     val release: GitHubRelease? = null,
     val downloadedApk: Uri? = null,
     val error: String? = null,
@@ -42,6 +46,7 @@ class AppUpdateViewModel(application: Application) : AndroidViewModel(applicatio
     ).versionName.orEmpty()
     private val mutableState = MutableStateFlow(AppUpdateState())
     val state = mutableState.asStateFlow()
+    private var downloadMonitor: Job? = null
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
@@ -56,7 +61,7 @@ class AppUpdateViewModel(application: Application) : AndroidViewModel(applicatio
         val id = preferences.getLong("download_id", -1)
         val downloadInstalledVersion = preferences.getString("download_installed_version", null)
         if (id != -1L && downloadInstalledVersion == installedVersion) {
-            mutableState.update { it.copy(downloading = true) }
+            mutableState.update { it.copy(downloading = true, showDownloadProgress = true) }
             monitorDownload(id)
         } else {
             clearDownload()
@@ -88,59 +93,73 @@ class AppUpdateViewModel(application: Application) : AndroidViewModel(applicatio
     fun download() {
         val release = state.value.release ?: return
         if (state.value.downloading) return
-        mutableState.update { it.copy(release = null, downloading = true) }
+        mutableState.update {
+            it.copy(release = null, downloading = true, downloadProgress = null, showDownloadProgress = true)
+        }
         viewModelScope.launch {
             try {
                 val id = withContext(Dispatchers.IO) {
-                    val filename = "omnibeat-${release.version}-${System.currentTimeMillis()}.apk"
                     val request = DownloadManager.Request(Uri.parse(release.apkUrl))
                         .setTitle("OmniBeat ${release.version}")
                         .setMimeType("application/vnd.android.package-archive")
                         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
+                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, release.apkName)
                     downloads.enqueue(request).also { downloadId ->
                         preferences.edit().putLong("download_id", downloadId)
                             .putString("download_installed_version", installedVersion).commit()
                     }
                 }
-                mutableState.update { it.copy(message = R.string.update_downloading) }
                 monitorDownload(id)
             } catch (exception: Exception) {
                 if (exception is CancellationException) throw exception
-                mutableState.update { it.copy(downloading = false) }
+                mutableState.update { it.copy(downloading = false, showDownloadProgress = false) }
                 showError(exception)
             }
         }
     }
 
     private fun monitorDownload(id: Long) {
-        viewModelScope.launch {
+        downloadMonitor?.cancel()
+        downloadMonitor = viewModelScope.launch {
             try {
-                val result = withContext(Dispatchers.IO) {
-                    downloads.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
-                        if (!cursor.moveToFirst()) throw IOException("Download no longer exists")
-                        val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-                        if (status == DownloadManager.STATUS_FAILED) {
-                            val reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
-                            throw IOException("DownloadManager: $reason")
-                        }
-                        if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                            val uri = downloads.getUriForDownloadedFile(id)
-                                ?: throw IOException("Downloaded APK is unavailable")
-                            getApplication<Application>().contentResolver.openFileDescriptor(uri, "r").use {
-                                if (it == null) throw IOException("Downloaded APK is unavailable")
+                while (true) {
+                    val result = withContext(Dispatchers.IO) {
+                        downloads.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
+                            if (!cursor.moveToFirst()) throw IOException("Download no longer exists")
+                            val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                            if (status == DownloadManager.STATUS_FAILED) {
+                                val reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+                                throw IOException("DownloadManager: $reason")
                             }
-                            uri
-                        } else null
+                            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                                val uri = downloads.getUriForDownloadedFile(id)
+                                    ?: throw IOException("Downloaded APK is unavailable")
+                                getApplication<Application>().contentResolver.openFileDescriptor(uri, "r").use {
+                                    if (it == null) throw IOException("Downloaded APK is unavailable")
+                                }
+                                uri to 1f
+                            } else {
+                                val total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                                val downloaded = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                                val progress = if (total > 0) (downloaded.toFloat() / total).coerceIn(0f, 1f) else null
+                                null to progress
+                            }
+                        }
                     }
-                }
-                if (result != null) {
-                    mutableState.update { it.copy(downloading = false, downloadedApk = result) }
+                    val (uri, progress) = result
+                    if (uri != null) {
+                        mutableState.update {
+                            it.copy(downloading = false, showDownloadProgress = false, downloadProgress = progress, downloadedApk = uri)
+                        }
+                        break
+                    }
+                    mutableState.update { it.copy(downloadProgress = progress) }
+                    delay(500)
                 }
             } catch (exception: Exception) {
                 if (exception is CancellationException) throw exception
                 clearDownload()
-                mutableState.update { it.copy(downloading = false) }
+                mutableState.update { it.copy(downloading = false, showDownloadProgress = false) }
                 showError(exception)
             }
         }
@@ -156,6 +175,7 @@ class AppUpdateViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun dismissRelease() { mutableState.update { it.copy(release = null) } }
+    fun dismissDownloadProgress() { mutableState.update { it.copy(showDownloadProgress = false) } }
     fun dismissDownloadedApk() { mutableState.update { it.copy(downloadedApk = null) } }
     fun dismissError() { mutableState.update { it.copy(error = null) } }
     fun dismissMessage() { mutableState.update { it.copy(message = null) } }

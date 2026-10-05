@@ -7,6 +7,12 @@ import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -16,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import omnibeat.app.R
 
@@ -62,6 +69,9 @@ fun rememberAppUpdates(): AppUpdateActions {
             onDismiss = model::dismissRelease,
         )
     }
+    if (state.downloading && state.showDownloadProgress && state.error == null) {
+        UpdateDownloadDialog(state.downloadProgress, model::dismissDownloadProgress)
+    }
     state.downloadedApk?.takeIf { state.error == null }?.let { uri ->
         OmniConfirmDialog(
             title = appStringResource(R.string.update_downloaded_title),
@@ -92,4 +102,29 @@ fun rememberAppUpdates(): AppUpdateActions {
         else -> null
     }
     return AppUpdateActions(statusText = statusText, onCheck = { model.check() })
+}
+
+@Composable
+private fun UpdateDownloadDialog(progress: Float?, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(appStringResource(R.string.update_downloading_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(RadioSpacing.medium)) {
+                Text(appStringResource(R.string.update_downloading))
+                if (progress == null) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                } else {
+                    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                    Text(appStringResource(R.string.update_download_progress, (progress * 100).toInt()))
+                }
+            }
+        },
+        confirmButton = {
+            OmniSecondaryButton(text = appStringResource(R.string.action_hide), onClick = onDismiss)
+        },
+        containerColor = RadioSurface,
+        titleContentColor = RadioText,
+        textContentColor = RadioTextMuted,
+    )
 }

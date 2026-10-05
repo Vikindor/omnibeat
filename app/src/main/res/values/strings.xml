@@ -5,6 +5,7 @@
     <string name="action_search_online">Search online</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
+    <string name="action_hide">Hide</string>
     <string name="action_copy">Copy</string>
     <string name="action_download">Download</string>
     <string name="action_open">Open</string>
@@ -257,6 +258,8 @@
     <string name="update_checking">Checking for updates...</string>
     <string name="update_latest">You are using the latest version</string>
     <string name="update_downloading">Downloading update to Downloads</string>
+    <string name="update_downloading_title">Downloading update</string>
+    <string name="update_download_progress">%1$d%%</string>
     <string name="update_failed">Unable to update OmniBeat\n%1$s</string>
 
     <string name="page_translation">Translation</string>
