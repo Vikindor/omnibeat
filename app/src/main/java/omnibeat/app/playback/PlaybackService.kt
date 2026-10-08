@@ -141,7 +141,7 @@ class PlaybackService : MediaLibraryService() {
         library = StationMediaLibrary(
             this, repository, scope,
             onStationsLoaded = { stations = it },
-            onPlaybackRejected = { if (!playbackRequested) stopSelf() },
+            onPlaybackRejected = { if (!playbackRequested) stopPlaybackService() },
         )
         setMediaNotificationProvider(DefaultMediaNotificationProvider.Builder(this).build().apply {
             setSmallIcon(R.drawable.ic_play_arrow)
@@ -248,15 +248,16 @@ class PlaybackService : MediaLibraryService() {
             )
             ACTION_PLAY_PREVIEW -> playPreviewStation(intent.toPreviewStation())
             ACTION_PLAY_PAUSE -> playOrPause()
-            ACTION_STOP -> {
-                stopPlayback()
-                stopSelf()
-            }
+            ACTION_STOP -> stopPlaybackService()
         }
         return result
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = mediaSession
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (!isPlaybackOngoing || !sessionPlayer.isPlaying) stopPlaybackService()
+    }
 
     override fun onDestroy() {
         resolveJob?.cancel()
@@ -355,8 +356,7 @@ class PlaybackService : MediaLibraryService() {
             scope.launch {
                 stations = repository.stations.first()
                 if (stations.getOrNull(index) == null) {
-                    stopPlayback()
-                    stopSelf()
+                    stopPlaybackService()
                 } else {
                     playStationAt(index, queueIds)
                 }
@@ -402,8 +402,7 @@ class PlaybackService : MediaLibraryService() {
                     streamInfo = PlaybackStreamInfo(),
                 ).withTrackStatus(PlaybackTrackStatus.Stopped)
             }
-            syncSession()
-            stopSelf()
+            stopPlaybackService(errorText = state.value.errorText)
             return
         }
         _state.update {
@@ -460,8 +459,7 @@ class PlaybackService : MediaLibraryService() {
                         buffering = false,
                     )
                 }
-                syncSession()
-                stopSelf()
+                stopPlaybackService(errorText = state.value.errorText)
             }
         }
     }
@@ -534,6 +532,24 @@ class PlaybackService : MediaLibraryService() {
         scheduleStopAfterPause()
     }
 
+    private fun stopPlaybackService(errorText: String? = null) {
+        val current = state.value
+        stopPlayback()
+        if (errorText != null) {
+            _state.value = current.copy(
+                resolving = false,
+                buffering = false,
+                isPlaying = false,
+                errorText = errorText,
+                streamInfo = PlaybackStreamInfo(),
+            ).withTrackStatus(PlaybackTrackStatus.Stopped)
+        }
+        syncSession()
+        mediaSession?.release()
+        mediaSession = null
+        pauseAllPlayersAndStopSelf()
+    }
+
     private fun scheduleStopAfterPause() {
         stopAfterPauseJob?.cancel()
         val minutes = stopServiceAfterPauseMinutes
@@ -542,8 +558,7 @@ class PlaybackService : MediaLibraryService() {
             delay(minutes.minutes)
             val current = state.value
             if (!current.isPlaying && !current.resolving && !current.buffering && current.trackStatus == PlaybackTrackStatus.Paused) {
-                stopPlayback()
-                stopSelf()
+                stopPlaybackService()
             }
         }
     }
@@ -653,8 +668,7 @@ class PlaybackService : MediaLibraryService() {
                     streamInfo = PlaybackStreamInfo(),
                 )
             }
-            syncSession()
-            stopSelf()
+            stopPlaybackService(errorText = state.value.errorText)
         }
     }
 
