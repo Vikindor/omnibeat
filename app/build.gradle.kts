@@ -10,15 +10,13 @@ val translationAssets = tasks.register<Sync>("prepareTranslationAssets") {
 android {
     namespace = "omnibeat.app"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
         applicationId = "omnibeat.app"
         minSdk = 34
-        targetSdk = 36
+        targetSdk = 37
         versionCode = providers.gradleProperty("app.versionCode").get().toInt()
         versionName = providers.gradleProperty("app.versionName").get()
 
