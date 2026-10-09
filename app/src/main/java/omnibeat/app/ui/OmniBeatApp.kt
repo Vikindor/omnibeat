@@ -151,6 +151,7 @@ fun OmniBeatApp() {
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var rememberLastStation by remember { mutableStateOf(true) }
         var stopServiceAfterPauseMinutes by remember { mutableIntStateOf(DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES) }
+        var keepMediaCard by remember { mutableStateOf(repository.keepMediaCard.value) }
         var showStationArtwork by remember { mutableStateOf(true) }
         var syncingStationArtwork by remember { mutableStateOf(false) }
         var showEmptyFavoritesTab by remember { mutableStateOf(true) }
@@ -212,6 +213,7 @@ fun OmniBeatApp() {
             onAppVolumeChange = { appVolume = it },
             onRememberLastStationChange = { rememberLastStation = it },
             onStopServiceAfterPauseMinutesChange = { stopServiceAfterPauseMinutes = it },
+            onKeepMediaCardChange = { keepMediaCard = it },
             onShowStationArtworkChange = { showStationArtwork = it },
             onShowEmptyFavoritesTabChange = { showEmptyFavoritesTab = it },
             onConfirmStationDeletionChange = { confirmStationDeletion = it },
@@ -1066,6 +1068,7 @@ fun OmniBeatApp() {
                                 appLanguage = appLanguage,
                                 rememberLastStation = rememberLastStation,
                                 stopServiceAfterPauseMinutes = stopServiceAfterPauseMinutes,
+                                keepMediaCard = keepMediaCard,
                                 showStationArtwork = showStationArtwork,
                                 syncingStationArtwork = syncingStationArtwork,
                                 showEmptyFavoritesTab = showEmptyFavoritesTab,
@@ -1091,6 +1094,10 @@ fun OmniBeatApp() {
                                 onStopServiceAfterPauseMinutesChange = { minutes ->
                                     stopServiceAfterPauseMinutes = minutes
                                     scope.launch { repository.saveStopServiceAfterPauseMinutes(minutes) }
+                                },
+                                onKeepMediaCardChange = { keep ->
+                                    repository.saveKeepMediaCard(keep)
+                                    keepMediaCard = keep
                                 },
                                 onShowStationArtworkChange = { show ->
                                     showStationArtwork = show

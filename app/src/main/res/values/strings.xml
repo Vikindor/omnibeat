@@ -5,6 +5,7 @@
     <string name="action_search_online">Search online</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
+    <string name="action_more_info">More info</string>
     <string name="action_hide">Hide</string>
     <string name="action_copy">Copy</string>
     <string name="action_download">Download</string>
@@ -53,6 +54,10 @@
     <string name="settings_stop_service_after_pause_never_subtitle">Notification will stay until you stop the app</string>
     <string name="settings_stop_service_after_pause_never">Never</string>
     <string name="settings_stop_service_after_pause_minutes">%1$d min</string>
+    <string name="settings_keep_media_card_title">Keep media controls after service stops</string>
+    <string name="settings_keep_media_card_on">Android will keep media controls in Quick Settings</string>
+    <string name="settings_keep_media_card_off">Android will clear media controls in Quick Settings</string>
+    <string name="settings_keep_media_card_note">Resume playback directly from Quick Settings by tapping Play, even when OmniBeat isn’t running.\nTurn this off if you don’t want your last played station shown there.\n\nChanges may not take effect immediately. You may need to restart your device.</string>
     <string name="settings_section_artwork">Artwork</string>
     <string name="settings_station_covers_title">Covers for stations</string>
     <string name="settings_station_covers_on">Station lists will show covers</string>

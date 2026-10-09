@@ -16,6 +16,7 @@ fun RepositoryStateEffects(
     onAppVolumeChange: (Float) -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
     onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
+    onKeepMediaCardChange: (Boolean) -> Unit,
     onShowStationArtworkChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
     onConfirmStationDeletionChange: (Boolean) -> Unit,
@@ -56,6 +57,12 @@ fun RepositoryStateEffects(
     LaunchedEffect(repository) {
         repository.stopServiceAfterPauseMinutes.collect { savedMinutes ->
             onStopServiceAfterPauseMinutesChange(savedMinutes)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.keepMediaCard.collect { keep ->
+            onKeepMediaCardChange(keep)
         }
     }
 

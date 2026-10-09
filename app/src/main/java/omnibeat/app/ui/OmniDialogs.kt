@@ -62,6 +62,37 @@ fun OmniConfirmDialog(
 }
 
 @Composable
+fun OmniInfoDialog(
+    title: String,
+    text: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = RadioSpacing.large)
+            .widthIn(max = 560.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        containerColor = RadioSurface,
+        titleContentColor = RadioText,
+        textContentColor = RadioTextMuted,
+        title = { Text(title, fontWeight = FontWeight.SemiBold) },
+        text = {
+            Text(
+                text = text,
+                lineHeight = RadioTextSizes.bodyLineHeight,
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            )
+        },
+        confirmButton = {
+            OmniSecondaryButton(text = stringResource(R.string.action_close), onClick = onDismiss)
+        },
+    )
+}
+
+@Composable
 fun ErrorDialog(
     message: String,
     onDismiss: () -> Unit,

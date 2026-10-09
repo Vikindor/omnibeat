@@ -142,6 +142,7 @@ fun SettingsPage(
     appLanguage: AppLanguage,
     rememberLastStation: Boolean,
     stopServiceAfterPauseMinutes: Int,
+    keepMediaCard: Boolean,
     showStationArtwork: Boolean,
     syncingStationArtwork: Boolean,
     showEmptyFavoritesTab: Boolean,
@@ -158,6 +159,7 @@ fun SettingsPage(
     onAppLanguageChange: (AppLanguage) -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
     onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
+    onKeepMediaCardChange: (Boolean) -> Unit,
     onShowStationArtworkChange: (Boolean) -> Unit,
     onSyncStationArtwork: () -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
@@ -175,6 +177,7 @@ fun SettingsPage(
 ) {
     val scrollState = rememberScrollState()
     var confirmClearLibrary by remember { mutableStateOf(false) }
+    var showKeepMediaCardInfo by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -227,6 +230,23 @@ fun SettingsPage(
                 },
                 selectedMinutes = stopServiceAfterPauseMinutes,
                 onSelectedMinutesChange = onStopServiceAfterPauseMinutesChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_keep_media_card_title),
+                subtitle = stringResource(
+                    if (keepMediaCard) R.string.settings_keep_media_card_on
+                    else R.string.settings_keep_media_card_off,
+                ),
+                checked = keepMediaCard,
+                onCheckedChange = onKeepMediaCardChange,
+                supportingContent = {
+                    TextButton(
+                        onClick = { showKeepMediaCardInfo = true },
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Text(stringResource(R.string.action_more_info))
+                    }
+                },
             )
             SettingsDivider()
 
@@ -376,6 +396,14 @@ fun SettingsPage(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
             .padding(end = RadioSpacing.extraSmall),
+        )
+    }
+
+    if (showKeepMediaCardInfo) {
+        OmniInfoDialog(
+            title = stringResource(R.string.settings_keep_media_card_title),
+            text = stringResource(R.string.settings_keep_media_card_note),
+            onDismiss = { showKeepMediaCardInfo = false },
         )
     }
 
@@ -596,6 +624,7 @@ private fun SettingsSwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    supportingContent: (@Composable () -> Unit)? = null,
 ) {
     val titleColor = if (enabled) RadioText else RadioTextMuted.copy(alpha = 0.55f)
     val subtitleColor = if (enabled) RadioTextMuted else RadioTextMuted.copy(alpha = 0.45f)
@@ -621,6 +650,7 @@ private fun SettingsSwitchRow(
                 color = subtitleColor,
                 fontSize = RadioTextSizes.bodySmall,
             )
+            supportingContent?.invoke()
         }
         Switch(
             checked = checked,

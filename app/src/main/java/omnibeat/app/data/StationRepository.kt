@@ -1,6 +1,11 @@
 package omnibeat.app.data
 
 import android.content.Context
+import android.content.ComponentName
+import android.content.pm.PackageManager
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaButtonReceiver
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
@@ -8,6 +13,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -54,6 +61,13 @@ private val translationEnabledKey = booleanPreferencesKey("translation_enabled")
 private val importedTranslationKey = stringPreferencesKey("imported_translation")
 
 class StationRepository(private val context: Context) {
+    @OptIn(UnstableApi::class)
+    private val mediaButtonReceiver = ComponentName(context, MediaButtonReceiver::class.java)
+    private val keepMediaCardState = MutableStateFlow(
+        context.packageManager.getComponentEnabledSetting(mediaButtonReceiver) !=
+            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+    )
+
     val translationEnabled: Flow<Boolean> = context.stationDataStore.data
         .map { it[translationEnabledKey] ?: false }
 
@@ -105,6 +119,8 @@ class StationRepository(private val context: Context) {
 
     val stopServiceAfterPauseMinutes: Flow<Int> = context.stationDataStore.data
         .map { preferences -> preferences[stopServiceAfterPauseMinutesKey] ?: DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES }
+
+    val keepMediaCard = keepMediaCardState.asStateFlow()
 
     val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showStationArtworkKey] ?: true }
@@ -190,6 +206,16 @@ class StationRepository(private val context: Context) {
         context.stationDataStore.edit { preferences ->
             preferences[stopServiceAfterPauseMinutesKey] = minutes
         }
+    }
+
+    fun saveKeepMediaCard(keep: Boolean) {
+        context.packageManager.setComponentEnabledSetting(
+            mediaButtonReceiver,
+            if (keep) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+            PackageManager.DONT_KILL_APP,
+        )
+        keepMediaCardState.value = keep
     }
 
     suspend fun saveShowStationArtwork(show: Boolean) {

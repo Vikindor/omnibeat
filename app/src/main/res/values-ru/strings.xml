@@ -3,6 +3,7 @@
     <string name="action_search_online">Искать онлайн</string>
     <string name="action_cancel">Отмена</string>
     <string name="action_close">Закрыть</string>
+    <string name="action_more_info">Подробнее</string>
     <string name="action_hide">Скрыть</string>
     <string name="action_copy">Копировать</string>
     <string name="action_download">Скачать</string>
@@ -51,6 +52,10 @@
     <string name="settings_stop_service_after_pause_never_subtitle">Уведомление останется, пока вы не остановите приложение</string>
     <string name="settings_stop_service_after_pause_never">Никогда</string>
     <string name="settings_stop_service_after_pause_minutes">%1$d мин</string>
+    <string name="settings_keep_media_card_title">Сохранять плеер после остановки сервиса</string>
+    <string name="settings_keep_media_card_on">Android будет сохранять плеер в панели быстрых настроек</string>
+    <string name="settings_keep_media_card_off">Android не будет сохранять плеер в панели быстрых настроек</string>
+    <string name="settings_keep_media_card_note">Возобновляйте воспроизведение прямо из панели быстрых настроек, нажав Play, даже когда OmniBeat не запущен.\nВыключите эту настройку, если не хотите видеть там последнюю прослушанную станцию.\n\nИзменения могут вступить в силу не сразу. Может потребоваться перезагрузка устройства.</string>
     <string name="settings_section_artwork">Обложки</string>
     <string name="settings_station_covers_title">Обложки станций</string>
     <string name="settings_station_covers_on">В списке станций будут отображаться обложки</string>
