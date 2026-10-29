@@ -23,6 +23,7 @@ import omnibeat.app.model.ImportedTranslation
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
+import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.model.ThemeMode
 import org.json.JSONArray
 import org.json.JSONObject
@@ -35,6 +36,7 @@ const val STOP_SERVICE_AFTER_PAUSE_NEVER = 0
 const val DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES = 5
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val themeModeKey = stringPreferencesKey("theme_mode")
+private val stationDividersKey = stringPreferencesKey("station_dividers")
 private val rememberLastStationKey = booleanPreferencesKey("remember_last_station")
 private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
 private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
@@ -112,6 +114,12 @@ class StationRepository(private val context: Context) {
             preferences[themeModeKey]
                 ?.let { savedMode -> ThemeMode.entries.firstOrNull { it.name == savedMode } }
                 ?: ThemeMode.System
+        }
+
+    val stationDividers: Flow<StationDividerStyle> = context.stationDataStore.data
+        .map { preferences ->
+            StationDividerStyle.entries.firstOrNull { it.name == preferences[stationDividersKey] }
+                ?: StationDividerStyle.Inset
         }
 
     val rememberLastStation: Flow<Boolean> = context.stationDataStore.data
@@ -193,6 +201,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveThemeMode(themeMode: ThemeMode) {
         context.stationDataStore.edit { preferences ->
             preferences[themeModeKey] = themeMode.name
+        }
+    }
+
+    suspend fun saveStationDividers(style: StationDividerStyle) {
+        context.stationDataStore.edit { preferences ->
+            preferences[stationDividersKey] = style.name
         }
     }
 

@@ -51,6 +51,7 @@ import omnibeat.app.R
 import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
 import omnibeat.app.model.AppLanguage
 import omnibeat.app.data.TranslationLanguage
+import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.model.ThemeMode
 
 @Composable
@@ -140,6 +141,7 @@ private fun pauseTimeoutLabel(minutes: Int): String {
 fun SettingsPage(
     themeMode: ThemeMode,
     appLanguage: AppLanguage,
+    stationDividers: StationDividerStyle,
     rememberLastStation: Boolean,
     stopServiceAfterPauseMinutes: Int,
     keepMediaCard: Boolean,
@@ -157,6 +159,7 @@ fun SettingsPage(
     showAndroidAutoArtwork: Boolean,
     onThemeModeChange: (ThemeMode) -> Unit,
     onAppLanguageChange: (AppLanguage) -> Unit,
+    onStationDividersChange: (StationDividerStyle) -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
     onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
     onKeepMediaCardChange: (Boolean) -> Unit,
@@ -199,14 +202,33 @@ fun SettingsPage(
                 themeMode = themeMode,
                 onThemeModeChange = onThemeModeChange,
             )
-            SettingsLanguageRow(
+            SettingsDropdownRow(
                 title = stringResource(R.string.settings_language_title),
                 subtitle = when (appLanguage) {
                     AppLanguage.System -> stringResource(R.string.settings_language_system)
                     else -> stringResource(R.string.settings_language_selected)
                 },
-                appLanguage = appLanguage,
-                onAppLanguageChange = onAppLanguageChange,
+                selectedOption = appLanguage,
+                options = TranslationLanguage.languages,
+                optionLabel = { appLanguageLabel(it) },
+                onOptionSelected = onAppLanguageChange,
+            )
+            SettingsDropdownRow(
+                title = stringResource(R.string.settings_station_dividers_title),
+                subtitle = stringResource(R.string.settings_station_dividers_subtitle),
+                selectedOption = stationDividers,
+                options = StationDividerStyle.entries,
+                optionLabel = {
+                    stringResource(
+                        when (it) {
+                            StationDividerStyle.None -> R.string.settings_station_dividers_none
+                            StationDividerStyle.Inset -> R.string.settings_station_dividers_inset
+                            StationDividerStyle.InsetRight -> R.string.settings_station_dividers_inset_right
+                            StationDividerStyle.FullWidth -> R.string.settings_station_dividers_full_width
+                        },
+                    )
+                },
+                onOptionSelected = onStationDividersChange,
             )
             SettingsDivider()
 
@@ -423,11 +445,50 @@ fun SettingsPage(
 }
 
 @Composable
-private fun SettingsLanguageRow(
+private fun SettingsThemeRow(
     title: String,
     subtitle: String,
-    appLanguage: AppLanguage,
-    onAppLanguageChange: (AppLanguage) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = RadioSpacing.fieldGap),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = title,
+                color = RadioText,
+                fontSize = RadioTextSizes.bodyLarge,
+            )
+            Text(
+                text = subtitle,
+                color = RadioTextMuted,
+                fontSize = RadioTextSizes.bodySmall,
+            )
+        }
+        ThemeModeSegmentedControl(
+            themeMode = themeMode,
+            onThemeModeChange = onThemeModeChange,
+        )
+    }
+}
+
+@Composable
+private fun <T> SettingsDropdownRow(
+    title: String,
+    subtitle: String,
+    selectedOption: T,
+    options: List<T>,
+    optionLabel: @Composable (T) -> String,
+    onOptionSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -457,7 +518,7 @@ private fun SettingsLanguageRow(
         Box {
             TextButton(onClick = { expanded = true }) {
                 Text(
-                    text = appLanguageLabel(appLanguage),
+                    text = optionLabel(selectedOption),
                     color = RadioPrimary,
                 )
             }
@@ -467,19 +528,19 @@ private fun SettingsLanguageRow(
                 containerColor = RadioSurface,
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(RadioCorners.medium),
             ) {
-                TranslationLanguage.languages.forEach { option ->
+                options.forEach { option ->
                     DropdownMenuItem(
                         modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
                         contentPadding = PaddingValues(horizontal = RadioSpacing.large),
                         text = {
                             Text(
-                                text = appLanguageLabel(option),
+                                text = optionLabel(option),
                                 color = RadioText,
                             )
                         },
                         onClick = {
                             expanded = false
-                            onAppLanguageChange(option)
+                            onOptionSelected(option)
                         },
                     )
                 }
@@ -577,43 +638,6 @@ private fun SettingsDivider(modifier: Modifier = Modifier) {
         color = RadioOutline.copy(alpha = 0.65f),
         modifier = modifier.padding(top = RadioSpacing.rowVertical, bottom = RadioSpacing.small),
     )
-}
-
-@Composable
-private fun SettingsThemeRow(
-    title: String,
-    subtitle: String,
-    themeMode: ThemeMode,
-    onThemeModeChange: (ThemeMode) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(RadioSpacing.groupGap),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = RadioSpacing.fieldGap),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(3.dp),
-            modifier = Modifier.weight(1f),
-        ) {
-            Text(
-                text = title,
-                color = RadioText,
-                fontSize = RadioTextSizes.bodyLarge,
-            )
-            Text(
-                text = subtitle,
-                color = RadioTextMuted,
-                fontSize = RadioTextSizes.bodySmall,
-            )
-        }
-        ThemeModeSegmentedControl(
-            themeMode = themeMode,
-            onThemeModeChange = onThemeModeChange,
-        )
-    }
 }
 
 @Composable

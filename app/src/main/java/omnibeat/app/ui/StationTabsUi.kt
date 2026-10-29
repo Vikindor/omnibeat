@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
+import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.model.StationEditorState
 import omnibeat.app.model.StationReorderDraft
 import omnibeat.app.model.StationSortState
@@ -28,6 +29,7 @@ fun StationTabsPager(
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
     showArtwork: Boolean,
+    dividerStyle: StationDividerStyle,
     listEnabled: Boolean,
     onMove: (Int, Int) -> Unit,
     onFavoriteClick: (Station) -> Unit,
@@ -68,6 +70,7 @@ fun StationTabsPager(
                         scrollToSelectedRequest = scrollToSelectedRequest,
                         scrollToStationId = scrollToStationId,
                         showArtwork = showArtwork,
+                        dividerStyle = dividerStyle,
                         enabled = listEnabled,
                         reordering = reorderDraft != null,
                         onMove = onMove,
@@ -101,6 +104,7 @@ fun StationTabsPager(
                         scrollToSelectedRequest = scrollToSelectedRequest,
                         scrollToStationId = scrollToStationId,
                         showArtwork = showArtwork,
+                        dividerStyle = dividerStyle,
                         enabled = listEnabled,
                         reordering = reorderDraft != null,
                         onMove = onMove,
@@ -127,6 +131,7 @@ private fun StationPageList(
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
     showArtwork: Boolean,
+    dividerStyle: StationDividerStyle,
     enabled: Boolean,
     reordering: Boolean,
     onMove: (Int, Int) -> Unit,
@@ -146,6 +151,7 @@ private fun StationPageList(
         scrollToSelectedRequest = scrollToSelectedRequest,
         scrollToStationId = scrollToStationId,
         showArtwork = showArtwork,
+        dividerStyle = dividerStyle,
         enabled = enabled,
         reordering = reordering,
         onMove = onMove,

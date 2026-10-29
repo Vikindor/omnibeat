@@ -2,6 +2,7 @@ package omnibeat.app.ui
 
 import androidx.compose.foundation.layout.PaddingValues
 
+import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.R
 import omnibeat.app.radio.stationTags
 
@@ -113,6 +114,7 @@ fun OnlineStationSearchPage(
     hasMoreResults: Boolean,
     optionsExpanded: Boolean,
     showArtwork: Boolean,
+    dividerStyle: StationDividerStyle,
     addedStreamUrls: Set<String>,
     selectedStreamUrl: String?,
     onSearchStateChange: (OnlineStationSearchState) -> Unit,
@@ -157,11 +159,13 @@ fun OnlineStationSearchPage(
                     itemsIndexed(
                         items = results,
                         key = { index, station -> station.stationUuid.ifBlank { "${station.streamUrl}#$index" } },
-                    ) { _, station ->
+                    ) { index, station ->
                         OnlineStationResultItem(
                             station = station,
                             added = station.streamUrl in addedStreamUrls,
                             selected = station.streamUrl == selectedStreamUrl,
+                            showDivider = index < results.lastIndex,
+                            dividerStyle = dividerStyle,
                             showArtwork = showArtwork,
                             onPreviewStation = { onPreviewStation(station) },
                             onAddStation = { onAddStation(station) },
@@ -671,7 +675,9 @@ private fun OnlineStationResultItem(
     station: RadioBrowserStation,
     added: Boolean,
     selected: Boolean,
+    showDivider: Boolean,
     showArtwork: Boolean,
+    dividerStyle: StationDividerStyle,
     onPreviewStation: () -> Unit,
     onAddStation: () -> Unit,
 ) {
@@ -683,6 +689,8 @@ private fun OnlineStationResultItem(
         selected = selected,
         enabled = true,
         onClick = onPreviewStation,
+        showDivider = showDivider,
+        dividerStyle = dividerStyle,
         trailingContent = {
             OmniIconButton(
                 painter = painterResource(if (added) R.drawable.ic_check else R.drawable.ic_add),

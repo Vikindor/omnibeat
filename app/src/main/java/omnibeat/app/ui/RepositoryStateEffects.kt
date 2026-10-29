@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import omnibeat.app.data.StationRepository
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
+import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.model.StationSortState
 
 @Composable
@@ -14,6 +15,7 @@ fun RepositoryStateEffects(
     visibleTabPages: List<MainPage>,
     onStationsChange: (List<Station>) -> Unit,
     onAppVolumeChange: (Float) -> Unit,
+    onStationDividersChange: (StationDividerStyle) -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
     onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
     onKeepMediaCardChange: (Boolean) -> Unit,
@@ -46,6 +48,10 @@ fun RepositoryStateEffects(
         repository.appVolume.collect { savedVolume ->
             onAppVolumeChange(savedVolume)
         }
+    }
+
+    LaunchedEffect(repository) {
+        repository.stationDividers.collect(onStationDividersChange)
     }
 
     LaunchedEffect(repository) {

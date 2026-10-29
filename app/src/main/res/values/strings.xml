@@ -45,6 +45,12 @@
     <string name="settings_language_title">Language</string>
     <string name="settings_language_system">Follow system language</string>
     <string name="settings_language_selected">Use selected language</string>
+    <string name="settings_station_dividers_title">Station dividers</string>
+    <string name="settings_station_dividers_subtitle">Choose how station dividers are displayed</string>
+    <string name="settings_station_dividers_none">None</string>
+    <string name="settings_station_dividers_inset">Inset</string>
+    <string name="settings_station_dividers_inset_right">Inset right</string>
+    <string name="settings_station_dividers_full_width">Full width</string>
     <string name="settings_section_playback">Playback</string>
     <string name="settings_remember_last_station_title">Remember last station</string>
     <string name="settings_remember_last_station_on">Play will start the last played station</string>

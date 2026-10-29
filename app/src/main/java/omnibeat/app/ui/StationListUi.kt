@@ -2,6 +2,7 @@ package omnibeat.app.ui
 
 import omnibeat.app.R
 import omnibeat.app.model.Station
+import omnibeat.app.model.StationDividerStyle
 
 import omnibeat.app.data.StationArtworkCache
 import androidx.compose.animation.core.RepeatMode
@@ -30,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -113,6 +115,7 @@ fun StationList(
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
     showArtwork: Boolean,
+    dividerStyle: StationDividerStyle = StationDividerStyle.Inset,
     enabled: Boolean = true,
     reordering: Boolean = false,
     onMove: (Int, Int) -> Unit = { _, _ -> },
@@ -174,6 +177,8 @@ fun StationList(
                         reordering = reordering,
                         showArtwork = showArtwork,
                         dragging = isDragging,
+                        showDivider = index < stations.lastIndex,
+                        dividerStyle = dividerStyle,
                         modifier = Modifier.animateItem(),
                         dragHandleModifier = if (reordering) {
                             Modifier.draggableHandle()
@@ -210,42 +215,63 @@ fun StationListItem(
     trailingContent: (@Composable () -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     startPadding: androidx.compose.ui.unit.Dp = RadioSpacing.page,
+    showDivider: Boolean = true,
+    dividerStyle: StationDividerStyle = StationDividerStyle.Inset,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .background(if (selected) RadioSurfaceHigh else RadioBackground)
-            .combinedClickable(
-                enabled = enabled,
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-            .padding(
-                start = startPadding,
-                end = if (trailingContent == null) RadioSpacing.page else RadioSpacing.small,
-                top = RadioSpacing.rowVertical,
-                bottom = RadioSpacing.rowVertical,
-            ),
-    ) {
-        leadingContent?.invoke()
-        if (showArtwork) {
-            StationArtwork(
-                imageUrl = imageUrl,
-                modifier = Modifier.padding(end = RadioSpacing.medium),
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(if (selected) RadioSurfaceHigh else RadioBackground)
+                .combinedClickable(
+                    enabled = enabled,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                )
+                .padding(
+                    start = startPadding,
+                    end = if (trailingContent == null) RadioSpacing.page else RadioSpacing.small,
+                    top = RadioSpacing.rowVertical,
+                    bottom = RadioSpacing.rowVertical,
+                ),
+        ) {
+            leadingContent?.invoke()
+            if (showArtwork) {
+                StationArtwork(
+                    imageUrl = imageUrl,
+                    modifier = Modifier.padding(end = RadioSpacing.medium),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    color = RadioText,
+                    fontSize = RadioTextSizes.stationTitle,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                StationTagPills(tags = tags, selected = selected)
+            }
+            trailingContent?.invoke()
+        }
+        if (showDivider && dividerStyle != StationDividerStyle.None) {
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = RadioOutline.copy(alpha = 0.65f),
+                modifier = Modifier.padding(
+                    start = when (dividerStyle) {
+                        StationDividerStyle.Inset, StationDividerStyle.InsetRight -> RadioSpacing.page
+                        else -> 0.dp
+                    },
+                    end = when (dividerStyle) {
+                        StationDividerStyle.Inset -> RadioSpacing.page
+                        StationDividerStyle.InsetRight -> RadioSpacing.page + RadioSizes.playerCollapseButton
+                        else -> 0.dp
+                    },
+                ),
             )
         }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = RadioText,
-                fontSize = RadioTextSizes.stationTitle,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            StationTagPills(tags = tags, selected = selected)
-        }
-        trailingContent?.invoke()
     }
 }
 
@@ -347,6 +373,8 @@ private fun StationRow(
     reordering: Boolean,
     showArtwork: Boolean,
     dragging: Boolean,
+    showDivider: Boolean,
+    dividerStyle: StationDividerStyle,
     modifier: Modifier = Modifier,
     dragHandleModifier: Modifier,
     onFavoriteClick: () -> Unit,
@@ -363,6 +391,8 @@ private fun StationRow(
         onClick = onClick,
         onLongClick = onLongClick,
         startPadding = if (reordering) RadioSpacing.small else RadioSpacing.page,
+        showDivider = showDivider,
+        dividerStyle = dividerStyle,
         leadingContent = if (reordering) {
             {
             Box(

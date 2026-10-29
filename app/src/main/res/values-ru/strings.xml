@@ -43,6 +43,12 @@
     <string name="settings_language_title">Язык</string>
     <string name="settings_language_system">Использовать язык системы</string>
     <string name="settings_language_selected">Использовать выбранный язык</string>
+    <string name="settings_station_dividers_title">Разделители станций</string>
+    <string name="settings_station_dividers_subtitle">Выберите вид линий между станциями</string>
+    <string name="settings_station_dividers_none">Нет</string>
+    <string name="settings_station_dividers_inset">Отступы</string>
+    <string name="settings_station_dividers_inset_right">Отступ справа</string>
+    <string name="settings_station_dividers_full_width">На всю ширину</string>
     <string name="settings_section_playback">Воспроизведение</string>
     <string name="settings_remember_last_station_title">Запоминать последнюю станцию</string>
     <string name="settings_remember_last_station_on">Воспроизведение начнётся с последней станции</string>

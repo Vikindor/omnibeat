@@ -57,6 +57,7 @@ import omnibeat.app.data.StationExportCodec
 import omnibeat.app.data.StationImportMode
 import omnibeat.app.data.StationRepository
 import omnibeat.app.data.StationArtworkCache
+import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.data.TranslationLanguage
 import omnibeat.app.data.appString
 import omnibeat.app.data.removeTrackingParameters
@@ -149,6 +150,7 @@ fun OmniBeatApp() {
 
         var stations by remember { mutableStateOf(emptyList<Station>()) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
+        var stationDividers by remember { mutableStateOf(StationDividerStyle.Inset) }
         var rememberLastStation by remember { mutableStateOf(true) }
         var stopServiceAfterPauseMinutes by remember { mutableIntStateOf(DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES) }
         var keepMediaCard by remember { mutableStateOf(repository.keepMediaCard.value) }
@@ -211,6 +213,7 @@ fun OmniBeatApp() {
             visibleTabPages = visibleTabPages,
             onStationsChange = { stations = it },
             onAppVolumeChange = { appVolume = it },
+            onStationDividersChange = { stationDividers = it },
             onRememberLastStationChange = { rememberLastStation = it },
             onStopServiceAfterPauseMinutesChange = { stopServiceAfterPauseMinutes = it },
             onKeepMediaCardChange = { keepMediaCard = it },
@@ -1013,6 +1016,7 @@ fun OmniBeatApp() {
                                 scrollToSelectedRequest = scrollToSelectedRequest,
                                 scrollToStationId = scrollToStationId,
                                 showArtwork = showStationArtwork,
+                                dividerStyle = stationDividers,
                                 listEnabled = drawerState.isClosed && reorderDraft == null,
                                 onMove = ::moveReorderDraft,
                                 onFavoriteClick = ::toggleFavorite,
@@ -1049,6 +1053,7 @@ fun OmniBeatApp() {
                                 hasMoreResults = onlineSearchHasMore,
                                 optionsExpanded = onlineOptionsExpanded,
                                 showArtwork = showStationArtwork,
+                                dividerStyle = stationDividers,
                                 addedStreamUrls = stations.mapTo(mutableSetOf()) { it.streamUrl },
                                 selectedStreamUrl = playbackState.selectedStation?.streamUrl,
                                 onSearchStateChange = {
@@ -1066,6 +1071,7 @@ fun OmniBeatApp() {
                             SettingsPage(
                                 themeMode = themeMode,
                                 appLanguage = appLanguage,
+                                stationDividers = stationDividers,
                                 rememberLastStation = rememberLastStation,
                                 stopServiceAfterPauseMinutes = stopServiceAfterPauseMinutes,
                                 keepMediaCard = keepMediaCard,
@@ -1086,6 +1092,10 @@ fun OmniBeatApp() {
                                 },
                                 onAppLanguageChange = { nextAppLanguage ->
                                     context.applicationContext.applyAppLanguage(nextAppLanguage)
+                                },
+                                onStationDividersChange = { style ->
+                                    stationDividers = style
+                                    scope.launch { repository.saveStationDividers(style) }
                                 },
                                 onRememberLastStationChange = { remember ->
                                     rememberLastStation = remember
