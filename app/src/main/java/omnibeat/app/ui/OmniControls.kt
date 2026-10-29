@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -48,6 +49,7 @@ fun OmniPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    icon: Painter? = null,
 ) {
     Button(
         onClick = onClick,
@@ -61,6 +63,10 @@ fun OmniPrimaryButton(
         contentPadding = PaddingValues(horizontal = RadioSpacing.wide, vertical = RadioSpacing.small),
         modifier = modifier.heightIn(min = RadioSizes.actionButtonMinHeight),
     ) {
+        if (icon != null) {
+            Icon(painter = icon, contentDescription = null, modifier = Modifier.size(RadioSizes.iconInline))
+            Spacer(Modifier.width(RadioSpacing.small))
+        }
         Text(text)
     }
 }

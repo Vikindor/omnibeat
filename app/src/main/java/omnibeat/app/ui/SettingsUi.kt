@@ -482,7 +482,7 @@ private fun SettingsThemeRow(
 }
 
 @Composable
-private fun <T> SettingsDropdownRow(
+internal fun <T> SettingsDropdownRow(
     title: String,
     subtitle: String,
     selectedOption: T,
@@ -641,7 +641,7 @@ private fun SettingsDivider(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SettingsSwitchRow(
+internal fun SettingsSwitchRow(
     title: String,
     subtitle: String,
     checked: Boolean,

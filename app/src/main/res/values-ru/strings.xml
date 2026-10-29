@@ -25,6 +25,7 @@
 
     <string name="page_stations">Станции</string>
     <string name="page_favorites">Избранное</string>
+    <string name="page_sleep_timer">Таймер сна</string>
     <string name="page_export_import">Экспорт / Импорт</string>
     <string name="page_settings">Настройки</string>
     <string name="page_about">О приложении</string>
@@ -34,6 +35,23 @@
 
     <string name="language_system">Системный</string>
     <string name="language_imported">%1$s (импортированный)</string>
+
+    <string name="sleep_timer_hours">Часы</string>
+    <string name="sleep_timer_minutes">Минуты</string>
+    <string name="sleep_timer_seconds">Секунды</string>
+    <string name="sleep_timer_preset_minutes">%1$dм</string>
+    <string name="sleep_timer_close_app_title">Закрывать приложение</string>
+    <string name="sleep_timer_close_app_off">Таймер только остановит воспроизведение</string>
+    <string name="sleep_timer_close_app_on">Таймер закроет приложение</string>
+    <string name="sleep_timer_position_title">Положение таймера</string>
+    <string name="sleep_timer_position_panel_left">Слева над панелью</string>
+    <string name="sleep_timer_position_panel_left_description">Будет закреплён над панелью слева</string>
+    <string name="sleep_timer_position_panel_right">Справа над панелью</string>
+    <string name="sleep_timer_position_panel_right_description">Будет закреплён над панелью справа</string>
+    <string name="sleep_timer_position_free">Свободное размещение</string>
+    <string name="sleep_timer_position_free_description">Нажмите и удерживайте для перемещения</string>
+    <string name="sleep_timer_start">Запустить</string>
+    <string name="sleep_timer_stop">Остановить</string>
 
     <string name="settings_section_appearance">Внешний вид</string>
     <string name="settings_theme_title">Тема</string>

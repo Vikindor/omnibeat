@@ -59,8 +59,10 @@ fun MainTopBar(
     onAddStation: () -> Unit,
     onSearchOnline: () -> Unit,
     onlineSearchControl: (@Composable (Modifier) -> Unit)? = null,
+    overlayTitle: String? = null,
 ) {
     val density = LocalDensity.current
+    val showTabs = selectedPage in tabPages && overlayTitle == null
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var addMenuExpanded by remember { mutableStateOf(false) }
 
@@ -73,7 +75,7 @@ fun MainTopBar(
             .height(RadioSizes.topBarHeight)
             .padding(start = RadioSpacing.extraSmall, end = RadioSpacing.small),
     ) {
-        if (selectedPage in tabPages) {
+        if (showTabs) {
             OmniIconButton(
                 painter = painterResource(R.drawable.ic_menu),
                 onClick = onOpenDrawer,
@@ -84,7 +86,7 @@ fun MainTopBar(
                 onClick = onNavigateBack,
             )
         }
-        if (selectedPage == MainPage.SearchOnline && onlineSearchControl != null) {
+        if (overlayTitle == null && selectedPage == MainPage.SearchOnline && onlineSearchControl != null) {
             onlineSearchControl(
                 Modifier
                     .weight(1f)
@@ -95,7 +97,7 @@ fun MainTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f),
             ) {
-                if (selectedPage in tabPages) {
+                if (showTabs) {
                     tabPages.forEach { tab ->
                         var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
                         Column(
@@ -130,7 +132,7 @@ fun MainTopBar(
                     }
                 } else {
                     Text(
-                        text = stringResource(selectedPage.titleRes()),
+                        text = overlayTitle ?: stringResource(selectedPage.titleRes()),
                         color = RadioText,
                         fontSize = RadioTextSizes.title,
                         fontWeight = FontWeight.SemiBold,
@@ -141,7 +143,7 @@ fun MainTopBar(
                 }
             }
         }
-        if (selectedPage in tabPages) {
+        if (showTabs) {
             if (reordering) {
                 OmniIconButton(
                     painter = painterResource(R.drawable.ic_close),

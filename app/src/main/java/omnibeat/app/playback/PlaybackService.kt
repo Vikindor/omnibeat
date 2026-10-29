@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.SystemClock
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Format
@@ -115,6 +116,8 @@ class PlaybackService : MediaLibraryService() {
     private var showAndroidAutoArtwork = false
     private var navigationQueueIds: List<String> = emptyList()
     private var stopAfterPauseJob: Job? = null
+    private var sleepTimerCloseApp = false
+    private var sleepTimerJob: Job? = null
 
     private fun trackText(status: PlaybackTrackStatus): String {
         return when (status) {
@@ -205,6 +208,9 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         scope.launch {
+            repository.sleepTimerCloseApp.collect { sleepTimerCloseApp = it }
+        }
+        scope.launch {
             repository.rememberLastStation.collect { remember ->
                 rememberLastStation = remember
             }
@@ -249,6 +255,8 @@ class PlaybackService : MediaLibraryService() {
             ACTION_PLAY_PREVIEW -> playPreviewStation(intent.toPreviewStation())
             ACTION_PLAY_PAUSE -> playOrPause()
             ACTION_STOP -> stopPlaybackService()
+            ACTION_START_SLEEP_TIMER -> startSleepTimer(intent.getLongExtra(EXTRA_SLEEP_TIMER_SECONDS, 0L))
+            ACTION_CANCEL_SLEEP_TIMER -> cancelSleepTimer()
         }
         return result
     }
@@ -260,6 +268,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        cancelSleepTimer()
         resolveJob?.cancel()
         noMetadataJob?.cancel()
         stopAfterPauseJob?.cancel()
@@ -491,6 +500,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun stopPlayback() {
+        cancelSleepTimer()
         resolveJob?.cancel()
         noMetadataJob?.cancel()
         stopAfterPauseJob?.cancel()
@@ -511,6 +521,34 @@ class PlaybackService : MediaLibraryService() {
                 streamInfo = PlaybackStreamInfo(),
             ).withTrackStatus(PlaybackTrackStatus.Stopped)
         }
+    }
+
+    private fun startSleepTimer(durationSeconds: Long) {
+        if (durationSeconds !in 1L..86399L) return
+        cancelSleepTimer()
+        val durationMs = durationSeconds * 1000L
+        val deadline = SystemClock.elapsedRealtime() + durationMs
+        _sleepTimerRemainingSeconds.value = durationSeconds
+        sleepTimerJob = scope.launch {
+            while (true) {
+                val remainingMs = deadline - SystemClock.elapsedRealtime()
+                if (remainingMs <= 0L) break
+                _sleepTimerRemainingSeconds.value = (remainingMs + 999L) / 1000L
+                delay(minOf(1000L, remainingMs))
+            }
+            sleepTimerJob = null
+            if (sleepTimerCloseApp) {
+                MainActivity.closeApp(this@PlaybackService)
+            } else {
+                stopPlaybackService()
+            }
+        }
+    }
+
+    private fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        _sleepTimerRemainingSeconds.value = 0L
     }
 
     private fun pausePlayback() {
@@ -923,9 +961,15 @@ class PlaybackService : MediaLibraryService() {
         private const val ACTION_PLAY_PREVIEW = "omnibeat.app.action.PLAY_PREVIEW"
         private const val ACTION_PLAY_PAUSE = "omnibeat.app.action.PLAY_PAUSE"
         private const val ACTION_STOP = "omnibeat.app.action.STOP"
+        private const val ACTION_START_SLEEP_TIMER = "omnibeat.app.action.START_SLEEP_TIMER"
+        private const val ACTION_CANCEL_SLEEP_TIMER = "omnibeat.app.action.CANCEL_SLEEP_TIMER"
+        private const val EXTRA_SLEEP_TIMER_SECONDS = "sleep_timer_seconds"
 
         private val _state = MutableStateFlow(PlaybackState())
         val state: StateFlow<PlaybackState> = _state.asStateFlow()
+
+        private val _sleepTimerRemainingSeconds = MutableStateFlow(0L)
+        val sleepTimerRemainingSeconds: StateFlow<Long> = _sleepTimerRemainingSeconds.asStateFlow()
 
         fun playStation(
             context: Context,
@@ -963,6 +1007,22 @@ class PlaybackService : MediaLibraryService() {
             context.startService(
                 Intent(context, PlaybackService::class.java)
                     .setAction(ACTION_STOP),
+            )
+        }
+
+        fun startSleepTimer(context: Context, durationSeconds: Long) {
+            if (durationSeconds !in 1L..86399L) return
+            context.startService(
+                Intent(context, PlaybackService::class.java)
+                    .setAction(ACTION_START_SLEEP_TIMER)
+                    .putExtra(EXTRA_SLEEP_TIMER_SECONDS, durationSeconds),
+            )
+        }
+
+        fun cancelSleepTimer(context: Context) {
+            if (_sleepTimerRemainingSeconds.value == 0L) return
+            context.startService(
+                Intent(context, PlaybackService::class.java).setAction(ACTION_CANCEL_SLEEP_TIMER),
             )
         }
 

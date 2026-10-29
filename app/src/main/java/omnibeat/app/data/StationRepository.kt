@@ -26,6 +26,8 @@ import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
 import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.model.ThemeMode
+import omnibeat.app.model.SleepTimerPlacement
+import omnibeat.app.model.SleepTimerFreePosition
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
@@ -38,6 +40,10 @@ const val DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES = 5
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val themeModeKey = stringPreferencesKey("theme_mode")
 private val stationDividersKey = stringPreferencesKey("station_dividers")
+private val sleepTimerCloseAppKey = booleanPreferencesKey("sleep_timer_close_app")
+private val sleepTimerPlacementKey = stringPreferencesKey("sleep_timer_placement")
+private val sleepTimerFreeXKey = floatPreferencesKey("sleep_timer_free_x")
+private val sleepTimerFreeYKey = floatPreferencesKey("sleep_timer_free_y")
 private val rememberLastStationKey = booleanPreferencesKey("remember_last_station")
 private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
 private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
@@ -122,6 +128,26 @@ class StationRepository(private val context: Context) {
         .map { preferences ->
             StationDividerStyle.entries.firstOrNull { it.name == preferences[stationDividersKey] }
                 ?: StationDividerStyle.Inset
+        }
+
+    val sleepTimerCloseApp: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[sleepTimerCloseAppKey] ?: false }
+
+    val sleepTimerPlacement: Flow<SleepTimerPlacement> = context.stationDataStore.data
+        .map { preferences ->
+            SleepTimerPlacement.entries.firstOrNull { it.name == preferences[sleepTimerPlacementKey] }
+                ?: SleepTimerPlacement.PanelRight
+        }
+
+    val sleepTimerFreePosition: Flow<SleepTimerFreePosition> = context.stationDataStore.data
+        .map { preferences ->
+            val defaults = SleepTimerFreePosition()
+            SleepTimerFreePosition(
+                xFraction = preferences[sleepTimerFreeXKey]?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
+                    ?: defaults.xFraction,
+                yFraction = preferences[sleepTimerFreeYKey]?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
+                    ?: defaults.yFraction,
+            )
         }
 
     val rememberLastStation: Flow<Boolean> = context.stationDataStore.data
@@ -212,6 +238,26 @@ class StationRepository(private val context: Context) {
     suspend fun saveStationDividers(style: StationDividerStyle) {
         context.stationDataStore.edit { preferences ->
             preferences[stationDividersKey] = style.name
+        }
+    }
+
+    suspend fun saveSleepTimerCloseApp(closeApp: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[sleepTimerCloseAppKey] = closeApp
+        }
+    }
+
+    suspend fun saveSleepTimerPlacement(placement: SleepTimerPlacement) {
+        context.stationDataStore.edit { preferences ->
+            preferences[sleepTimerPlacementKey] = placement.name
+        }
+    }
+
+    suspend fun saveSleepTimerFreePosition(position: SleepTimerFreePosition) {
+        if (!position.xFraction.isFinite() || !position.yFraction.isFinite()) return
+        context.stationDataStore.edit { preferences ->
+            preferences[sleepTimerFreeXKey] = position.xFraction.coerceIn(0f, 1f)
+            preferences[sleepTimerFreeYKey] = position.yFraction.coerceIn(0f, 1f)
         }
     }
 

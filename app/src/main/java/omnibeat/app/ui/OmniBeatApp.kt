@@ -1,6 +1,7 @@
 package omnibeat.app.ui
 
 import omnibeat.app.R
+import omnibeat.app.MainActivity
 import omnibeat.app.data.parseStationTags
 import omnibeat.app.data.StationExportData
 import omnibeat.app.model.STATION_STREAM_URL_MAX_LENGTH
@@ -19,13 +20,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -44,6 +48,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
@@ -60,6 +66,8 @@ import omnibeat.app.data.StationImportMode
 import omnibeat.app.data.StationRepository
 import omnibeat.app.data.StationArtworkCache
 import omnibeat.app.model.StationDividerStyle
+import omnibeat.app.model.SleepTimerPlacement
+import omnibeat.app.model.SleepTimerFreePosition
 import omnibeat.app.data.TranslationLanguage
 import omnibeat.app.data.appString
 import omnibeat.app.data.removeTrackingParameters
@@ -164,6 +172,11 @@ fun OmniBeatApp() {
         val radioBrowserClient = remember { RadioBrowserClient(context.applicationContext) }
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val playbackState by PlaybackService.state.collectAsState()
+        val sleepTimerRemainingSeconds by PlaybackService.sleepTimerRemainingSeconds.collectAsState()
+        val sleepTimerCloseApp by repository.sleepTimerCloseApp.collectAsState(initial = false)
+        val sleepTimerPlacement by repository.sleepTimerPlacement.collectAsState(initial = SleepTimerPlacement.PanelRight)
+        val sleepTimerFreePosition by repository.sleepTimerFreePosition.collectAsState(initial = SleepTimerFreePosition())
+        var showSleepTimer by rememberSaveable { mutableStateOf(false) }
 
         var stations by remember { mutableStateOf(emptyList<Station>()) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
@@ -213,6 +226,10 @@ fun OmniBeatApp() {
         } else {
             listOf(MainPage.Stations)
         }
+        val showPlayerPanel = !showSleepTimer &&
+            (selectedPage in visibleTabPages || selectedPage == MainPage.SearchOnline)
+        val showSleepTimerPill = showPlayerPanel && sleepTimerRemainingSeconds > 0L
+        val layoutDirection = LocalLayoutDirection.current
         val pagerState = rememberPagerState(pageCount = { visibleTabPages.size })
         val visualSelectedPage by remember(pagerState, visibleTabPages, selectedPage) {
             derivedStateOf {
@@ -883,9 +900,11 @@ fun OmniBeatApp() {
             }
         }
 
-        BackHandler(enabled = drawerState.isOpen || reorderDraft != null || selectedPage !in visibleTabPages) {
+        BackHandler(enabled = showSleepTimer || drawerState.isOpen || reorderDraft != null || selectedPage !in visibleTabPages) {
             if (drawerState.isOpen) {
                 scope.launch { drawerState.close() }
+            } else if (showSleepTimer) {
+                showSleepTimer = false
             } else if (reorderDraft != null) {
                 reorderDraft = null
             } else {
@@ -916,6 +935,11 @@ fun OmniBeatApp() {
                         selectedPage = lastMainPage
                         scope.launch { drawerState.close() }
                     },
+                    onSleepTimerClick = {
+                        showSleepTimer = true
+                        scope.launch { drawerState.close() }
+                    },
+                    sleepTimerOpen = showSleepTimer,
                     onExportImportClick = {
                         selectedPage = MainPage.ExportImport
                         scope.launch { drawerState.close() }
@@ -929,261 +953,306 @@ fun OmniBeatApp() {
                         scope.launch { drawerState.close() }
                     },
                     onExitClick = {
-                        PlaybackService.stop(context)
-                        context.findActivity()?.finishAffinity()
+                        MainActivity.closeApp(context)
                     },
                 )
             },
         ) {
-            Scaffold(
-                containerColor = RadioBackground,
-                topBar = {
-                    MainTopBar(
-                        selectedPage = selectedPage,
-                        visualSelectedPage = visualSelectedPage,
-                        tabPages = visibleTabPages,
-                        sortState = sortState,
-                        reordering = reorderDraft != null,
-                        onPageSelected = { page ->
-                            if (reorderDraft == null) {
-                                selectMainPage(page)
-                            }
-                        },
-                        onSortModeSelected = ::selectSortMode,
-                        onCancelReorder = ::cancelReorder,
-                        onConfirmReorder = ::confirmReorder,
-                        onOpenDrawer = { scope.launch { drawerState.open() } },
-                        onNavigateBack = { selectedPage = lastMainPage },
-                        onAddStation = {
-                            editorState = StationEditorState(
-                                stationIndex = null,
-                                title = "",
-                                streamUrl = "",
-                                tags = "",
-                                dateAdded = null,
-                            )
-                        },
-                        onSearchOnline = {
-                            selectedPage = MainPage.SearchOnline
-                        },
-                        onlineSearchControl = if (selectedPage == MainPage.SearchOnline) {
-                            { controlModifier ->
-                                SearchOptionsTopBarControl(
-                                    expanded = onlineOptionsExpanded,
-                                    loading = onlineSearchLoading,
-                                    onExpandedChange = { onlineOptionsExpanded = it },
-                                    modifier = controlModifier,
-                                )
-                            }
-                        } else {
-                            null
-                        },
-                    )
-                },
-                bottomBar = {
-                    if (selectedPage in visibleTabPages || selectedPage == MainPage.SearchOnline) {
-                        PlayerPanel(
-                            station = playbackState.selectedStation,
-                            trackText = playbackState.trackText,
-                            trackStatus = playbackState.trackStatus,
-                            errorText = playbackState.errorText,
-                            streamInfo = playbackState.streamInfo,
-                            loading = playbackState.resolving || playbackState.buffering,
-                            isPlaying = playbackState.isPlaying,
-                            appVolume = appVolume,
-                            showBitrate = showBitrateInControlPanel,
-                            showUnavailableBitrate = showUnavailableBitrate,
-                            marqueeTrackTitle = marqueeTrackTitle,
-                            collapsed = playerPanelCollapsed,
-                            onCollapsedChange = { collapsed ->
-                                playerPanelCollapsed = collapsed
-                                scope.launch { repository.savePlayerPanelCollapsed(collapsed) }
+            Box(modifier = Modifier.fillMaxSize()) {
+                Scaffold(
+                    containerColor = RadioBackground,
+                    floatingActionButtonPosition = when (sleepTimerPlacement) {
+                        SleepTimerPlacement.PanelLeft -> if (layoutDirection == LayoutDirection.Ltr) FabPosition.Start else FabPosition.End
+                        else -> if (layoutDirection == LayoutDirection.Ltr) FabPosition.End else FabPosition.Start
+                    },
+                    topBar = {
+                        MainTopBar(
+                            selectedPage = selectedPage,
+                            visualSelectedPage = visualSelectedPage,
+                            tabPages = visibleTabPages,
+                            sortState = sortState,
+                            reordering = reorderDraft != null,
+                            onPageSelected = { page ->
+                                if (reorderDraft == null) {
+                                    selectMainPage(page)
+                                }
                             },
-                            onPlayPause = { playOrPause() },
-                            onStop = { PlaybackService.stop(context) },
-                            onPreviousStation = { playAdjacentStation(-1) },
-                            onNextStation = { playAdjacentStation(1) },
-                            onRandomStation = { playRandomStation() },
-                            onVolumeChange = { volume ->
-                                appVolume = volume
-                                scope.launch { repository.saveAppVolume(volume) }
+                            onSortModeSelected = ::selectSortMode,
+                            onCancelReorder = ::cancelReorder,
+                            onConfirmReorder = ::confirmReorder,
+                            onOpenDrawer = { scope.launch { drawerState.open() } },
+                            onNavigateBack = {
+                                if (showSleepTimer) showSleepTimer = false else selectedPage = lastMainPage
+                            },
+                            overlayTitle = if (showSleepTimer) resources.appString(R.string.page_sleep_timer) else null,
+                            onAddStation = {
+                                editorState = StationEditorState(
+                                    stationIndex = null,
+                                    title = "",
+                                    streamUrl = "",
+                                    tags = "",
+                                    dateAdded = null,
+                                )
+                            },
+                            onSearchOnline = {
+                                selectedPage = MainPage.SearchOnline
+                            },
+                            onlineSearchControl = if (selectedPage == MainPage.SearchOnline) {
+                                { controlModifier ->
+                                    SearchOptionsTopBarControl(
+                                        expanded = onlineOptionsExpanded,
+                                        loading = onlineSearchLoading,
+                                        onExpandedChange = { onlineOptionsExpanded = it },
+                                        modifier = controlModifier,
+                                    )
+                                }
+                            } else {
+                                null
                             },
                         )
-                    }
-                },
-            ) { padding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                ) {
-                    when (selectedPage) {
-                        MainPage.Stations,
-                        MainPage.Favorites -> {
-                            StationTabsPager(
-                                visibleTabPages = visibleTabPages,
-                                pagerState = pagerState,
-                                stations = stations,
-                                selectedStationId = playbackState.selectedStation?.id,
-                                playingStationId = playbackState.selectedStation?.id.takeIf { playbackState.isPlaying },
-                                sortState = sortState,
-                                customStationOrder = customStationOrder,
-                                customFavoriteOrder = customFavoriteOrder,
-                                reorderDraft = reorderDraft,
-                                scrollToSelectedRequest = scrollToSelectedRequest,
-                                scrollToStationId = scrollToStationId,
-                                showArtwork = showStationArtwork,
-                                dividerStyle = stationDividers,
-                                listEnabled = drawerState.isClosed && reorderDraft == null,
-                                onMove = ::moveReorderDraft,
-                                onFavoriteClick = ::toggleFavorite,
-                                onEditStation = { editorState = it },
-                                onStationClick = ::playStation,
-                                modifier = Modifier.fillMaxSize(),
+                    },
+                    floatingActionButton = {
+                        if (showSleepTimerPill && sleepTimerPlacement != SleepTimerPlacement.FreePlacement) {
+                            SleepTimerPill(
+                                remainingSeconds = sleepTimerRemainingSeconds,
+                                onClick = { showSleepTimer = true },
                             )
                         }
-
-                        MainPage.ExportImport -> {
-                            ExportImportPage(
-                                stationCount = stations.size,
-                                favoriteCount = stations.count { it.isFavorite },
-                                onExportStations = { exportStations() },
-                                onExportSimpleText = { exportSimpleText() },
-                                onImportStations = {
-                                    importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
-                                },
-                                onClearLibrary = { clearLibrary() },
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        }
-
-                        MainPage.Translation -> TranslationPage(repository = repository)
-
-                        MainPage.SearchOnline -> {
-                            OnlineStationSearchPage(
-                                searchState = onlineSearchState,
-                                countries = onlineCountries,
-                                languages = onlineLanguages,
-                                results = onlineSearchResults,
-                                loading = onlineSearchLoading,
-                                loadingMore = onlineSearchLoadingMore,
-                                hasMoreResults = onlineSearchHasMore,
-                                optionsExpanded = onlineOptionsExpanded,
-                                showArtwork = showStationArtwork,
-                                dividerStyle = stationDividers,
-                                addedStreamUrls = stations.mapTo(mutableSetOf()) { it.streamUrl },
-                                selectedStreamUrl = playbackState.selectedStation?.streamUrl,
-                                onSearchStateChange = {
-                                    onlineSearchState = it
-                                },
-                                onSearch = { searchOnlineStations() },
-                                onLoadMore = { loadMoreOnlineStations() },
-                                onPreviewStation = { previewOnlineStation(it) },
-                                onAddStation = { addOnlineStation(it) },
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        }
-
-                        MainPage.Settings -> {
-                            SettingsPage(
-                                themeMode = themeMode,
-                                appLanguage = appLanguage,
-                                stationDividers = stationDividers,
-                                rememberLastStation = rememberLastStation,
-                                stopServiceAfterPauseMinutes = stopServiceAfterPauseMinutes,
-                                keepMediaCard = keepMediaCard,
-                                showStationArtwork = showStationArtwork,
-                                syncingStationArtwork = syncingStationArtwork,
-                                showEmptyFavoritesTab = showEmptyFavoritesTab,
-                                confirmStationDeletion = confirmStationDeletion,
-                                showBitrateInControlPanel = showBitrateInControlPanel,
+                    },
+                    bottomBar = {
+                        if (showPlayerPanel) {
+                            PlayerPanel(
+                                station = playbackState.selectedStation,
+                                trackText = playbackState.trackText,
+                                trackStatus = playbackState.trackStatus,
+                                errorText = playbackState.errorText,
+                                streamInfo = playbackState.streamInfo,
+                                loading = playbackState.resolving || playbackState.buffering,
+                                isPlaying = playbackState.isPlaying,
+                                appVolume = appVolume,
+                                showBitrate = showBitrateInControlPanel,
                                 showUnavailableBitrate = showUnavailableBitrate,
                                 marqueeTrackTitle = marqueeTrackTitle,
-                                autoExpandPlayerPanelOnPlayback = autoExpandPlayerPanelOnPlayback,
-                                collapsePlayerPanelInSearch = collapsePlayerPanelInSearch,
-                                addRadioBrowserTags = addRadioBrowserTags,
-                                removeTrackingParameters = removeTrackingParametersFromUrls,
-                                showAndroidAutoArtwork = showAndroidAutoArtwork,
-                                onThemeModeChange = { nextThemeMode ->
-                                    scope.launch { repository.saveThemeMode(nextThemeMode) }
+                                collapsed = playerPanelCollapsed,
+                                onCollapsedChange = { collapsed ->
+                                    playerPanelCollapsed = collapsed
+                                    scope.launch { repository.savePlayerPanelCollapsed(collapsed) }
                                 },
-                                onAppLanguageChange = { nextAppLanguage ->
-                                    context.applicationContext.applyAppLanguage(nextAppLanguage)
+                                onPlayPause = { playOrPause() },
+                                onStop = { PlaybackService.stop(context) },
+                                onPreviousStation = { playAdjacentStation(-1) },
+                                onNextStation = { playAdjacentStation(1) },
+                                onRandomStation = { playRandomStation() },
+                                onVolumeChange = { volume ->
+                                    appVolume = volume
+                                    scope.launch { repository.saveAppVolume(volume) }
                                 },
-                                onStationDividersChange = { style ->
-                                    stationDividers = style
-                                    scope.launch { repository.saveStationDividers(style) }
-                                },
-                                onRememberLastStationChange = { remember ->
-                                    rememberLastStation = remember
-                                    scope.launch { repository.saveRememberLastStation(remember) }
-                                },
-                                onStopServiceAfterPauseMinutesChange = { minutes ->
-                                    stopServiceAfterPauseMinutes = minutes
-                                    scope.launch { repository.saveStopServiceAfterPauseMinutes(minutes) }
-                                },
-                                onKeepMediaCardChange = { keep ->
-                                    repository.saveKeepMediaCard(keep)
-                                    keepMediaCard = keep
-                                },
-                                onShowStationArtworkChange = { show ->
-                                    showStationArtwork = show
-                                    scope.launch { repository.saveShowStationArtwork(show) }
-                                },
-                                onSyncStationArtwork = { syncStationArtwork() },
-                                onShowEmptyFavoritesTabChange = { show ->
-                                    showEmptyFavoritesTab = show
-                                    scope.launch { repository.saveShowEmptyFavoritesTab(show) }
-                                },
-                                onConfirmStationDeletionChange = { confirm ->
-                                    confirmStationDeletion = confirm
-                                    scope.launch { repository.saveConfirmStationDeletion(confirm) }
-                                },
-                                onShowBitrateInControlPanelChange = { show ->
-                                    showBitrateInControlPanel = show
-                                    scope.launch { repository.saveShowBitrateInControlPanel(show) }
-                                },
-                                onShowUnavailableBitrateChange = { show ->
-                                    showUnavailableBitrate = show
-                                    scope.launch { repository.saveShowUnavailableBitrate(show) }
-                                },
-                                onMarqueeTrackTitleChange = { marquee ->
-                                    marqueeTrackTitle = marquee
-                                    scope.launch { repository.saveMarqueeTrackTitle(marquee) }
-                                },
-                                onAutoExpandPlayerPanelOnPlaybackChange = { autoExpand ->
-                                    autoExpandPlayerPanelOnPlayback = autoExpand
-                                    scope.launch { repository.saveAutoExpandPlayerPanelOnPlayback(autoExpand) }
-                                },
-                                onCollapsePlayerPanelInSearchChange = { collapse ->
-                                    collapsePlayerPanelInSearch = collapse
-                                    scope.launch { repository.saveCollapsePlayerPanelInSearch(collapse) }
-                                },
-                                onAddRadioBrowserTagsChange = { add ->
-                                    addRadioBrowserTags = add
-                                    scope.launch { repository.saveAddRadioBrowserTags(add) }
-                                },
-                                onRemoveTrackingParametersChange = { remove ->
-                                    removeTrackingParametersFromUrls = remove
-                                    scope.launch { repository.saveRemoveTrackingParameters(remove) }
-                                },
-                                onShowAndroidAutoArtworkChange = { show ->
-                                    showAndroidAutoArtwork = show
-                                    scope.launch { repository.saveShowAndroidAutoArtwork(show) }
-                                },
-                                onClearLibrary = { clearLibrary() },
-                                modifier = Modifier.fillMaxSize(),
                             )
                         }
+                    },
+                ) { padding ->
+                    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                        when (selectedPage) {
+                            MainPage.Stations,
+                            MainPage.Favorites -> {
+                                StationTabsPager(
+                                    visibleTabPages = visibleTabPages,
+                                    pagerState = pagerState,
+                                    stations = stations,
+                                    selectedStationId = playbackState.selectedStation?.id,
+                                    playingStationId = playbackState.selectedStation?.id.takeIf { playbackState.isPlaying },
+                                    sortState = sortState,
+                                    customStationOrder = customStationOrder,
+                                    customFavoriteOrder = customFavoriteOrder,
+                                    reorderDraft = reorderDraft,
+                                    scrollToSelectedRequest = scrollToSelectedRequest,
+                                    scrollToStationId = scrollToStationId,
+                                    showArtwork = showStationArtwork,
+                                    dividerStyle = stationDividers,
+                                    listEnabled = drawerState.isClosed && reorderDraft == null,
+                                    onMove = ::moveReorderDraft,
+                                    onFavoriteClick = ::toggleFavorite,
+                                    onEditStation = { editorState = it },
+                                    onStationClick = ::playStation,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
 
-                        MainPage.About -> {
-                            AboutPage(
-                                onWhatsNewClick = { showWhatsNew = true },
-                                modifier = Modifier.fillMaxSize(),
-                                updates = updates,
+                            MainPage.ExportImport -> {
+                                ExportImportPage(
+                                    stationCount = stations.size,
+                                    favoriteCount = stations.count { it.isFavorite },
+                                    onExportStations = { exportStations() },
+                                    onExportSimpleText = { exportSimpleText() },
+                                    onImportStations = {
+                                        importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
+                                    },
+                                    onClearLibrary = { clearLibrary() },
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+
+                            MainPage.Translation -> TranslationPage(repository = repository)
+
+                            MainPage.SearchOnline -> {
+                                OnlineStationSearchPage(
+                                    searchState = onlineSearchState,
+                                    countries = onlineCountries,
+                                    languages = onlineLanguages,
+                                    results = onlineSearchResults,
+                                    loading = onlineSearchLoading,
+                                    loadingMore = onlineSearchLoadingMore,
+                                    hasMoreResults = onlineSearchHasMore,
+                                    optionsExpanded = onlineOptionsExpanded,
+                                    showArtwork = showStationArtwork,
+                                    dividerStyle = stationDividers,
+                                    addedStreamUrls = stations.mapTo(mutableSetOf()) { it.streamUrl },
+                                    selectedStreamUrl = playbackState.selectedStation?.streamUrl,
+                                    onSearchStateChange = {
+                                        onlineSearchState = it
+                                    },
+                                    onSearch = { searchOnlineStations() },
+                                    onLoadMore = { loadMoreOnlineStations() },
+                                    onPreviewStation = { previewOnlineStation(it) },
+                                    onAddStation = { addOnlineStation(it) },
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+
+                            MainPage.Settings -> {
+                                SettingsPage(
+                                    themeMode = themeMode,
+                                    appLanguage = appLanguage,
+                                    stationDividers = stationDividers,
+                                    rememberLastStation = rememberLastStation,
+                                    stopServiceAfterPauseMinutes = stopServiceAfterPauseMinutes,
+                                    keepMediaCard = keepMediaCard,
+                                    showStationArtwork = showStationArtwork,
+                                    syncingStationArtwork = syncingStationArtwork,
+                                    showEmptyFavoritesTab = showEmptyFavoritesTab,
+                                    confirmStationDeletion = confirmStationDeletion,
+                                    showBitrateInControlPanel = showBitrateInControlPanel,
+                                    showUnavailableBitrate = showUnavailableBitrate,
+                                    marqueeTrackTitle = marqueeTrackTitle,
+                                    autoExpandPlayerPanelOnPlayback = autoExpandPlayerPanelOnPlayback,
+                                    collapsePlayerPanelInSearch = collapsePlayerPanelInSearch,
+                                    addRadioBrowserTags = addRadioBrowserTags,
+                                    removeTrackingParameters = removeTrackingParametersFromUrls,
+                                    showAndroidAutoArtwork = showAndroidAutoArtwork,
+                                    onThemeModeChange = { nextThemeMode ->
+                                        scope.launch { repository.saveThemeMode(nextThemeMode) }
+                                    },
+                                    onAppLanguageChange = { nextAppLanguage ->
+                                        context.applicationContext.applyAppLanguage(nextAppLanguage)
+                                    },
+                                    onStationDividersChange = { style ->
+                                        stationDividers = style
+                                        scope.launch { repository.saveStationDividers(style) }
+                                    },
+                                    onRememberLastStationChange = { remember ->
+                                        rememberLastStation = remember
+                                        scope.launch { repository.saveRememberLastStation(remember) }
+                                    },
+                                    onStopServiceAfterPauseMinutesChange = { minutes ->
+                                        stopServiceAfterPauseMinutes = minutes
+                                        scope.launch { repository.saveStopServiceAfterPauseMinutes(minutes) }
+                                    },
+                                    onKeepMediaCardChange = { keep ->
+                                        repository.saveKeepMediaCard(keep)
+                                        keepMediaCard = keep
+                                    },
+                                    onShowStationArtworkChange = { show ->
+                                        showStationArtwork = show
+                                        scope.launch { repository.saveShowStationArtwork(show) }
+                                    },
+                                    onSyncStationArtwork = { syncStationArtwork() },
+                                    onShowEmptyFavoritesTabChange = { show ->
+                                        showEmptyFavoritesTab = show
+                                        scope.launch { repository.saveShowEmptyFavoritesTab(show) }
+                                    },
+                                    onConfirmStationDeletionChange = { confirm ->
+                                        confirmStationDeletion = confirm
+                                        scope.launch { repository.saveConfirmStationDeletion(confirm) }
+                                    },
+                                    onShowBitrateInControlPanelChange = { show ->
+                                        showBitrateInControlPanel = show
+                                        scope.launch { repository.saveShowBitrateInControlPanel(show) }
+                                    },
+                                    onShowUnavailableBitrateChange = { show ->
+                                        showUnavailableBitrate = show
+                                        scope.launch { repository.saveShowUnavailableBitrate(show) }
+                                    },
+                                    onMarqueeTrackTitleChange = { marquee ->
+                                        marqueeTrackTitle = marquee
+                                        scope.launch { repository.saveMarqueeTrackTitle(marquee) }
+                                    },
+                                    onAutoExpandPlayerPanelOnPlaybackChange = { autoExpand ->
+                                        autoExpandPlayerPanelOnPlayback = autoExpand
+                                        scope.launch { repository.saveAutoExpandPlayerPanelOnPlayback(autoExpand) }
+                                    },
+                                    onCollapsePlayerPanelInSearchChange = { collapse ->
+                                        collapsePlayerPanelInSearch = collapse
+                                        scope.launch { repository.saveCollapsePlayerPanelInSearch(collapse) }
+                                    },
+                                    onAddRadioBrowserTagsChange = { add ->
+                                        addRadioBrowserTags = add
+                                        scope.launch { repository.saveAddRadioBrowserTags(add) }
+                                    },
+                                    onRemoveTrackingParametersChange = { remove ->
+                                        removeTrackingParametersFromUrls = remove
+                                        scope.launch { repository.saveRemoveTrackingParameters(remove) }
+                                    },
+                                    onShowAndroidAutoArtworkChange = { show ->
+                                        showAndroidAutoArtwork = show
+                                        scope.launch { repository.saveShowAndroidAutoArtwork(show) }
+                                    },
+                                    onClearLibrary = { clearLibrary() },
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+
+                            MainPage.About -> {
+                                AboutPage(
+                                    onWhatsNewClick = { showWhatsNew = true },
+                                    modifier = Modifier.fillMaxSize(),
+                                    updates = updates,
+                                )
+                            }
+                        }
+                        if (showSleepTimer) {
+                            SleepTimerPage(
+                                remainingSeconds = sleepTimerRemainingSeconds,
+                                closeApp = sleepTimerCloseApp,
+                                placement = sleepTimerPlacement,
+                                onPlacementChange = { placement ->
+                                    scope.launch { repository.saveSleepTimerPlacement(placement) }
+                                },
+                                onCloseAppChange = { closeApp ->
+                                    scope.launch { repository.saveSleepTimerCloseApp(closeApp) }
+                                },
+                                onStart = { seconds ->
+                                    PlaybackService.startSleepTimer(context, seconds)
+                                },
+                                onStop = {
+                                    PlaybackService.cancelSleepTimer(context)
+                                },
                             )
                         }
                     }
+                }
+                if (showSleepTimerPill && sleepTimerPlacement == SleepTimerPlacement.FreePlacement) {
+                    FreeSleepTimerPill(
+                        remainingSeconds = sleepTimerRemainingSeconds,
+                        position = sleepTimerFreePosition,
+                        onPositionChange = { position ->
+                            scope.launch { repository.saveSleepTimerFreePosition(position) }
+                        },
+                        onClick = { showSleepTimer = true },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.safeDrawing)
+                            .padding(RadioSpacing.small),
+                    )
                 }
             }
         }

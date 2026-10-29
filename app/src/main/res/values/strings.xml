@@ -27,6 +27,7 @@
 
     <string name="page_stations">Stations</string>
     <string name="page_favorites">Favorites</string>
+    <string name="page_sleep_timer">Sleep Timer</string>
     <string name="page_export_import">Export / Import</string>
     <string name="page_settings">Settings</string>
     <string name="page_about">About</string>
@@ -36,6 +37,23 @@
 
     <string name="language_system">System</string>
     <string name="language_imported">%1$s (imported)</string>
+
+    <string name="sleep_timer_hours">Hours</string>
+    <string name="sleep_timer_minutes">Minutes</string>
+    <string name="sleep_timer_seconds">Seconds</string>
+    <string name="sleep_timer_preset_minutes">%1$dm</string>
+    <string name="sleep_timer_close_app_title">Close app</string>
+    <string name="sleep_timer_close_app_off">The timer will only stop playback</string>
+    <string name="sleep_timer_close_app_on">The timer will close the app</string>
+    <string name="sleep_timer_position_title">Timer position</string>
+    <string name="sleep_timer_position_panel_left">Panel left</string>
+    <string name="sleep_timer_position_panel_left_description">Will be pinned above the panel on the left</string>
+    <string name="sleep_timer_position_panel_right">Panel right</string>
+    <string name="sleep_timer_position_panel_right_description">Will be pinned above the panel on the right</string>
+    <string name="sleep_timer_position_free">Free placement</string>
+    <string name="sleep_timer_position_free_description">Press and hold to drag</string>
+    <string name="sleep_timer_start">Start</string>
+    <string name="sleep_timer_stop">Stop</string>
 
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_theme_title">Theme</string>
