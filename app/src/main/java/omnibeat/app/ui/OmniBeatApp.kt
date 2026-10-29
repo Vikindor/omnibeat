@@ -9,6 +9,7 @@ import omnibeat.app.radio.RadioBrowserClient
 import omnibeat.app.radio.RadioBrowserFilterOption
 import omnibeat.app.radio.RadioBrowserSearchParams
 
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -37,6 +38,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -141,6 +143,21 @@ fun OmniBeatApp() {
                 modifier = Modifier.fillMaxSize(),
             )
             return@OmniBeatTheme
+        }
+
+        val versionCode = remember(context) {
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                PackageManager.PackageInfoFlags.of(0),
+            ).longVersionCode
+        }
+        val whatsNewSeenVersionCode by repository.whatsNewSeenVersionCode.collectAsState(initial = null)
+        var showWhatsNew by rememberSaveable { mutableStateOf(false) }
+
+        LaunchedEffect(versionCode, whatsNewSeenVersionCode) {
+            if (whatsNewSeenVersionCode != null && whatsNewSeenVersionCode != versionCode) {
+                showWhatsNew = true
+            }
         }
 
         val updates = (context.applicationContext as? AppUpdateProvider)?.rememberUpdates()
@@ -1160,11 +1177,26 @@ fun OmniBeatApp() {
                         }
 
                         MainPage.About -> {
-                            AboutPage(modifier = Modifier.fillMaxSize(), updates = updates)
+                            AboutPage(
+                                onWhatsNewClick = { showWhatsNew = true },
+                                modifier = Modifier.fillMaxSize(),
+                                updates = updates,
+                            )
                         }
                     }
                 }
             }
+        }
+
+        if (showWhatsNew) {
+            WhatsNewDialog(
+                onDismiss = {
+                    scope.launch {
+                        repository.saveWhatsNewSeenVersionCode(versionCode)
+                        showWhatsNew = false
+                    }
+                },
+            )
         }
 
         pendingImportData?.let { importData ->

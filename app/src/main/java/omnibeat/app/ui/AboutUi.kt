@@ -45,7 +45,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AboutPage(modifier: Modifier = Modifier, updates: AppUpdateActions? = null) {
+fun AboutPage(
+    onWhatsNewClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    updates: AppUpdateActions? = null,
+) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     val packageInfo = remember(context) {
@@ -73,10 +77,19 @@ fun AboutPage(modifier: Modifier = Modifier, updates: AppUpdateActions? = null) 
                 label = stringResource(R.string.about_version),
                 value = versionName,
                 action = {
+                    OmniPrimaryButton(
+                        text = stringResource(R.string.whats_new_title),
+                        onClick = onWhatsNewClick,
+                    )
+                },
+            )
+            AboutInfoRow(
+                label = stringResource(R.string.about_build),
+                value = versionCode.toString(),
+                action = {
                     if (updates != null) AboutUpdateButton(updates)
                 },
             )
-            AboutInfoRow(label = stringResource(R.string.about_build), value = versionCode.toString())
             AboutInfoRow(
                 label = stringResource(R.string.about_formats),
                 value = "Direct stream, PLS, M3U, HLS, XSPF, ASX/WAX/WMX, DASH",

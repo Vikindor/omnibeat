@@ -245,6 +245,7 @@
     <string name="about_description">Плеер, поддерживающий все современные онлайн-станции</string>
     <string name="about_section_app">Приложение</string>
     <string name="about_version">Версия</string>
+    <string name="whats_new_title">Что нового</string>
     <string name="about_build">Сборка</string>
     <string name="about_check_updates">Проверить обновления</string>
     <string name="about_formats">Форматы</string>

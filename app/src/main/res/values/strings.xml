@@ -248,6 +248,7 @@
     <string name="about_description">Built to support all modern online stations</string>
     <string name="about_section_app">App</string>
     <string name="about_version">Version</string>
+    <string name="whats_new_title">What’s new</string>
     <string name="about_build">Build</string>
     <string name="about_check_updates">Check for updates</string>
     <string name="about_formats">Formats</string>

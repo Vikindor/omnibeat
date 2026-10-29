@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -52,6 +53,7 @@ private val removeTrackingParametersKey = booleanPreferencesKey("remove_tracking
 private val showAndroidAutoArtworkKey = booleanPreferencesKey("show_android_auto_artwork")
 private val playerPanelCollapsedKey = booleanPreferencesKey("player_panel_collapsed")
 private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
+private val whatsNewSeenVersionCodeKey = longPreferencesKey("whats_new_seen_version_code")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val recentlyPlayedStationIdsKey = stringPreferencesKey("recently_played_station_ids")
@@ -168,6 +170,9 @@ class StationRepository(private val context: Context) {
 
     val onboardingCompleted: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[onboardingCompletedKey] ?: false }
+
+    val whatsNewSeenVersionCode: Flow<Long> = context.stationDataStore.data
+        .map { preferences -> preferences[whatsNewSeenVersionCodeKey] ?: 0L }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
@@ -305,6 +310,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveOnboardingCompleted(completed: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[onboardingCompletedKey] = completed
+        }
+    }
+
+    suspend fun saveWhatsNewSeenVersionCode(versionCode: Long) {
+        context.stationDataStore.edit { preferences ->
+            preferences[whatsNewSeenVersionCodeKey] = versionCode
         }
     }
 
