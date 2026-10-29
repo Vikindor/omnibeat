@@ -1,5 +1,5 @@
 [versions]
-agp = "9.4.1"
+agp = "9.5.0"
 coreKtx = "1.19.1"
 media3 = "1.11.1"
 datastore = "1.2.1"
