@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="whats_new_entries">
-        <item>@string/whats_new_1_10_0</item>
+        <item>@string/whats_new_1_12_0</item>
     </string-array>
 
-    <string name="whats_new_1_10_0">"v1.10.0
-• Station lists now support customizable dividers. Check Settings."</string>
+    <string name="whats_new_1_12_0">"v1.12.0
+• Added a Sleep Timer with a movable on-screen countdown.
+• Added customizable dividers to station lists.
+• Added a "What’s new" window.
+• Changed the "Check for updates" button in About.
+• Internal improvements and component updates."</string>
 </resources>
