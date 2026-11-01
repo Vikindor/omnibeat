@@ -1,7 +1,8 @@
 package omnibeat.app.ui
 
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +74,14 @@ fun MainTopBar(
 ) {
     val density = LocalDensity.current
     val showTabs = selectedPage in tabPages && overlayTitle == null
+    val tabListState = rememberLazyListState()
+
+    LaunchedEffect(selectedPage, tabPages, showTabs) {
+        if (showTabs) {
+            val index = tabPages.indexOf(selectedPage)
+            if (index >= 0) tabListState.animateScrollToItem(index)
+        }
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -102,42 +112,46 @@ fun MainTopBar(
         } else {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f).then(
-                    if (showTabs) Modifier.horizontalScroll(rememberScrollState()) else Modifier,
-                ),
+                modifier = Modifier.weight(1f),
             ) {
                 if (showTabs) {
-                    tabPages.forEach { tab ->
-                        var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
-                        Column(
-                            modifier = Modifier
-                                .selectable(
-                                    selected = visualSelectedPage == tab,
-                                    enabled = !reordering,
-                                    role = Role.Tab,
-                                    onClick = { onPageSelected(tab) },
-                                )
-                                .padding(horizontal = RadioSpacing.medium, vertical = RadioSpacing.small),
-                        ) {
-                            Text(
-                                text = (tab as? MainPage.Playlist)?.let { page -> playlists.firstOrNull { it.id == page.id }?.title }
-                                    ?: stringResource(tab.titleRes()),
-                                color = if (visualSelectedPage == tab) RadioText else RadioTextMuted,
-                                fontSize = RadioTextSizes.subtitle,
-                                fontWeight = if (visualSelectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.onSizeChanged { size ->
-                                    tabTextWidth = with(density) { size.width.toDp() }
-                                },
-                            )
-                            Box(
+                    LazyRow(
+                        state = tabListState,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        items(tabPages, key = { it.name }) { tab ->
+                            var tabTextWidth by remember(tab) { mutableStateOf(0.dp) }
+                            Column(
                                 modifier = Modifier
-                                    .padding(top = RadioSpacing.compact)
-                                    .width(tabTextWidth)
-                                    .height(2.dp)
-                                    .background(if (visualSelectedPage == tab) RadioPrimary else RadioOutline),
-                            )
+                                    .selectable(
+                                        selected = visualSelectedPage == tab,
+                                        enabled = !reordering,
+                                        role = Role.Tab,
+                                        onClick = { onPageSelected(tab) },
+                                    )
+                                    .padding(horizontal = RadioSpacing.medium, vertical = RadioSpacing.small),
+                            ) {
+                                Text(
+                                    text = (tab as? MainPage.Playlist)?.let { page -> playlists.firstOrNull { it.id == page.id }?.title }
+                                        ?: stringResource(tab.titleRes()),
+                                    color = if (visualSelectedPage == tab) RadioText else RadioTextMuted,
+                                    fontSize = RadioTextSizes.subtitle,
+                                    fontWeight = if (visualSelectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.onSizeChanged { size ->
+                                        tabTextWidth = with(density) { size.width.toDp() }
+                                    },
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = RadioSpacing.compact)
+                                        .width(tabTextWidth)
+                                        .height(2.dp)
+                                        .background(if (visualSelectedPage == tab) RadioPrimary else RadioOutline),
+                                )
+                            }
                         }
                     }
                 } else {
