@@ -66,16 +66,17 @@ internal class StationMediaLibrary(
     private suspend fun library(): Library {
         val stations = repository.stations.first()
         onStationsLoaded(stations)
-        val sortState = repository.stationSortState.first()
+        val stationSortState = repository.stationSortState.first()
+        val favoriteSortState = repository.favoriteSortState.first()
         val customStationOrder = repository.customStationOrder.first()
         val customFavoriteOrder = repository.customFavoriteOrder.first()
         return Library(
             stations = stations,
             allStations = sortedStations(
-                stations, MainPage.Stations, sortState, customStationOrder, customFavoriteOrder,
+                stations, MainPage.Stations, stationSortState, customStationOrder, customFavoriteOrder,
             ),
             favoriteStations = sortedStations(
-                stations.filter { it.isFavorite }, MainPage.Favorites, sortState, customStationOrder, customFavoriteOrder,
+                stations.filter { it.isFavorite }, MainPage.Favorites, favoriteSortState, customStationOrder, customFavoriteOrder,
             ),
             recentIds = repository.recentlyPlayedStationIds.first(),
             showArtwork = repository.showAndroidAutoArtwork.first(),

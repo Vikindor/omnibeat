@@ -147,9 +147,11 @@
     <string name="auto_station_not_found">Станция не найдена в библиотеке</string>
 
     <string name="dialog_clear_library_title">Очистить библиотеку?</string>
-    <string name="dialog_clear_library_text">Все станции, избранное и сортировка будут удалены</string>
+    <string name="dialog_clear_library_text">Все станции, избранное, плейлисты, сортировка и порядок вкладок будут удалены</string>
     <string name="dialog_error_title">Ошибка</string>
     <string name="toast_error_copied">Ошибка скопирована</string>
+    <string name="dialog_import_library_title">Импорт библиотеки</string>
+    <string name="dialog_import_library_text">Импортировать %1$d станций и %2$d плейлистов?&lt;br/&gt;&lt;b&gt;Замена&lt;/b&gt; восстанавливает всю библиотеку и порядок вкладок.&lt;br/&gt;&lt;b&gt;Объединение&lt;/b&gt; обновляет станции с совпадающими URL и объединяет состав существующих плейлистов. Текущая сортировка и порядок вкладок сохраняются.</string>
     <string name="dialog_import_stations_title">Импорт станций</string>
     <string name="dialog_import_stations_text">Импортировать %1$d станций?&lt;br/&gt;&lt;b&gt;Замена&lt;/b&gt; сначала очищает текущую библиотеку.&lt;br/&gt;&lt;b&gt;Объединение&lt;/b&gt; сохраняет текущую библиотеку и обновляет станции с совпадающими URL стримов.</string>
 
@@ -157,6 +159,7 @@
     <string name="toast_export_txt">TXT-файл экспортирован</string>
     <string name="toast_export_failed">Не удалось экспортировать: %1$s</string>
     <string name="toast_import_failed">Не удалось импортировать: %1$s</string>
+    <string name="import_invalid_format">Неверный формат данных</string>
     <string name="toast_stations_imported">Станции импортированы</string>
     <string name="toast_library_deleted">Библиотека удалена</string>
     <string name="toast_playback_error">Ошибка воспроизведения</string>
@@ -178,9 +181,9 @@
     <string name="track_text_no_metadata">Нет метаданных</string>
 
     <string name="export_import_library_title">Библиотека</string>
-    <string name="export_import_library_summary">станций: %1$d, в избранном: %2$d</string>
+    <string name="export_import_library_summary">станций: %1$d, в избранном: %2$d, плейлистов: %3$d</string>
     <string name="export_import_json_title">OmniBeat JSON</string>
-    <string name="export_import_json_description">Полная резервная копия OmniBeat: станции, избранное и сортировка.</string>
+    <string name="export_import_json_description">Резервная копия библиотеки OmniBeat: станции, избранное, плейлисты, порядок вкладок и сортировка.</string>
     <string name="export_import_json_export_title">Экспорт OmniBeat JSON</string>
     <string name="export_import_json_export_subtitle">Сохранить в родном JSON формате со всеми полями</string>
     <string name="export_import_json_import_title">Импорт OmniBeat JSON</string>

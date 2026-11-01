@@ -68,6 +68,7 @@ private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val recentlyPlayedStationIdsKey = stringPreferencesKey("recently_played_station_ids")
 private val stationSortKey = stringPreferencesKey("station_sort")
+private val favoriteSortKey = stringPreferencesKey("favorite_sort")
 private val customStationOrderKey = stringPreferencesKey("custom_station_order")
 private val customFavoriteOrderKey = stringPreferencesKey("custom_favorite_order")
 private val tabOrderKey = stringPreferencesKey("tab_order")
@@ -234,6 +235,9 @@ class StationRepository(private val context: Context) {
         .map { preferences ->
             decodeStationSortState(preferences[stationSortKey])
         }
+
+    val favoriteSortState: Flow<StationSortState> = context.stationDataStore.data
+        .map { preferences -> decodeStationSortState(preferences[favoriteSortKey]) }
 
     val customStationOrder: Flow<List<String>> = context.stationDataStore.data
         .map { preferences -> decodeStringList(preferences[customStationOrderKey]) }
@@ -422,6 +426,12 @@ class StationRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveFavoriteSortState(sortState: StationSortState) {
+        context.stationDataStore.edit { preferences ->
+            preferences[favoriteSortKey] = "${sortState.mode.name}:${sortState.ascending}"
+        }
+    }
+
     suspend fun saveCustomStationOrder(stationIds: List<String>) {
         context.stationDataStore.edit { preferences ->
             preferences[customStationOrderKey] = encodeStringList(stationIds)
@@ -434,13 +444,54 @@ class StationRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveImportedLibrary(importResult: StationImportResult) {
+    suspend fun exportLibrary(): StationExportData = withContext(Dispatchers.IO) {
+        val preferences = context.stationDataStore.data.first()
+        StationExportData(
+            stations = decodeStations(preferences[stationsJsonKey].orEmpty()),
+            stationSortState = decodeStationSortState(preferences[stationSortKey]),
+            favoriteSortState = decodeStationSortState(preferences[favoriteSortKey]),
+            customStationOrder = decodeStringList(preferences[customStationOrderKey]),
+            customFavoriteOrder = decodeStringList(preferences[customFavoriteOrderKey]),
+            collections = LibraryCollections(
+                playlists = decodePlaylists(preferences[playlistsJsonKey]),
+                tabOrder = decodeStringList(preferences[tabOrderKey]),
+            ),
+        )
+    }
+
+    suspend fun importLibrary(data: StationExportData, mode: StationImportMode): StationImportResult {
+        var result: StationImportResult? = null
         context.stationDataStore.edit { preferences ->
-            preferences[stationsJsonKey] = encodeStations(importResult.stations)
-            preferences[stationSortKey] = "${importResult.sortState.mode.name}:${importResult.sortState.ascending}"
-            preferences[customStationOrderKey] = encodeStringList(importResult.customStationOrder)
-            preferences[customFavoriteOrderKey] = encodeStringList(importResult.customFavoriteOrder)
+            val imported = StationExportCodec.buildImportResult(
+                importedData = data,
+                currentStations = decodeStations(preferences[stationsJsonKey].orEmpty()),
+                currentStationSortState = decodeStationSortState(preferences[stationSortKey]),
+                currentFavoriteSortState = decodeStationSortState(preferences[favoriteSortKey]),
+                currentCustomStationOrder = decodeStringList(preferences[customStationOrderKey]),
+                currentCustomFavoriteOrder = decodeStringList(preferences[customFavoriteOrderKey]),
+                currentCollections = LibraryCollections(
+                    playlists = decodePlaylists(preferences[playlistsJsonKey]),
+                    tabOrder = decodeStringList(preferences[tabOrderKey]),
+                ),
+                mode = mode,
+            )
+            preferences[stationsJsonKey] = encodeStations(imported.stations)
+            preferences[stationSortKey] = "${imported.stationSortState.mode.name}:${imported.stationSortState.ascending}"
+            preferences[favoriteSortKey] = "${imported.favoriteSortState.mode.name}:${imported.favoriteSortState.ascending}"
+            preferences[customStationOrderKey] = encodeStringList(imported.customStationOrder)
+            preferences[customFavoriteOrderKey] = encodeStringList(imported.customFavoriteOrder)
+            preferences[playlistsJsonKey] = encodePlaylists(imported.collections.playlists)
+            val tabs = orderedTabs(imported.collections.playlists, imported.collections.tabOrder).map { it.name }
+            preferences[tabOrderKey] = encodeStringList(tabs)
+            if (preferences[lastMainPageKey] !in tabs) preferences[lastMainPageKey] = "Stations"
+            val ids = imported.stations.mapTo(mutableSetOf()) { it.id }
+            if (preferences[lastPlayedStationIdKey] !in ids) preferences.remove(lastPlayedStationIdKey)
+            preferences[recentlyPlayedStationIdsKey] = encodeStringList(
+                decodeStringList(preferences[recentlyPlayedStationIdsKey]).filter(ids::contains),
+            )
+            result = imported
         }
+        return requireNotNull(result)
     }
 
     suspend fun saveTabOrder(tabIds: List<String>) {
@@ -477,9 +528,11 @@ class StationRepository(private val context: Context) {
     suspend fun clearLibrary() {
         context.stationDataStore.edit { preferences ->
             preferences[stationsJsonKey] = encodeStations(emptyList())
-            preferences[playlistsJsonKey] = encodePlaylists(decodePlaylists(preferences[playlistsJsonKey]).map {
-                it.copy(stationIds = emptyList())
-            })
+            preferences.remove(playlistsJsonKey)
+            preferences.remove(tabOrderKey)
+            preferences.remove(stationSortKey)
+            preferences.remove(favoriteSortKey)
+            preferences[lastMainPageKey] = "Stations"
             preferences[customStationOrderKey] = encodeStringList(emptyList())
             preferences[customFavoriteOrderKey] = encodeStringList(emptyList())
             preferences.remove(lastPlayedStationIdKey)

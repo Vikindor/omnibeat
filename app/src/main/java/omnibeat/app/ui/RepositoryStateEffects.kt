@@ -35,6 +35,7 @@ fun RepositoryStateEffects(
     onLastMainPageChange: (MainPage) -> Unit,
     onSelectedPageRestore: (MainPage) -> Unit,
     onStationSortStateChange: (StationSortState) -> Unit,
+    onFavoriteSortStateChange: (StationSortState) -> Unit,
     onCustomStationOrderChange: (List<String>) -> Unit,
     onCustomFavoriteOrderChange: (List<String>) -> Unit,
     onLastPlayedStationIdChange: (String?) -> Unit,
@@ -166,6 +167,10 @@ fun RepositoryStateEffects(
         repository.stationSortState.collect { savedSortState ->
             onStationSortStateChange(savedSortState)
         }
+    }
+
+    LaunchedEffect(repository) {
+        repository.favoriteSortState.collect(onFavoriteSortStateChange)
     }
 
     LaunchedEffect(repository) {

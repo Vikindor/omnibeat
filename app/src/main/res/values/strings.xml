@@ -150,9 +150,11 @@
     <string name="auto_station_not_found">Station not found in your library</string>
 
     <string name="dialog_clear_library_title">Clear library?</string>
-    <string name="dialog_clear_library_text">All stations, favorites, and custom order will be removed</string>
+    <string name="dialog_clear_library_text">All stations, favorites, and playlists will be deleted. Sorting and tab order will be reset.</string>
     <string name="dialog_error_title">Error</string>
     <string name="toast_error_copied">Error copied</string>
+    <string name="dialog_import_library_title">Import library</string>
+    <string name="dialog_import_library_text">Import %1$d stations and %2$d playlists?&lt;br/&gt;&lt;b&gt;Replace&lt;/b&gt; restores the entire library and tab order.&lt;br/&gt;&lt;b&gt;Merge&lt;/b&gt; updates stations with matching URLs and combines matching playlists. Your existing sorting and tab order are kept.</string>
     <string name="dialog_import_stations_title">Import stations</string>
     <string name="dialog_import_stations_text">Import %1$d stations?&lt;br/&gt;&lt;b&gt;Replace&lt;/b&gt; clears the current library first.&lt;br/&gt;&lt;b&gt;Merge&lt;/b&gt; keeps your current library and updates stations with matching stream URLs.</string>
 
@@ -160,6 +162,7 @@
     <string name="toast_export_txt">TXT exported</string>
     <string name="toast_export_failed">Export failed: %1$s</string>
     <string name="toast_import_failed">Import failed: %1$s</string>
+    <string name="import_invalid_format">Invalid data format</string>
     <string name="toast_stations_imported">Stations imported</string>
     <string name="toast_library_deleted">Library deleted</string>
     <string name="toast_playback_error">Playback error</string>
@@ -181,9 +184,9 @@
     <string name="track_text_no_metadata">No metadata</string>
 
     <string name="export_import_library_title">Library</string>
-    <string name="export_import_library_summary">stations: %1$d, favorites: %2$d</string>
+    <string name="export_import_library_summary">stations: %1$d, favorites: %2$d, playlists: %3$d</string>
     <string name="export_import_json_title">OmniBeat JSON</string>
-    <string name="export_import_json_description">Complete OmniBeat backup with stations, favorites, and sorting order.</string>
+    <string name="export_import_json_description">OmniBeat library backup: stations, favorites, playlists, tab order, and sorting.</string>
     <string name="export_import_json_export_title">Export OmniBeat JSON</string>
     <string name="export_import_json_export_subtitle">Save as a native JSON format with all fields</string>
     <string name="export_import_json_import_title">Import OmniBeat JSON</string>

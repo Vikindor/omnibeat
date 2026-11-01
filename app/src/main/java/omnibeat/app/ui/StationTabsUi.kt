@@ -27,7 +27,8 @@ fun StationTabsPager(
     playingStationId: String?,
     showPlaybackIndicator: Boolean,
     showFavoriteButtons: Boolean,
-    sortState: StationSortState,
+    stationSortState: StationSortState,
+    favoriteSortState: StationSortState,
     customStationOrder: List<String>,
     customFavoriteOrder: List<String>,
     reorderDraft: StationReorderDraft?,
@@ -56,7 +57,7 @@ fun StationTabsPager(
         } else sortedStations(
             source = if (page == MainPage.Favorites) stations.filter { it.isFavorite } else stations,
             page = page,
-            sortState = sortState,
+            sortState = if (page == MainPage.Favorites) favoriteSortState else stationSortState,
             customStationOrder = customStationOrder,
             customFavoriteOrder = customFavoriteOrder,
         )

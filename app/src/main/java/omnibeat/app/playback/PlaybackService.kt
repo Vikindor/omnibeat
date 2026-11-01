@@ -235,10 +235,11 @@ class PlaybackService : MediaLibraryService() {
         scope.launch {
             combine(
                 repository.stationSortState,
+                repository.favoriteSortState,
                 repository.customStationOrder,
                 repository.customFavoriteOrder,
-            ) { sortState, stationOrder, favoriteOrder ->
-                Triple(sortState, stationOrder, favoriteOrder)
+            ) { stationSort, favoriteSort, stationOrder, favoriteOrder ->
+                (stationSort to favoriteSort) to (stationOrder to favoriteOrder)
             }.distinctUntilChanged().collect {
                 mediaSession?.let { library.notifyChanged(it) }
             }

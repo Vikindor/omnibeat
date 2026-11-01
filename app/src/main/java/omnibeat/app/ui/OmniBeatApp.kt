@@ -214,7 +214,8 @@ fun OmniBeatApp() {
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf<MainPage>(MainPage.Stations) }
         var lastMainPage by remember { mutableStateOf<MainPage>(MainPage.Stations) }
-        var sortState by remember { mutableStateOf(StationSortState()) }
+        var stationSortState by remember { mutableStateOf(StationSortState()) }
+        var favoriteSortState by remember { mutableStateOf(StationSortState()) }
         var customStationOrder by remember { mutableStateOf(emptyList<String>()) }
         var customFavoriteOrder by remember { mutableStateOf(emptyList<String>()) }
         var reorderDraft by remember { mutableStateOf<StationReorderDraft?>(null) }
@@ -248,7 +249,8 @@ fun OmniBeatApp() {
         }
         val visibleTabPages by visibleTabPagesState
         val currentPlaylist = (selectedPage as? MainPage.Playlist)?.let { tab -> playlists.firstOrNull { it.id == tab.id } }
-        val currentSortState = currentPlaylist?.sortState ?: sortState
+        val currentSortState = currentPlaylist?.sortState
+            ?: if (selectedPage == MainPage.Favorites) favoriteSortState else stationSortState
         val showPlayerPanel = !showSleepTimer && tabOrderDraft == null &&
             (selectedPage in visibleTabPages || selectedPage == MainPage.SearchOnline)
         val showSleepTimerPill = showPlayerPanel && sleepTimerRemainingSeconds > 0L
@@ -288,7 +290,8 @@ fun OmniBeatApp() {
             onPlayerPanelCollapsedChange = { playerPanelCollapsed = it },
             onLastMainPageChange = { lastMainPage = it },
             onSelectedPageRestore = { selectedPage = it },
-            onStationSortStateChange = { sortState = it },
+            onStationSortStateChange = { stationSortState = it },
+            onFavoriteSortStateChange = { favoriteSortState = it },
             onCustomStationOrderChange = { customStationOrder = it },
             onCustomFavoriteOrderChange = { customFavoriteOrder = it },
             onLastPlayedStationIdChange = { lastPlayedStationId = it },
@@ -333,65 +336,78 @@ fun OmniBeatApp() {
 
         fun importStations(mode: StationImportMode) {
             val importData = pendingImportData ?: return
-            val importResult = StationExportCodec.buildImportResult(
-                importedData = importData,
-                currentStations = stations,
-                currentSortState = sortState,
-                currentCustomStationOrder = customStationOrder,
-                currentCustomFavoriteOrder = customFavoriteOrder,
-                mode = mode,
-            )
             pendingImportData = null
-            stations = importResult.stations
-            sortState = importResult.sortState
-            customStationOrder = importResult.customStationOrder
-            customFavoriteOrder = importResult.customFavoriteOrder
-            reorderDraft = null
-            if (
-                playbackState.selectedStation != null &&
-                importResult.stations.none { it.id == playbackState.selectedStation?.id }
-            ) {
-                PlaybackService.stop(context)
-            }
             scope.launch {
-                repository.saveImportedLibrary(importResult)
-                Toast.makeText(context, resources.appString(R.string.toast_stations_imported), Toast.LENGTH_SHORT).show()
+                try {
+                    val importResult = withContext(Dispatchers.IO) { repository.importLibrary(importData, mode) }
+                    stations = importResult.stations
+                    stationSortState = importResult.stationSortState
+                    favoriteSortState = importResult.favoriteSortState
+                    customStationOrder = importResult.customStationOrder
+                    customFavoriteOrder = importResult.customFavoriteOrder
+                    reorderDraft = null
+                    playbackQueueIds = null
+                    if (lastMainPage is MainPage.Playlist &&
+                        importResult.collections.playlists.none { MainPage.Playlist(it.id) == lastMainPage }
+                    ) {
+                        lastMainPage = MainPage.Stations
+                    }
+                    if (playbackState.selectedStation != null &&
+                        importResult.stations.none { it.id == playbackState.selectedStation?.id }
+                    ) {
+                        PlaybackService.stop(context)
+                    }
+                    Toast.makeText(context, resources.appString(R.string.toast_stations_imported), Toast.LENGTH_SHORT).show()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    errorDialog = resources.appString(R.string.toast_import_failed, error.message.orEmpty())
+                }
             }
         }
 
-        val importLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
-        ) { uri ->
-            if (uri == null) {
-                return@rememberLauncherForActivityResult
-            }
+        fun readImport(uri: android.net.Uri?, decode: (String) -> StationExportData) {
+            if (uri == null) return
             scope.launch {
                 runCatching {
-                    val importText = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    withContext(Dispatchers.IO) {
+                        val content = context.contentResolver.openInputStream(uri)?.use { inputStream ->
                             inputStream.readBytes().toString(Charsets.UTF_8)
                         } ?: error("Could not open import file")
-                    }
-                    if (importText.trimStart().startsWith("{")) {
-                        StationExportCodec.decode(importText)
-                    } else {
-                        SimpleStationTextCodec.decode(
-                            text = importText,
-                            cleanTrackingParameters = removeTrackingParametersFromUrls,
-                        )
+                        decode(content)
                     }
                 }.onSuccess { importData ->
                     pendingImportData = importData
-                    if (stations.isEmpty()) {
+                    if (stations.isEmpty() && playlists.isEmpty()) {
                         importStations(StationImportMode.Replace)
                     }
                 }.onFailure { error ->
-                    Toast.makeText(
-                        context,
-                        resources.appString(R.string.toast_import_failed, error.message.orEmpty()),
-                        Toast.LENGTH_LONG,
-                    ).show()
+                    if (error is CancellationException) throw error
+                    errorDialog = if (error is IllegalArgumentException) {
+                        resources.appString(R.string.import_invalid_format)
+                    } else {
+                        resources.appString(R.string.toast_import_failed, error.message.orEmpty())
+                    }
                 }
+            }
+        }
+
+        val jsonImportLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            readImport(uri) { content ->
+                StationExportCodec.decode(content.trimStart().removePrefix("\uFEFF").trimStart())
+            }
+        }
+
+        val textImportLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            readImport(uri) { content ->
+                SimpleStationTextCodec.decode(
+                    text = content,
+                    cleanTrackingParameters = removeTrackingParametersFromUrls,
+                )
             }
         }
 
@@ -502,16 +518,19 @@ fun OmniBeatApp() {
         }
 
         fun exportStations() {
-            pendingExportContent = StationExportCodec.encode(
-                StationExportData(
-                    stations = stations,
-                    sortState = sortState,
-                    customStationOrder = customStationOrder,
-                    customFavoriteOrder = customFavoriteOrder,
-                ),
-            )
-            val exportDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd"))
-            jsonExportLauncher.launch("omnibeat_stations_$exportDate.json")
+            scope.launch {
+                try {
+                    pendingExportContent = withContext(Dispatchers.IO) {
+                        StationExportCodec.encode(repository.exportLibrary())
+                    }
+                    val exportDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd"))
+                    jsonExportLauncher.launch("omnibeat_library_$exportDate.json")
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    errorDialog = resources.appString(R.string.toast_export_failed, error.message.orEmpty())
+                }
+            }
         }
 
         fun exportSimpleText() {
@@ -530,17 +549,27 @@ fun OmniBeatApp() {
 
         fun clearLibrary() {
             PlaybackService.stop(context)
-            stations = emptyList()
-            customStationOrder = emptyList()
-            customFavoriteOrder = emptyList()
-            reorderDraft = null
-            lastPlayedStationId = null
-            if (selectedPage == MainPage.Favorites) {
-                selectMainPage(MainPage.Stations)
-            }
             scope.launch {
-                repository.clearLibrary()
-                Toast.makeText(context, resources.appString(R.string.toast_library_deleted), Toast.LENGTH_SHORT).show()
+                try {
+                    repository.clearLibrary()
+                    stations = emptyList()
+                    stationSortState = StationSortState()
+                    favoriteSortState = StationSortState()
+                    customStationOrder = emptyList()
+                    customFavoriteOrder = emptyList()
+                    reorderDraft = null
+                    tabOrderDraft = null
+                    membershipMode = null
+                    pendingPlaylistId = null
+                    playbackQueueIds = null
+                    lastPlayedStationId = null
+                    lastMainPage = MainPage.Stations
+                    Toast.makeText(context, resources.appString(R.string.toast_library_deleted), Toast.LENGTH_SHORT).show()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    errorDialog = error.message.orEmpty()
+                }
             }
         }
 
@@ -740,7 +769,7 @@ fun OmniBeatApp() {
             return sortedStations(
                 source = if (page == MainPage.Favorites) stations.filter { it.isFavorite } else stations,
                 page = page,
-                sortState = sortState,
+                sortState = if (page == MainPage.Favorites) favoriteSortState else stationSortState,
                 customStationOrder = customStationOrder,
                 customFavoriteOrder = customFavoriteOrder,
             )
@@ -815,6 +844,16 @@ fun OmniBeatApp() {
             }
         }
 
+        fun saveBuiltinSortState(page: MainPage, state: StationSortState) {
+            if (page == MainPage.Favorites) {
+                favoriteSortState = state
+                scope.launch { repository.saveFavoriteSortState(state) }
+            } else {
+                stationSortState = state
+                scope.launch { repository.saveStationSortState(state) }
+            }
+        }
+
         fun selectSortMode(nextSortMode: StationSortMode) {
             val page = activeNavigationPage()
             val playlist = playlistFor(page)
@@ -852,18 +891,17 @@ fun OmniBeatApp() {
                     customSortedStations(pageStations, customOrder)
                 }
                 val nextSortState = StationSortState(mode = StationSortMode.Custom, ascending = false)
-                sortState = nextSortState
+                saveBuiltinSortState(reorderPage, nextSortState)
                 reorderDraft = StationReorderDraft(page = reorderPage, stations = draftStations)
-                scope.launch { repository.saveStationSortState(nextSortState) }
                 return
             }
-            val nextSortState = if (sortState.mode == nextSortMode) {
-                sortState.copy(ascending = !sortState.ascending)
+            val current = if (page == MainPage.Favorites) favoriteSortState else stationSortState
+            val nextSortState = if (current.mode == nextSortMode) {
+                current.copy(ascending = !current.ascending)
             } else {
                 StationSortState(mode = nextSortMode, ascending = false)
             }
-            sortState = nextSortState
-            scope.launch { repository.saveStationSortState(nextSortState) }
+            saveBuiltinSortState(page, nextSortState)
         }
 
         fun moveReorderDraft(fromIndex: Int, toIndex: Int) {
@@ -905,7 +943,7 @@ fun OmniBeatApp() {
             } else {
                 customStationOrder = nextOrder
             }
-            sortState = nextSortState
+            saveBuiltinSortState(draft.page, nextSortState)
             reorderDraft = null
             scope.launch {
                 if (draft.page == MainPage.Favorites) {
@@ -913,7 +951,6 @@ fun OmniBeatApp() {
                 } else {
                     repository.saveCustomStationOrder(nextOrder)
                 }
-                repository.saveStationSortState(nextSortState)
             }
         }
 
@@ -1178,7 +1215,8 @@ fun OmniBeatApp() {
                                     playingStationId = playbackState.selectedStation?.id.takeIf { playbackState.isPlaying },
                                     showPlaybackIndicator = showPlaybackIndicator,
                                     showFavoriteButtons = showFavoriteButtons,
-                                    sortState = sortState,
+                                    stationSortState = stationSortState,
+                                    favoriteSortState = favoriteSortState,
                                     customStationOrder = customStationOrder,
                                     customFavoriteOrder = customFavoriteOrder,
                                     reorderDraft = reorderDraft,
@@ -1202,12 +1240,16 @@ fun OmniBeatApp() {
                                 ExportImportPage(
                                     stationCount = stations.size,
                                     favoriteCount = stations.count { it.isFavorite },
+                                    playlistCount = playlists.size,
                                     onExportStations = { exportStations() },
                                     onExportSimpleText = { exportSimpleText() },
-                                    onImportStations = {
-                                        importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
+                                    onImportJson = {
+                                        jsonImportLauncher.launch(arrayOf("application/json"))
                                     },
-                                    onClearLibrary = { clearLibrary() },
+                                    onImportSimpleText = {
+                                        textImportLauncher.launch(arrayOf("text/plain"))
+                                    },
+
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
@@ -1480,6 +1522,7 @@ fun OmniBeatApp() {
         pendingImportData?.let { importData ->
             ImportStationsDialog(
                 stationCount = importData.stations.size,
+                playlistCount = importData.collections?.playlists?.size,
                 onImport = ::importStations,
                 onDismiss = { pendingImportData = null },
             )
