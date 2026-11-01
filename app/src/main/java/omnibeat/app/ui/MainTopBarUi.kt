@@ -1,16 +1,14 @@
 package omnibeat.app.ui
 
-import androidx.compose.foundation.layout.PaddingValues
-
-import androidx.compose.foundation.layout.heightIn
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -19,6 +17,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,8 +62,6 @@ fun MainTopBar(
 ) {
     val density = LocalDensity.current
     val showTabs = selectedPage in tabPages && overlayTitle == null
-    var sortMenuExpanded by remember { mutableStateOf(false) }
-    var addMenuExpanded by remember { mutableStateOf(false) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -156,15 +153,9 @@ fun MainTopBar(
                     tint = Color(0xFF66D17A),
                 )
             } else {
-                SortMenuButton(
+                StationMenuButton(
                     sortState = sortState,
-                    expanded = sortMenuExpanded,
-                    onExpandedChange = { sortMenuExpanded = it },
                     onSortModeSelected = onSortModeSelected,
-                )
-                AddMenuButton(
-                    expanded = addMenuExpanded,
-                    onExpandedChange = { addMenuExpanded = it },
                     onAddStation = onAddStation,
                     onSearchOnline = onSearchOnline,
                 )
@@ -173,70 +164,49 @@ fun MainTopBar(
     }
 }
 
+private enum class StationMenuPage {
+    Main,
+    Sort,
+}
+
 @Composable
-private fun SortMenuButton(
+private fun StationMenuButton(
     sortState: StationSortState,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
     onSortModeSelected: (StationSortMode) -> Unit,
+    onAddStation: () -> Unit,
+    onSearchOnline: () -> Unit,
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    var menuPage by remember { mutableStateOf(StationMenuPage.Main) }
+
     Box {
         OmniIconButton(
-            painter = painterResource(R.drawable.ic_sort),
-            onClick = { onExpandedChange(true) },
+            painter = painterResource(R.drawable.ic_more_vert),
+            onClick = {
+                menuPage = StationMenuPage.Main
+                expanded = true
+            },
         )
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) },
+            onDismissRequest = { expanded = false },
             containerColor = RadioSurface,
             shape = androidx.compose.foundation.shape.RoundedCornerShape(RadioCorners.medium),
             offset = DpOffset(x = 0.dp, y = RadioSpacing.extraSmall),
         ) {
-            StationSortMode.entries.forEach { option ->
-                val selected = sortState.mode == option
-                DropdownMenuItem(
-                    modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
-                    contentPadding = PaddingValues(horizontal = RadioSpacing.large),
-                    text = {
-                        Text(
-                            text = stringResource(option.labelRes()),
-                            color = RadioText,
-                        )
-                    },
-                    onClick = {
+            when (menuPage) {
+                StationMenuPage.Main -> StationActionsMenu(
+                    onAddStation = onAddStation,
+                    onSearchOnline = onSearchOnline,
+                    onOpenSort = { menuPage = StationMenuPage.Sort },
+                    onDismiss = { expanded = false },
+                )
+                StationMenuPage.Sort -> StationSortMenu(
+                    sortState = sortState,
+                    onBack = { menuPage = StationMenuPage.Main },
+                    onSortModeSelected = { option ->
+                        if (option == StationSortMode.Custom) expanded = false
                         onSortModeSelected(option)
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(
-                                if (selected) {
-                                    R.drawable.ic_radio_button_checked
-                                } else {
-                                    R.drawable.ic_radio_button_unchecked
-                                },
-                            ),
-                            contentDescription = null,
-                            modifier = Modifier.size(RadioSizes.icon),
-                            tint = if (selected) RadioPrimary else RadioTextMuted,
-                        )
-                    },
-                    trailingIcon = if (selected && option != StationSortMode.Custom) {
-                        {
-                            Icon(
-                                painter = painterResource(
-                                    if (sortState.ascending) {
-                                        R.drawable.ic_keyboard_arrow_up
-                                    } else {
-                                        R.drawable.ic_keyboard_arrow_down
-                                    },
-                                ),
-                                contentDescription = null,
-                                modifier = Modifier.size(RadioSizes.icon),
-                                tint = RadioText,
-                            )
-                        }
-                    } else {
-                        null
                     },
                 )
             }
@@ -245,68 +215,140 @@ private fun SortMenuButton(
 }
 
 @Composable
-private fun AddMenuButton(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
+private fun StationActionsMenu(
     onAddStation: () -> Unit,
     onSearchOnline: () -> Unit,
+    onOpenSort: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    Box {
-        OmniIconButton(
-            painter = painterResource(R.drawable.ic_add),
-            onClick = { onExpandedChange(true) },
+    DropdownMenuItem(
+        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
+        text = {
+            Text(
+                text = stringResource(R.string.action_add_manually),
+                color = RadioText,
+            )
+        },
+        onClick = {
+            onDismiss()
+            onAddStation()
+        },
+        leadingIcon = {
+            Icon(
+                painter = painterResource(R.drawable.ic_add_manually),
+                contentDescription = null,
+                modifier = Modifier.size(RadioSizes.icon),
+                tint = RadioText,
+            )
+        },
+    )
+    DropdownMenuItem(
+        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
+        text = {
+            Text(
+                text = stringResource(R.string.action_search_online),
+                color = RadioText,
+            )
+        },
+        onClick = {
+            onDismiss()
+            onSearchOnline()
+        },
+        leadingIcon = {
+            Icon(
+                painter = painterResource(R.drawable.ic_search),
+                contentDescription = null,
+                modifier = Modifier.size(RadioSizes.icon),
+                tint = RadioText,
+            )
+        },
+    )
+    HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
+    DropdownMenuItem(
+        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
+        text = { Text(stringResource(R.string.action_sort), color = RadioText) },
+        onClick = onOpenSort,
+        leadingIcon = {
+            Icon(
+                painter = painterResource(R.drawable.ic_sort),
+                contentDescription = null,
+                modifier = Modifier.size(RadioSizes.icon),
+                tint = RadioText,
+            )
+        },
+    )
+}
+
+@Composable
+private fun StationSortMenu(
+    sortState: StationSortState,
+    onBack: () -> Unit,
+    onSortModeSelected: (StationSortMode) -> Unit,
+) {
+    DropdownMenuItem(
+        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
+        text = { Text(stringResource(R.string.action_sort), color = RadioText) },
+        onClick = onBack,
+        leadingIcon = {
+            Icon(
+                painter = painterResource(R.drawable.ic_arrow_back),
+                contentDescription = null,
+                modifier = Modifier.size(RadioSizes.icon),
+                tint = RadioText,
+            )
+        },
+    )
+    HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
+    StationSortMode.entries.forEach { option ->
+        val selected = sortState.mode == option
+        DropdownMenuItem(
+            modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+            contentPadding = PaddingValues(horizontal = RadioSpacing.large),
+            text = {
+                Text(
+                    text = stringResource(option.labelRes()),
+                    color = RadioText,
+                )
+            },
+            onClick = {
+                onSortModeSelected(option)
+            },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(
+                        if (selected) {
+                            R.drawable.ic_radio_button_checked
+                        } else {
+                            R.drawable.ic_radio_button_unchecked
+                        },
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(RadioSizes.icon),
+                    tint = if (selected) RadioPrimary else RadioTextMuted,
+                )
+            },
+            trailingIcon = if (selected && option != StationSortMode.Custom) {
+                {
+                    Icon(
+                        painter = painterResource(
+                            if (sortState.ascending) {
+                                R.drawable.ic_keyboard_arrow_up
+                            } else {
+                                R.drawable.ic_keyboard_arrow_down
+                            },
+                        ),
+                        contentDescription = null,
+                        modifier = Modifier.size(RadioSizes.icon),
+                        tint = RadioText,
+                    )
+                }
+            } else {
+                null
+            },
         )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) },
-            containerColor = RadioSurface,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(RadioCorners.medium),
-            offset = DpOffset(x = 0.dp, y = RadioSpacing.extraSmall),
-        ) {
-            DropdownMenuItem(
-                modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
-                contentPadding = PaddingValues(horizontal = RadioSpacing.large),
-                text = {
-                    Text(
-                        text = stringResource(R.string.action_add_manually),
-                        color = RadioText,
-                    )
-                },
-                onClick = {
-                    onExpandedChange(false)
-                    onAddStation()
-                },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_add_manually),
-                        contentDescription = null,
-                        modifier = Modifier.size(RadioSizes.icon),
-                        tint = RadioText,
-                    )
-                },
-            )
-            DropdownMenuItem(
-                modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
-                contentPadding = PaddingValues(horizontal = RadioSpacing.large),
-                text = {
-                    Text(
-                        text = stringResource(R.string.action_search_online),
-                        color = RadioText,
-                    )
-                },
-                onClick = {
-                    onExpandedChange(false)
-                    onSearchOnline()
-                },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_search),
-                        contentDescription = null,
-                        modifier = Modifier.size(RadioSizes.icon),
-                        tint = RadioText,
-                    )
-                },
-            )
-        }
     }
 }
