@@ -25,6 +25,8 @@ fun StationTabsPager(
     stations: List<Station>,
     selectedStationId: String?,
     playingStationId: String?,
+    showPlaybackIndicator: Boolean,
+    showFavoriteButtons: Boolean,
     sortState: StationSortState,
     customStationOrder: List<String>,
     customFavoriteOrder: List<String>,
@@ -63,6 +65,8 @@ fun StationTabsPager(
                 stations = visibleStations,
                 selectedStationId = selectedStationId,
                 playingStationId = playingStationId,
+                showPlaybackIndicator = showPlaybackIndicator,
+                showFavoriteButtons = showFavoriteButtons,
                 emptyContent = {
                     when (page) {
                         MainPage.Stations -> EmptyStationsState(Modifier.fillMaxSize().padding(horizontal = RadioSpacing.inset))
@@ -90,6 +94,8 @@ private fun StationPageList(
     stations: List<Station>,
     selectedStationId: String?,
     playingStationId: String?,
+    showPlaybackIndicator: Boolean,
+    showFavoriteButtons: Boolean,
     emptyContent: @Composable () -> Unit,
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
@@ -111,6 +117,8 @@ private fun StationPageList(
         stations = stations,
         selectedIndex = stations.indexOfFirst { it.id == selectedStationId },
         playingStationId = playingStationId,
+        showPlaybackIndicator = showPlaybackIndicator,
+        showFavoriteButtons = showFavoriteButtons,
         scrollToSelectedRequest = scrollToSelectedRequest,
         scrollToStationId = scrollToStationId,
         showArtwork = showArtwork,

@@ -40,16 +40,18 @@ const val STOP_SERVICE_AFTER_PAUSE_NEVER = 0
 const val DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES = 5
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val themeModeKey = stringPreferencesKey("theme_mode")
-private val stationDividersKey = stringPreferencesKey("station_dividers")
 private val sleepTimerCloseAppKey = booleanPreferencesKey("sleep_timer_close_app")
 private val sleepTimerPlacementKey = stringPreferencesKey("sleep_timer_placement")
 private val sleepTimerFreeXKey = floatPreferencesKey("sleep_timer_free_x")
 private val sleepTimerFreeYKey = floatPreferencesKey("sleep_timer_free_y")
-private val rememberLastStationKey = booleanPreferencesKey("remember_last_station")
-private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
-private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
+private val stationDividersKey = stringPreferencesKey("station_dividers")
+private val showPlaybackIndicatorKey = booleanPreferencesKey("show_playback_indicator")
+private val showFavoriteButtonsKey = booleanPreferencesKey("show_favorite_buttons")
 private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
 private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
+private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
+private val rememberLastStationKey = booleanPreferencesKey("remember_last_station")
+private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
 private val showBitrateInControlPanelKey = booleanPreferencesKey("show_bitrate_in_control_panel")
 private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_bitrate")
 private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
@@ -126,12 +128,6 @@ class StationRepository(private val context: Context) {
                 ?: ThemeMode.System
         }
 
-    val stationDividers: Flow<StationDividerStyle> = context.stationDataStore.data
-        .map { preferences ->
-            StationDividerStyle.entries.firstOrNull { it.name == preferences[stationDividersKey] }
-                ?: StationDividerStyle.Inset
-        }
-
     val sleepTimerCloseApp: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[sleepTimerCloseAppKey] ?: false }
 
@@ -152,6 +148,27 @@ class StationRepository(private val context: Context) {
             )
         }
 
+    val stationDividers: Flow<StationDividerStyle> = context.stationDataStore.data
+        .map { preferences ->
+            StationDividerStyle.entries.firstOrNull { it.name == preferences[stationDividersKey] }
+                ?: StationDividerStyle.Inset
+        }
+
+    val showPlaybackIndicator: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showPlaybackIndicatorKey] ?: true }
+
+    val showFavoriteButtons: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showFavoriteButtonsKey] ?: true }
+
+    val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
+
+    val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
+
+    val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showStationArtworkKey] ?: true }
+
     val rememberLastStation: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[rememberLastStationKey] ?: true }
 
@@ -159,15 +176,6 @@ class StationRepository(private val context: Context) {
         .map { preferences -> preferences[stopServiceAfterPauseMinutesKey] ?: DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES }
 
     val keepMediaCard = keepMediaCardState.asStateFlow()
-
-    val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[showStationArtworkKey] ?: true }
-
-    val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
-
-    val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
 
     val showBitrateInControlPanel: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showBitrateInControlPanelKey] ?: true }
@@ -240,12 +248,6 @@ class StationRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveStationDividers(style: StationDividerStyle) {
-        context.stationDataStore.edit { preferences ->
-            preferences[stationDividersKey] = style.name
-        }
-    }
-
     suspend fun saveSleepTimerCloseApp(closeApp: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[sleepTimerCloseAppKey] = closeApp
@@ -263,6 +265,42 @@ class StationRepository(private val context: Context) {
         context.stationDataStore.edit { preferences ->
             preferences[sleepTimerFreeXKey] = position.xFraction.coerceIn(0f, 1f)
             preferences[sleepTimerFreeYKey] = position.yFraction.coerceIn(0f, 1f)
+        }
+    }
+
+    suspend fun saveStationDividers(style: StationDividerStyle) {
+        context.stationDataStore.edit { preferences ->
+            preferences[stationDividersKey] = style.name
+        }
+    }
+
+    suspend fun saveShowPlaybackIndicator(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showPlaybackIndicatorKey] = show
+        }
+    }
+
+    suspend fun saveShowFavoriteButtons(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showFavoriteButtonsKey] = show
+        }
+    }
+
+    suspend fun saveShowEmptyFavoritesTab(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showEmptyFavoritesTabKey] = show
+        }
+    }
+
+    suspend fun saveConfirmStationDeletion(confirm: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[confirmStationDeletionKey] = confirm
+        }
+    }
+
+    suspend fun saveShowStationArtwork(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showStationArtworkKey] = show
         }
     }
 
@@ -286,24 +324,6 @@ class StationRepository(private val context: Context) {
             PackageManager.DONT_KILL_APP,
         )
         keepMediaCardState.value = keep
-    }
-
-    suspend fun saveShowStationArtwork(show: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[showStationArtworkKey] = show
-        }
-    }
-
-    suspend fun saveShowEmptyFavoritesTab(show: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[showEmptyFavoritesTabKey] = show
-        }
-    }
-
-    suspend fun saveConfirmStationDeletion(confirm: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[confirmStationDeletionKey] = confirm
-        }
     }
 
     suspend fun saveShowBitrateInControlPanel(show: Boolean) {

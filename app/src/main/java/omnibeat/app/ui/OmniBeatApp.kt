@@ -190,13 +190,15 @@ fun OmniBeatApp() {
         var stations by remember { mutableStateOf(emptyList<Station>()) }
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var stationDividers by remember { mutableStateOf(StationDividerStyle.Inset) }
+        var showPlaybackIndicator by remember { mutableStateOf(true) }
+        var showFavoriteButtons by remember { mutableStateOf(true) }
+        var showEmptyFavoritesTab by remember { mutableStateOf(true) }
+        var confirmStationDeletion by remember { mutableStateOf(true) }
+        var showStationArtwork by remember { mutableStateOf(true) }
+        var syncingStationArtwork by remember { mutableStateOf(false) }
         var rememberLastStation by remember { mutableStateOf(true) }
         var stopServiceAfterPauseMinutes by remember { mutableIntStateOf(DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES) }
         var keepMediaCard by remember { mutableStateOf(repository.keepMediaCard.value) }
-        var showStationArtwork by remember { mutableStateOf(true) }
-        var syncingStationArtwork by remember { mutableStateOf(false) }
-        var showEmptyFavoritesTab by remember { mutableStateOf(true) }
-        var confirmStationDeletion by remember { mutableStateOf(true) }
         var showBitrateInControlPanel by remember { mutableStateOf(true) }
         var showUnavailableBitrate by remember { mutableStateOf(false) }
         var marqueeTrackTitle by remember { mutableStateOf(true) }
@@ -262,12 +264,14 @@ fun OmniBeatApp() {
             onStationsChange = { stations = it },
             onAppVolumeChange = { appVolume = it },
             onStationDividersChange = { stationDividers = it },
+            onShowPlaybackIndicatorChange = { showPlaybackIndicator = it },
+            onShowFavoriteButtonsChange = { showFavoriteButtons = it },
+            onShowEmptyFavoritesTabChange = { showEmptyFavoritesTab = it },
+            onConfirmStationDeletionChange = { confirmStationDeletion = it },
+            onShowStationArtworkChange = { showStationArtwork = it },
             onRememberLastStationChange = { rememberLastStation = it },
             onStopServiceAfterPauseMinutesChange = { stopServiceAfterPauseMinutes = it },
             onKeepMediaCardChange = { keepMediaCard = it },
-            onShowStationArtworkChange = { showStationArtwork = it },
-            onShowEmptyFavoritesTabChange = { showEmptyFavoritesTab = it },
-            onConfirmStationDeletionChange = { confirmStationDeletion = it },
             onShowBitrateInControlPanelChange = { showBitrateInControlPanel = it },
             onShowUnavailableBitrateChange = { showUnavailableBitrate = it },
             onMarqueeTrackTitleChange = { marqueeTrackTitle = it },
@@ -1151,6 +1155,8 @@ fun OmniBeatApp() {
                                     stations = stations,
                                     selectedStationId = playbackState.selectedStation?.id,
                                     playingStationId = playbackState.selectedStation?.id.takeIf { playbackState.isPlaying },
+                                    showPlaybackIndicator = showPlaybackIndicator,
+                                    showFavoriteButtons = showFavoriteButtons,
                                     sortState = sortState,
                                     customStationOrder = customStationOrder,
                                     customFavoriteOrder = customFavoriteOrder,
@@ -1217,13 +1223,15 @@ fun OmniBeatApp() {
                                     themeMode = themeMode,
                                     appLanguage = appLanguage,
                                     stationDividers = stationDividers,
+                                    showPlaybackIndicator = showPlaybackIndicator,
+                                    showFavoriteButtons = showFavoriteButtons,
+                                    showEmptyFavoritesTab = showEmptyFavoritesTab,
+                                    confirmStationDeletion = confirmStationDeletion,
+                                    showStationArtwork = showStationArtwork,
+                                    syncingStationArtwork = syncingStationArtwork,
                                     rememberLastStation = rememberLastStation,
                                     stopServiceAfterPauseMinutes = stopServiceAfterPauseMinutes,
                                     keepMediaCard = keepMediaCard,
-                                    showStationArtwork = showStationArtwork,
-                                    syncingStationArtwork = syncingStationArtwork,
-                                    showEmptyFavoritesTab = showEmptyFavoritesTab,
-                                    confirmStationDeletion = confirmStationDeletion,
                                     showBitrateInControlPanel = showBitrateInControlPanel,
                                     showUnavailableBitrate = showUnavailableBitrate,
                                     marqueeTrackTitle = marqueeTrackTitle,
@@ -1242,6 +1250,27 @@ fun OmniBeatApp() {
                                         stationDividers = style
                                         scope.launch { repository.saveStationDividers(style) }
                                     },
+                                    onShowPlaybackIndicatorChange = { show ->
+                                        showPlaybackIndicator = show
+                                        scope.launch { repository.saveShowPlaybackIndicator(show) }
+                                    },
+                                    onShowFavoriteButtonsChange = { show ->
+                                        showFavoriteButtons = show
+                                        scope.launch { repository.saveShowFavoriteButtons(show) }
+                                    },
+                                    onShowEmptyFavoritesTabChange = { show ->
+                                        showEmptyFavoritesTab = show
+                                        scope.launch { repository.saveShowEmptyFavoritesTab(show) }
+                                    },
+                                    onConfirmStationDeletionChange = { confirm ->
+                                        confirmStationDeletion = confirm
+                                        scope.launch { repository.saveConfirmStationDeletion(confirm) }
+                                    },
+                                    onShowStationArtworkChange = { show ->
+                                        showStationArtwork = show
+                                        scope.launch { repository.saveShowStationArtwork(show) }
+                                    },
+                                    onSyncStationArtwork = { syncStationArtwork() },
                                     onRememberLastStationChange = { remember ->
                                         rememberLastStation = remember
                                         scope.launch { repository.saveRememberLastStation(remember) }
@@ -1253,19 +1282,6 @@ fun OmniBeatApp() {
                                     onKeepMediaCardChange = { keep ->
                                         repository.saveKeepMediaCard(keep)
                                         keepMediaCard = keep
-                                    },
-                                    onShowStationArtworkChange = { show ->
-                                        showStationArtwork = show
-                                        scope.launch { repository.saveShowStationArtwork(show) }
-                                    },
-                                    onSyncStationArtwork = { syncStationArtwork() },
-                                    onShowEmptyFavoritesTabChange = { show ->
-                                        showEmptyFavoritesTab = show
-                                        scope.launch { repository.saveShowEmptyFavoritesTab(show) }
-                                    },
-                                    onConfirmStationDeletionChange = { confirm ->
-                                        confirmStationDeletion = confirm
-                                        scope.launch { repository.saveConfirmStationDeletion(confirm) }
                                     },
                                     onShowBitrateInControlPanelChange = { show ->
                                         showBitrateInControlPanel = show

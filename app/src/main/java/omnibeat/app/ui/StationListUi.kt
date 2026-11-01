@@ -138,6 +138,8 @@ fun StationList(
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
     showArtwork: Boolean,
+    showPlaybackIndicator: Boolean,
+    showFavoriteButtons: Boolean,
     dividerStyle: StationDividerStyle = StationDividerStyle.Inset,
     enabled: Boolean = true,
     reordering: Boolean = false,
@@ -199,6 +201,8 @@ fun StationList(
                         enabled = enabled,
                         reordering = reordering,
                         showArtwork = showArtwork,
+                        showPlaybackIndicator = showPlaybackIndicator,
+                        showFavoriteButtons = showFavoriteButtons,
                         dragging = isDragging,
                         showDivider = index < stations.lastIndex,
                         dividerStyle = dividerStyle,
@@ -395,6 +399,8 @@ private fun StationRow(
     enabled: Boolean,
     reordering: Boolean,
     showArtwork: Boolean,
+    showPlaybackIndicator: Boolean,
+    showFavoriteButtons: Boolean,
     dragging: Boolean,
     showDivider: Boolean,
     dividerStyle: StationDividerStyle,
@@ -436,29 +442,40 @@ private fun StationRow(
         } else {
             null
         },
-        trailingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(RadioSpacing.small),
-                modifier = Modifier.padding(start = RadioSpacing.medium),
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(width = RadioSizes.signalWidth, height = RadioSizes.signalHeight),
+        trailingContent = if (showPlaybackIndicator || showFavoriteButtons) {
+            {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(RadioSpacing.small),
+                    modifier = Modifier.padding(start = RadioSpacing.medium),
                 ) {
-                    if (playing && !reordering) {
-                        StationPlayingIndicator()
+                    if (showPlaybackIndicator) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(
+                                width = if (showFavoriteButtons) RadioSizes.signalWidth else RadioSizes.button,
+                                height = RadioSizes.signalHeight,
+                            ),
+                        ) {
+                            if (playing && !reordering) {
+                                StationPlayingIndicator()
+                            }
+                        }
+                    }
+                    if (showFavoriteButtons) {
+                        OmniIconButton(
+                            painter = painterResource(
+                                if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
+                            ),
+                            enabled = enabled && !reordering,
+                            onClick = onFavoriteClick,
+                            tint = if (station.isFavorite) RadioPrimary else RadioText,
+                        )
                     }
                 }
-                OmniIconButton(
-                    painter = painterResource(
-                        if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
-                    ),
-                    enabled = enabled && !reordering,
-                    onClick = onFavoriteClick,
-                    tint = if (station.isFavorite) RadioPrimary else RadioText,
-                )
             }
+        } else {
+            null
         },
         modifier = modifier,
     )

@@ -15,12 +15,14 @@ fun RepositoryStateEffects(
     onStationsChange: (List<Station>) -> Unit,
     onAppVolumeChange: (Float) -> Unit,
     onStationDividersChange: (StationDividerStyle) -> Unit,
+    onShowPlaybackIndicatorChange: (Boolean) -> Unit,
+    onShowFavoriteButtonsChange: (Boolean) -> Unit,
+    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
+    onConfirmStationDeletionChange: (Boolean) -> Unit,
+    onShowStationArtworkChange: (Boolean) -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
     onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
     onKeepMediaCardChange: (Boolean) -> Unit,
-    onShowStationArtworkChange: (Boolean) -> Unit,
-    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
-    onConfirmStationDeletionChange: (Boolean) -> Unit,
     onShowBitrateInControlPanelChange: (Boolean) -> Unit,
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
@@ -54,6 +56,32 @@ fun RepositoryStateEffects(
     }
 
     LaunchedEffect(repository) {
+        repository.showPlaybackIndicator.collect(onShowPlaybackIndicatorChange)
+    }
+
+    LaunchedEffect(repository) {
+        repository.showFavoriteButtons.collect(onShowFavoriteButtonsChange)
+    }
+
+    LaunchedEffect(repository) {
+        repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
+            onShowEmptyFavoritesTabChange(savedShowEmptyFavoritesTab)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.confirmStationDeletion.collect { savedConfirmStationDeletion ->
+            onConfirmStationDeletionChange(savedConfirmStationDeletion)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.showStationArtwork.collect { savedShowStationArtwork ->
+            onShowStationArtworkChange(savedShowStationArtwork)
+        }
+    }
+
+    LaunchedEffect(repository) {
         repository.rememberLastStation.collect { savedRememberLastStation ->
             onRememberLastStationChange(savedRememberLastStation)
         }
@@ -68,24 +96,6 @@ fun RepositoryStateEffects(
     LaunchedEffect(repository) {
         repository.keepMediaCard.collect { keep ->
             onKeepMediaCardChange(keep)
-        }
-    }
-
-    LaunchedEffect(repository) {
-        repository.showStationArtwork.collect { savedShowStationArtwork ->
-            onShowStationArtworkChange(savedShowStationArtwork)
-        }
-    }
-
-    LaunchedEffect(repository) {
-        repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
-            onShowEmptyFavoritesTabChange(savedShowEmptyFavoritesTab)
-        }
-    }
-
-    LaunchedEffect(repository) {
-        repository.confirmStationDeletion.collect { savedConfirmStationDeletion ->
-            onConfirmStationDeletionChange(savedConfirmStationDeletion)
         }
     }
 
