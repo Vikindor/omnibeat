@@ -1,7 +1,8 @@
 <resources>
     <string name="action_add_manually">Добавить вручную</string>
     <string name="action_search_online">Искать онлайн</string>
-    <string name="action_sort">Сортировка</string>
+    <string name="action_sort_stations">Сортировка станций</string>
+    <string name="action_reorder_tabs">Порядок вкладок</string>
     <string name="action_cancel">Отмена</string>
     <string name="action_close">Закрыть</string>
     <string name="action_more_info">Подробнее</string>

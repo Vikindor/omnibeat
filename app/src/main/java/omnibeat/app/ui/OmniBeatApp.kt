@@ -73,6 +73,7 @@ import omnibeat.app.data.appString
 import omnibeat.app.data.removeTrackingParameters
 import omnibeat.app.data.normalizeStreamUrl
 import omnibeat.app.model.MainPage
+import omnibeat.app.model.orderedTabs
 import omnibeat.app.model.Playlist
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationEditorState
@@ -181,6 +182,8 @@ fun OmniBeatApp() {
 
         val savedPlaylists by repository.playlists.collectAsState(initial = null)
         val playlists = savedPlaylists.orEmpty()
+        val savedTabOrder by repository.tabOrder.collectAsState(initial = emptyList())
+        var tabOrderDraft by rememberSaveable { mutableStateOf<List<String>?>(null) }
         var showPlaylistEditor by rememberSaveable { mutableStateOf(false) }
         var editingPlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
         var deletingPlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -232,19 +235,21 @@ fun OmniBeatApp() {
         var onlineFilterRequest by remember { mutableStateOf<Deferred<List<String>>?>(null) }
         var onlineFilterErrorsHandledBySearch by remember { mutableStateOf(false) }
         var onlineOptionsExpanded by remember { mutableStateOf(false) }
+        val allTabPagesState = remember {
+            derivedStateOf { orderedTabs(savedPlaylists.orEmpty(), savedTabOrder) }
+        }
+        val allTabPages by allTabPagesState
         val visibleTabPagesState = remember {
             derivedStateOf {
-                (if (showEmptyFavoritesTab || stations.any { it.isFavorite }) {
-                    MainPage.tabPages
-                } else {
-                    listOf(MainPage.Stations)
-                }) + savedPlaylists.orEmpty().map { MainPage.Playlist(it.id) }
+                allTabPagesState.value.filter {
+                    it != MainPage.Favorites || showEmptyFavoritesTab || stations.any { station -> station.isFavorite }
+                }
             }
         }
         val visibleTabPages by visibleTabPagesState
         val currentPlaylist = (selectedPage as? MainPage.Playlist)?.let { tab -> playlists.firstOrNull { it.id == tab.id } }
         val currentSortState = currentPlaylist?.sortState ?: sortState
-        val showPlayerPanel = !showSleepTimer &&
+        val showPlayerPanel = !showSleepTimer && tabOrderDraft == null &&
             (selectedPage in visibleTabPages || selectedPage == MainPage.SearchOnline)
         val showSleepTimerPill = showPlayerPanel && sleepTimerRemainingSeconds > 0L
         val layoutDirection = LocalLayoutDirection.current
@@ -491,7 +496,7 @@ fun OmniBeatApp() {
             pages = visibleTabPages,
             selectedPage = selectedPage,
         ) { page ->
-            if (selectedPage in visibleTabPages && selectedPage != page && membershipMode == null && !showSleepTimer) {
+            if (selectedPage in visibleTabPages && selectedPage != page && membershipMode == null && !showSleepTimer && tabOrderDraft == null) {
                 selectMainPage(page)
             }
         }
@@ -972,9 +977,11 @@ fun OmniBeatApp() {
             }
         }
 
-        BackHandler(enabled = membershipMode != null || showSleepTimer || drawerState.isOpen || reorderDraft != null || selectedPage !in visibleTabPages) {
+        BackHandler(enabled = tabOrderDraft != null || membershipMode != null || showSleepTimer || drawerState.isOpen || reorderDraft != null || selectedPage !in visibleTabPages) {
             if (drawerState.isOpen) {
                 scope.launch { drawerState.close() }
+            } else if (tabOrderDraft != null) {
+                tabOrderDraft = null
             } else if (membershipMode != null) {
                 membershipMode = null
             } else if (showSleepTimer) {
@@ -1057,21 +1064,35 @@ fun OmniBeatApp() {
                                 showPlaylistEditor = true
                             },
                             onDeletePlaylist = { deletingPlaylistId = currentPlaylist?.id },
-                            reordering = reorderDraft != null,
+                            reordering = reorderDraft != null || tabOrderDraft != null,
+                            reorderingTabs = tabOrderDraft != null,
                             onPageSelected = { page ->
                                 if (reorderDraft == null) {
                                     selectMainPage(page)
                                 }
                             },
                             onSortModeSelected = ::selectSortMode,
-                            onCancelReorder = ::cancelReorder,
-                            onConfirmReorder = ::confirmReorder,
+                            onReorderTabs = { tabOrderDraft = allTabPages.map { it.name } },
+                            onCancelReorder = {
+                                if (tabOrderDraft != null) tabOrderDraft = null else cancelReorder()
+                            },
+                            onConfirmReorder = {
+                                val order = tabOrderDraft
+                                if (order == null) {
+                                    confirmReorder()
+                                } else {
+                                    tabOrderDraft = null
+                                    scope.launch { repository.saveTabOrder(order) }
+                                }
+                            },
                             onOpenDrawer = { scope.launch { drawerState.open() } },
                             onNavigateBack = {
-                                if (membershipMode != null) membershipMode = null
+                                if (tabOrderDraft != null) tabOrderDraft = null
+                                else if (membershipMode != null) membershipMode = null
                                 else if (showSleepTimer) showSleepTimer = false else selectedPage = lastMainPage
                             },
                             overlayTitle = when {
+                                tabOrderDraft != null -> resources.appString(R.string.action_reorder_tabs)
                                 showSleepTimer -> resources.appString(R.string.page_sleep_timer)
                                 membershipMode == PlaylistMembershipMode.Add -> resources.appString(R.string.playlist_add)
                                 membershipMode == PlaylistMembershipMode.Remove -> resources.appString(R.string.playlist_remove)
@@ -1165,7 +1186,7 @@ fun OmniBeatApp() {
                                     scrollToStationId = scrollToStationId,
                                     showArtwork = showStationArtwork,
                                     dividerStyle = stationDividers,
-                                    listEnabled = drawerState.isClosed && reorderDraft == null && membershipMode == null && !showSleepTimer,
+                                    listEnabled = drawerState.isClosed && reorderDraft == null && tabOrderDraft == null && membershipMode == null && !showSleepTimer,
                                     onMove = ::moveReorderDraft,
                                     onFavoriteClick = ::toggleFavorite,
                                     onEditStation = { editorState = it },
@@ -1360,6 +1381,19 @@ fun OmniBeatApp() {
                                     )
                                 }
                             }
+                        }
+                        tabOrderDraft?.let { order ->
+                            ReorderTabsPage(
+                                tabs = orderedTabs(playlists, order),
+                                playlists = playlists,
+                                dividerStyle = stationDividers,
+                                onMove = { from, to ->
+                                    val draft = tabOrderDraft ?: return@ReorderTabsPage
+                                    if (from in draft.indices && to in draft.indices && from != to) {
+                                        tabOrderDraft = draft.toMutableList().apply { add(to, removeAt(from)) }
+                                    }
+                                },
+                            )
                         }
                         if (showSleepTimer) {
                             SleepTimerPage(

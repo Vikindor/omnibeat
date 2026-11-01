@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import omnibeat.app.model.ImportedTranslation
 import omnibeat.app.model.Station
 import omnibeat.app.model.Playlist
+import omnibeat.app.model.orderedTabs
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
 import omnibeat.app.model.StationDividerStyle
@@ -69,6 +70,7 @@ private val recentlyPlayedStationIdsKey = stringPreferencesKey("recently_played_
 private val stationSortKey = stringPreferencesKey("station_sort")
 private val customStationOrderKey = stringPreferencesKey("custom_station_order")
 private val customFavoriteOrderKey = stringPreferencesKey("custom_favorite_order")
+private val tabOrderKey = stringPreferencesKey("tab_order")
 private val playlistsJsonKey = stringPreferencesKey("playlists_json")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 private val translationEnabledKey = booleanPreferencesKey("translation_enabled")
@@ -212,6 +214,9 @@ class StationRepository(private val context: Context) {
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
+
+    val tabOrder: Flow<List<String>> = context.stationDataStore.data
+        .map { decodeStringList(it[tabOrderKey]) }
 
     val playlists: Flow<List<Playlist>> = context.stationDataStore.data
         .map { decodePlaylists(it[playlistsJsonKey]) }
@@ -438,6 +443,13 @@ class StationRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveTabOrder(tabIds: List<String>) {
+        context.stationDataStore.edit { preferences ->
+            val playlists = decodePlaylists(preferences[playlistsJsonKey])
+            preferences[tabOrderKey] = encodeStringList(orderedTabs(playlists, tabIds).map { it.name })
+        }
+    }
+
     suspend fun createPlaylist(title: String): String {
         val id = UUID.randomUUID().toString()
         updatePlaylists { it + Playlist(id = id, title = title.trim()) }
@@ -489,7 +501,11 @@ class StationRepository(private val context: Context) {
 
     private suspend fun updatePlaylists(transform: (List<Playlist>) -> List<Playlist>) {
         context.stationDataStore.edit { preferences ->
-            preferences[playlistsJsonKey] = encodePlaylists(transform(decodePlaylists(preferences[playlistsJsonKey])))
+            val playlists = transform(decodePlaylists(preferences[playlistsJsonKey]))
+            preferences[playlistsJsonKey] = encodePlaylists(playlists)
+            preferences[tabOrderKey] = encodeStringList(
+                orderedTabs(playlists, decodeStringList(preferences[tabOrderKey])).map { it.name },
+            )
         }
     }
 

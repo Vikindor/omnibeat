@@ -61,8 +61,10 @@ fun MainTopBar(
     tabPages: List<MainPage>,
     sortState: StationSortState,
     reordering: Boolean,
+    reorderingTabs: Boolean = false,
     onPageSelected: (MainPage) -> Unit,
     onSortModeSelected: (StationSortMode) -> Unit,
+    onReorderTabs: () -> Unit,
     onCancelReorder: () -> Unit,
     onConfirmReorder: () -> Unit,
     onOpenDrawer: () -> Unit,
@@ -167,7 +169,7 @@ fun MainTopBar(
                 }
             }
         }
-        if (showTabs) {
+        if (showTabs || reorderingTabs) {
             if (reordering) {
                 OmniIconButton(
                     painter = painterResource(R.drawable.ic_close),
@@ -189,6 +191,7 @@ fun MainTopBar(
                     onDeletePlaylist = onDeletePlaylist,
                     sortState = sortState,
                     onSortModeSelected = onSortModeSelected,
+                    onReorderTabs = onReorderTabs,
                     onAddStation = onAddStation,
                     onSearchOnline = onSearchOnline,
                 )
@@ -205,6 +208,7 @@ private enum class StationMenuPage {
 @Composable
 private fun StationMenuButton(
     selectedPage: MainPage,
+    onReorderTabs: () -> Unit,
     onCreatePlaylist: () -> Unit,
     onAddToPlaylist: () -> Unit,
     onRemoveFromPlaylist: () -> Unit,
@@ -246,6 +250,7 @@ private fun StationMenuButton(
                     onAddStation = onAddStation,
                     onSearchOnline = onSearchOnline,
                     onOpenSort = { menuPage = StationMenuPage.Sort },
+                    onReorderTabs = onReorderTabs,
                     onDismiss = { expanded = false },
                 )
                 StationMenuPage.Sort -> StationSortMenu(
@@ -264,6 +269,7 @@ private fun StationMenuButton(
 @Composable
 private fun StationActionsMenu(
     selectedPage: MainPage,
+    onReorderTabs: () -> Unit,
     onCreatePlaylist: () -> Unit,
     onAddToPlaylist: () -> Unit,
     onRemoveFromPlaylist: () -> Unit,
@@ -335,7 +341,7 @@ private fun StationActionsMenu(
     DropdownMenuItem(
         modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
         contentPadding = PaddingValues(horizontal = RadioSpacing.large),
-        text = { Text(stringResource(R.string.action_sort), color = RadioText) },
+        text = { Text(stringResource(R.string.action_sort_stations), color = RadioText) },
         onClick = onOpenSort,
         leadingIcon = {
             Icon(
@@ -346,6 +352,10 @@ private fun StationActionsMenu(
             )
         },
     )
+    PlaylistMenuItem(R.string.action_reorder_tabs, R.drawable.ic_drag_indicator) {
+        onDismiss()
+        onReorderTabs()
+    }
     if (selectedPage == MainPage.Stations) {
         HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
         PlaylistMenuItem(R.string.playlist_create, R.drawable.ic_add) {
@@ -397,7 +407,7 @@ private fun StationSortMenu(
     DropdownMenuItem(
         modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
         contentPadding = PaddingValues(horizontal = RadioSpacing.large),
-        text = { Text(stringResource(R.string.action_sort), color = RadioText) },
+        text = { Text(stringResource(R.string.action_sort_stations), color = RadioText) },
         onClick = onBack,
         leadingIcon = {
             Icon(
