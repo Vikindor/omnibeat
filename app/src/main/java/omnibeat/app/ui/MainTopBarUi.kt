@@ -154,6 +154,7 @@ fun MainTopBar(
                 )
             } else {
                 StationMenuButton(
+                    selectedPage = selectedPage,
                     sortState = sortState,
                     onSortModeSelected = onSortModeSelected,
                     onAddStation = onAddStation,
@@ -171,13 +172,14 @@ private enum class StationMenuPage {
 
 @Composable
 private fun StationMenuButton(
+    selectedPage: MainPage,
     sortState: StationSortState,
     onSortModeSelected: (StationSortMode) -> Unit,
     onAddStation: () -> Unit,
     onSearchOnline: () -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var menuPage by remember { mutableStateOf(StationMenuPage.Main) }
+    var expanded by remember(selectedPage) { mutableStateOf(false) }
+    var menuPage by remember(selectedPage) { mutableStateOf(StationMenuPage.Main) }
 
     Box {
         OmniIconButton(
@@ -196,6 +198,7 @@ private fun StationMenuButton(
         ) {
             when (menuPage) {
                 StationMenuPage.Main -> StationActionsMenu(
+                    selectedPage = selectedPage,
                     onAddStation = onAddStation,
                     onSearchOnline = onSearchOnline,
                     onOpenSort = { menuPage = StationMenuPage.Sort },
@@ -216,56 +219,59 @@ private fun StationMenuButton(
 
 @Composable
 private fun StationActionsMenu(
+    selectedPage: MainPage,
     onAddStation: () -> Unit,
     onSearchOnline: () -> Unit,
     onOpenSort: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    DropdownMenuItem(
-        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
-        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
-        text = {
-            Text(
-                text = stringResource(R.string.action_add_manually),
-                color = RadioText,
-            )
-        },
-        onClick = {
-            onDismiss()
-            onAddStation()
-        },
-        leadingIcon = {
-            Icon(
-                painter = painterResource(R.drawable.ic_add_manually),
-                contentDescription = null,
-                modifier = Modifier.size(RadioSizes.icon),
-                tint = RadioText,
-            )
-        },
-    )
-    DropdownMenuItem(
-        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
-        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
-        text = {
-            Text(
-                text = stringResource(R.string.action_search_online),
-                color = RadioText,
-            )
-        },
-        onClick = {
-            onDismiss()
-            onSearchOnline()
-        },
-        leadingIcon = {
-            Icon(
-                painter = painterResource(R.drawable.ic_search),
-                contentDescription = null,
-                modifier = Modifier.size(RadioSizes.icon),
-                tint = RadioText,
-            )
-        },
-    )
-    HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
+    if (selectedPage == MainPage.Stations) {
+        DropdownMenuItem(
+            modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+            contentPadding = PaddingValues(horizontal = RadioSpacing.large),
+            text = {
+                Text(
+                    text = stringResource(R.string.action_add_manually),
+                    color = RadioText,
+                )
+            },
+            onClick = {
+                onDismiss()
+                onAddStation()
+            },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_add_manually),
+                    contentDescription = null,
+                    modifier = Modifier.size(RadioSizes.icon),
+                    tint = RadioText,
+                )
+            },
+        )
+        DropdownMenuItem(
+            modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+            contentPadding = PaddingValues(horizontal = RadioSpacing.large),
+            text = {
+                Text(
+                    text = stringResource(R.string.action_search_online),
+                    color = RadioText,
+                )
+            },
+            onClick = {
+                onDismiss()
+                onSearchOnline()
+            },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_search),
+                    contentDescription = null,
+                    modifier = Modifier.size(RadioSizes.icon),
+                    tint = RadioText,
+                )
+            },
+        )
+        HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
+    }
     DropdownMenuItem(
         modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
         contentPadding = PaddingValues(horizontal = RadioSpacing.large),
