@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
+import omnibeat.app.model.Playlist
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
 import omnibeat.app.model.StationDividerStyle
@@ -17,7 +19,8 @@ import omnibeat.app.model.sortedStations
 
 @Composable
 fun StationTabsPager(
-    visibleTabPages: List<MainPage>,
+    visibleTabPagesState: State<List<MainPage>>,
+    playlists: List<Playlist>,
     pagerState: PagerState,
     stations: List<Station>,
     selectedStationId: String?,
@@ -34,90 +37,50 @@ fun StationTabsPager(
     onMove: (Int, Int) -> Unit,
     onFavoriteClick: (Station) -> Unit,
     onEditStation: (StationEditorState) -> Unit,
-    onStationClick: (Station) -> Unit,
+    onStationClick: (MainPage, Station) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     HorizontalPager(
         state = pagerState,
-        userScrollEnabled = reorderDraft == null,
+        key = { visibleTabPagesState.value[it].name },
+        userScrollEnabled = reorderDraft == null && listEnabled,
         modifier = modifier,
     ) { pageIndex ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pagerFade(pagerState, pageIndex),
-        ) {
-            when (visibleTabPages[pageIndex]) {
-                MainPage.Stations -> {
-                    val visibleStations = reorderDraft?.stations ?: sortedStations(
-                        source = stations,
-                        page = MainPage.Stations,
-                        sortState = sortState,
-                        customStationOrder = customStationOrder,
-                        customFavoriteOrder = customFavoriteOrder,
-                    )
-                    StationPageList(
-                        stations = visibleStations,
-                        selectedStationId = selectedStationId,
-                        playingStationId = playingStationId,
-                        emptyContent = {
-                            EmptyStationsState(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = RadioSpacing.inset),
-                            )
-                        },
-                        scrollToSelectedRequest = scrollToSelectedRequest,
-                        scrollToStationId = scrollToStationId,
-                        showArtwork = showArtwork,
-                        dividerStyle = dividerStyle,
-                        enabled = listEnabled,
-                        reordering = reorderDraft != null,
-                        onMove = onMove,
-                        onFavoriteClick = onFavoriteClick,
-                        onEditStation = { station ->
-                            createEditorState(stations, station)?.let(onEditStation)
-                        },
-                        onStationClick = onStationClick,
-                    )
-                }
-
-                MainPage.Favorites -> {
-                    val favoriteStations = reorderDraft?.stations ?: sortedStations(
-                        source = stations.filter { it.isFavorite },
-                        page = MainPage.Favorites,
-                        sortState = sortState,
-                        customStationOrder = customStationOrder,
-                        customFavoriteOrder = customFavoriteOrder,
-                    )
-                    StationPageList(
-                        stations = favoriteStations,
-                        selectedStationId = selectedStationId,
-                        playingStationId = playingStationId,
-                        emptyContent = {
-                            EmptyFavoritesState(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = RadioSpacing.inset),
-                            )
-                        },
-                        scrollToSelectedRequest = scrollToSelectedRequest,
-                        scrollToStationId = scrollToStationId,
-                        showArtwork = showArtwork,
-                        dividerStyle = dividerStyle,
-                        enabled = listEnabled,
-                        reordering = reorderDraft != null,
-                        onMove = onMove,
-                        onFavoriteClick = onFavoriteClick,
-                        onEditStation = { station ->
-                            createEditorState(stations, station)?.let(onEditStation)
-                        },
-                        onStationClick = onStationClick,
-                    )
-                }
-
-                else -> Unit
-            }
+        val page = visibleTabPagesState.value.getOrNull(pageIndex) ?: return@HorizontalPager
+        val playlist = (page as? MainPage.Playlist)?.let { tab -> playlists.firstOrNull { it.id == tab.id } }
+        val draft = reorderDraft?.takeIf { it.page == page }
+        val visibleStations = draft?.stations ?: if (page is MainPage.Playlist) {
+            playlist?.stations(stations).orEmpty()
+        } else sortedStations(
+            source = if (page == MainPage.Favorites) stations.filter { it.isFavorite } else stations,
+            page = page,
+            sortState = sortState,
+            customStationOrder = customStationOrder,
+            customFavoriteOrder = customFavoriteOrder,
+        )
+        Box(Modifier.fillMaxSize().pagerFade(pagerState, pageIndex)) {
+            StationPageList(
+                stations = visibleStations,
+                selectedStationId = selectedStationId,
+                playingStationId = playingStationId,
+                emptyContent = {
+                    when (page) {
+                        MainPage.Stations -> EmptyStationsState(Modifier.fillMaxSize().padding(horizontal = RadioSpacing.inset))
+                        MainPage.Favorites -> EmptyFavoritesState(Modifier.fillMaxSize().padding(horizontal = RadioSpacing.inset))
+                        else -> EmptyStationsState(Modifier.fillMaxSize().padding(horizontal = RadioSpacing.inset))
+                    }
+                },
+                scrollToSelectedRequest = scrollToSelectedRequest,
+                scrollToStationId = scrollToStationId,
+                showArtwork = showArtwork,
+                dividerStyle = dividerStyle,
+                enabled = listEnabled,
+                reordering = draft != null,
+                onMove = onMove,
+                onFavoriteClick = onFavoriteClick,
+                onEditStation = { station -> createEditorState(stations, station)?.let(onEditStation) },
+                onStationClick = { station -> onStationClick(page, station) },
+            )
         }
     }
 }

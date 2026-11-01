@@ -97,12 +97,35 @@ fun EmptyFavoritesState(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
         modifier = modifier.padding(horizontal = RadioSpacing.page),
     ) {
-        Text(
-            text = stringResource(R.string.empty_favorites),
-            color = RadioTextMuted,
-            fontSize = RadioTextSizes.bodyLarge,
-            textAlign = TextAlign.Center,
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(RadioSpacing.small),
+        ) {
+            Text(
+                text = stringResource(R.string.empty_favorites_prefix),
+                color = RadioTextMuted,
+                fontSize = RadioTextSizes.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.empty_favorites_suffix),
+                    color = RadioTextMuted,
+                    fontSize = RadioTextSizes.bodyLarge,
+                )
+                Icon(
+                    painter = painterResource(R.drawable.ic_favorite_border),
+                    contentDescription = null,
+                    tint = RadioTextMuted,
+                    modifier = Modifier
+                        .padding(start = RadioSpacing.compact)
+                        .size(RadioSizes.iconInline),
+                )
+            }
+        }
     }
 }
 

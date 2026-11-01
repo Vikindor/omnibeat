@@ -208,7 +208,7 @@ fun StationEditorDialog(
 }
 
 @Composable
-private fun EditableFieldLabel(text: String) {
+internal fun EditableFieldLabel(text: String) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(RadioSpacing.extraSmall),
         verticalAlignment = Alignment.CenterVertically,

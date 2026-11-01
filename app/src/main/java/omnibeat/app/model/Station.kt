@@ -26,17 +26,19 @@ data class StationSortState(
     val ascending: Boolean = false,
 )
 
-enum class MainPage {
-    Stations,
-    Favorites,
-    ExportImport,
-    Translation,
-    SearchOnline,
-    Settings,
-    About;
+sealed class MainPage(val name: String) {
+    data object Stations : MainPage("Stations")
+    data object Favorites : MainPage("Favorites")
+    data class Playlist(val id: String) : MainPage("Playlist:$id")
+    data object ExportImport : MainPage("ExportImport")
+    data object Translation : MainPage("Translation")
+    data object SearchOnline : MainPage("SearchOnline")
+    data object Settings : MainPage("Settings")
+    data object About : MainPage("About")
 
     companion object {
-        val tabPages = listOf(Stations, Favorites)
+        val tabPages: List<MainPage>
+            get() = listOf(Stations, Favorites)
     }
 }
 

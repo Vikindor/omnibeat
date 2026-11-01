@@ -28,20 +28,30 @@ fun normalizeStreamUrl(streamUrl: String): String {
 }
 
 fun removeTrackingParameters(streamUrl: String): String {
-    return runCatching {
-        val uri = URI(streamUrl)
-        val query = uri.rawQuery ?: return@runCatching streamUrl
-        val cleanedQuery = query
-            .split("&")
-            .filter { part ->
-                val key = part.substringBefore("=", missingDelimiterValue = part)
-                !key.isTrackingQueryKey()
-            }
-            .joinToString("&")
-            .takeIf { it.isNotBlank() }
+    val uri = try {
+        URI(streamUrl)
+    } catch (_: URISyntaxException) {
+        return streamUrl
+    }
+    val query = uri.rawQuery ?: return streamUrl
+    val parameters = query.split("&")
+    val retainedParameters = parameters.filter { part ->
+        val key = part.substringBefore("=")
+        !key.isTrackingQueryKey()
+    }
+    if (retainedParameters.size == parameters.size) return streamUrl
 
-        URI(uri.scheme, uri.rawAuthority, uri.rawPath, cleanedQuery, uri.rawFragment).toString()
-    }.getOrDefault(streamUrl)
+    val cleanedQuery = retainedParameters.joinToString("&")
+    val queryStart = streamUrl.indexOf('?')
+    val queryEnd = queryStart + 1 + query.length
+    return buildString {
+        append(streamUrl, 0, queryStart)
+        if (cleanedQuery.isNotEmpty()) {
+            append('?')
+            append(cleanedQuery)
+        }
+        append(streamUrl, queryEnd, streamUrl.length)
+    }
 }
 
 private fun String.isTrackingQueryKey(): Boolean {

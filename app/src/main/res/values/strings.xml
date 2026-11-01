@@ -21,6 +21,15 @@
     <string name="action_continue">Continue</string>
     <string name="action_finish">Finish</string>
 
+    <string name="playlist_title">Playlist</string>
+    <string name="playlist_create">Create playlist</string>
+    <string name="playlist_add">Add to playlist</string>
+    <string name="playlist_remove">Remove from playlist</string>
+    <string name="playlist_rename">Rename playlist</string>
+    <string name="playlist_delete">Delete playlist</string>
+    <string name="playlist_delete_message">Delete this playlist? Stations will remain in your library.</string>
+    <string name="playlist_empty">This playlist is empty</string>
+
     <string name="sort_date_added">Date added</string>
     <string name="sort_station_title">Station title</string>
     <string name="sort_favorites">Favorites</string>
@@ -182,7 +191,8 @@
     <string name="empty_stations_prefix">No stations here yet.</string>
     <string name="empty_stations_suffix_start">Tap</string>
     <string name="empty_stations_suffix_end">to add some</string>
-    <string name="empty_favorites">No favorites yet</string>
+    <string name="empty_favorites_prefix">No favorites yet.</string>
+    <string name="empty_favorites_suffix">Add stations and tap</string>
 
     <string name="online_search_options">Search options</string>
     <string name="online_search_by_title">Search by title</string>

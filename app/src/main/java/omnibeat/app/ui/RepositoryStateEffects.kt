@@ -2,6 +2,7 @@ package omnibeat.app.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.flow.first
 import omnibeat.app.data.StationRepository
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
@@ -11,8 +12,6 @@ import omnibeat.app.model.StationSortState
 @Composable
 fun RepositoryStateEffects(
     repository: StationRepository,
-    selectedPage: MainPage,
-    visibleTabPages: List<MainPage>,
     onStationsChange: (List<Station>) -> Unit,
     onAppVolumeChange: (Float) -> Unit,
     onStationDividersChange: (StationDividerStyle) -> Unit,
@@ -142,14 +141,15 @@ fun RepositoryStateEffects(
         }
     }
 
-    LaunchedEffect(repository, selectedPage, visibleTabPages) {
-        repository.lastMainPage.collect { savedPage ->
-            val restoredPage = MainPage.tabPages.firstOrNull { it.name == savedPage } ?: MainPage.Stations
-            onLastMainPageChange(restoredPage)
-            if (selectedPage in visibleTabPages) {
-                onSelectedPageRestore(restoredPage)
-            }
+    LaunchedEffect(repository) {
+        val savedPage = repository.lastMainPage.first()
+        val restoredPage = if (savedPage?.startsWith("Playlist:") == true) {
+            MainPage.Playlist(savedPage.removePrefix("Playlist:"))
+        } else {
+            MainPage.tabPages.firstOrNull { it.name == savedPage } ?: MainPage.Stations
         }
+        onLastMainPageChange(restoredPage)
+        onSelectedPageRestore(restoredPage)
     }
 
     LaunchedEffect(repository) {

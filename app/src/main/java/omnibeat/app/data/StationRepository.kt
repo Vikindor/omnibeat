@@ -22,6 +22,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import omnibeat.app.model.ImportedTranslation
 import omnibeat.app.model.Station
+import omnibeat.app.model.Playlist
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
 import omnibeat.app.model.StationDividerStyle
@@ -66,6 +67,7 @@ private val recentlyPlayedStationIdsKey = stringPreferencesKey("recently_played_
 private val stationSortKey = stringPreferencesKey("station_sort")
 private val customStationOrderKey = stringPreferencesKey("custom_station_order")
 private val customFavoriteOrderKey = stringPreferencesKey("custom_favorite_order")
+private val playlistsJsonKey = stringPreferencesKey("playlists_json")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 private val translationEnabledKey = booleanPreferencesKey("translation_enabled")
 private val importedTranslationKey = stringPreferencesKey("imported_translation")
@@ -202,6 +204,9 @@ class StationRepository(private val context: Context) {
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
+
+    val playlists: Flow<List<Playlist>> = context.stationDataStore.data
+        .map { decodePlaylists(it[playlistsJsonKey]) }
 
     val lastPlayedStationId: Flow<String?> = context.stationDataStore.data
         .map { preferences -> preferences[lastPlayedStationIdKey]?.takeIf { it.isNotBlank() } }
@@ -413,15 +418,36 @@ class StationRepository(private val context: Context) {
         }
     }
 
+    suspend fun createPlaylist(title: String): String {
+        val id = UUID.randomUUID().toString()
+        updatePlaylists { it + Playlist(id = id, title = title.trim()) }
+        return id
+    }
+
+    suspend fun updatePlaylist(id: String, transform: (Playlist) -> Playlist) {
+        updatePlaylists { list -> list.map { if (it.id == id) transform(it) else it } }
+    }
+
+    suspend fun deletePlaylist(id: String) {
+        updatePlaylists { list -> list.filterNot { it.id == id } }
+    }
+
     suspend fun saveStations(stations: List<Station>) {
         context.stationDataStore.edit { preferences ->
             preferences[stationsJsonKey] = encodeStations(stations)
+            val ids = stations.mapTo(mutableSetOf()) { it.id }
+            preferences[playlistsJsonKey] = encodePlaylists(decodePlaylists(preferences[playlistsJsonKey]).map {
+                it.copy(stationIds = it.stationIds.filter(ids::contains))
+            })
         }
     }
 
     suspend fun clearLibrary() {
         context.stationDataStore.edit { preferences ->
             preferences[stationsJsonKey] = encodeStations(emptyList())
+            preferences[playlistsJsonKey] = encodePlaylists(decodePlaylists(preferences[playlistsJsonKey]).map {
+                it.copy(stationIds = emptyList())
+            })
             preferences[customStationOrderKey] = encodeStringList(emptyList())
             preferences[customFavoriteOrderKey] = encodeStringList(emptyList())
             preferences.remove(lastPlayedStationIdKey)
@@ -439,6 +465,38 @@ class StationRepository(private val context: Context) {
             }
             preferences[stationsJsonKey] = encodeStations(nextStations)
         }
+    }
+
+    private suspend fun updatePlaylists(transform: (List<Playlist>) -> List<Playlist>) {
+        context.stationDataStore.edit { preferences ->
+            preferences[playlistsJsonKey] = encodePlaylists(transform(decodePlaylists(preferences[playlistsJsonKey])))
+        }
+    }
+
+    private fun encodePlaylists(playlists: List<Playlist>): String = JSONArray().apply {
+        playlists.forEach { playlist ->
+            put(JSONObject()
+                .put("id", playlist.id)
+                .put("title", playlist.title)
+                .put("stationIds", JSONArray(playlist.stationIds))
+                .put("sort", "${playlist.sortState.mode.name}:${playlist.sortState.ascending}"))
+        }
+    }.toString()
+
+    private fun decodePlaylists(saved: String?): List<Playlist> {
+        if (saved.isNullOrBlank()) return emptyList()
+        return runCatching {
+            val items = JSONArray(saved)
+            List(items.length()) { index ->
+                val item = items.getJSONObject(index)
+                Playlist(
+                    id = item.getString("id"),
+                    title = item.getString("title"),
+                    stationIds = decodeStringList(item.optJSONArray("stationIds")?.toString()).distinct(),
+                    sortState = decodeStationSortState(item.optString("sort")),
+                )
+            }
+        }.getOrDefault(emptyList())
     }
 
     private fun encodeStations(stations: List<Station>): String {

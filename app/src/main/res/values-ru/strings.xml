@@ -19,6 +19,15 @@
     <string name="action_continue">Продолжить</string>
     <string name="action_finish">Готово</string>
 
+    <string name="playlist_title">Плейлист</string>
+    <string name="playlist_create">Создать плейлист</string>
+    <string name="playlist_add">Добавить в плейлист</string>
+    <string name="playlist_remove">Убрать из плейлиста</string>
+    <string name="playlist_rename">Переименовать плейлист</string>
+    <string name="playlist_delete">Удалить плейлист</string>
+    <string name="playlist_delete_message">Удалить этот плейлист? Станции останутся в библиотеке.</string>
+    <string name="playlist_empty">Этот плейлист пуст</string>
+
     <string name="sort_date_added">Дата добавления</string>
     <string name="sort_station_title">Название станции</string>
     <string name="sort_favorites">Избранное</string>
@@ -179,7 +188,8 @@
     <string name="empty_stations_prefix">Станций пока нет.</string>
     <string name="empty_stations_suffix_start">Нажмите</string>
     <string name="empty_stations_suffix_end">чтобы добавить</string>
-    <string name="empty_favorites">В избранном пока ничего нет</string>
+    <string name="empty_favorites_prefix">В избранном пока ничего нет.</string>
+    <string name="empty_favorites_suffix">Добавьте станции и нажмите</string>
 
     <string name="online_search_options">Параметры поиска</string>
     <string name="online_search_by_title">Поиск по названию</string>

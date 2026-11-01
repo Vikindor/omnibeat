@@ -1,5 +1,7 @@
 package omnibeat.app.ui
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import omnibeat.app.R
+import omnibeat.app.model.Playlist
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
@@ -45,6 +49,12 @@ import omnibeat.app.model.StationSortState
 @Composable
 fun MainTopBar(
     selectedPage: MainPage,
+    playlists: List<Playlist>,
+    onCreatePlaylist: () -> Unit,
+    onAddToPlaylist: () -> Unit,
+    onRemoveFromPlaylist: () -> Unit,
+    onRenamePlaylist: () -> Unit,
+    onDeletePlaylist: () -> Unit,
     visualSelectedPage: MainPage = selectedPage,
     tabPages: List<MainPage>,
     sortState: StationSortState,
@@ -92,7 +102,9 @@ fun MainTopBar(
         } else {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).then(
+                    if (showTabs) Modifier.horizontalScroll(rememberScrollState()) else Modifier,
+                ),
             ) {
                 if (showTabs) {
                     tabPages.forEach { tab ->
@@ -108,7 +120,8 @@ fun MainTopBar(
                                 .padding(horizontal = RadioSpacing.medium, vertical = RadioSpacing.small),
                         ) {
                             Text(
-                                text = stringResource(tab.titleRes()),
+                                text = (tab as? MainPage.Playlist)?.let { page -> playlists.firstOrNull { it.id == page.id }?.title }
+                                    ?: stringResource(tab.titleRes()),
                                 color = if (visualSelectedPage == tab) RadioText else RadioTextMuted,
                                 fontSize = RadioTextSizes.subtitle,
                                 fontWeight = if (visualSelectedPage == tab) FontWeight.SemiBold else FontWeight.Medium,
@@ -155,6 +168,11 @@ fun MainTopBar(
             } else {
                 StationMenuButton(
                     selectedPage = selectedPage,
+                    onCreatePlaylist = onCreatePlaylist,
+                    onAddToPlaylist = onAddToPlaylist,
+                    onRemoveFromPlaylist = onRemoveFromPlaylist,
+                    onRenamePlaylist = onRenamePlaylist,
+                    onDeletePlaylist = onDeletePlaylist,
                     sortState = sortState,
                     onSortModeSelected = onSortModeSelected,
                     onAddStation = onAddStation,
@@ -173,6 +191,11 @@ private enum class StationMenuPage {
 @Composable
 private fun StationMenuButton(
     selectedPage: MainPage,
+    onCreatePlaylist: () -> Unit,
+    onAddToPlaylist: () -> Unit,
+    onRemoveFromPlaylist: () -> Unit,
+    onRenamePlaylist: () -> Unit,
+    onDeletePlaylist: () -> Unit,
     sortState: StationSortState,
     onSortModeSelected: (StationSortMode) -> Unit,
     onAddStation: () -> Unit,
@@ -180,6 +203,8 @@ private fun StationMenuButton(
 ) {
     var expanded by remember(selectedPage) { mutableStateOf(false) }
     var menuPage by remember(selectedPage) { mutableStateOf(StationMenuPage.Main) }
+    val menuSortState by rememberUpdatedState(sortState)
+    val selectSortMode by rememberUpdatedState(onSortModeSelected)
 
     Box {
         OmniIconButton(
@@ -199,17 +224,22 @@ private fun StationMenuButton(
             when (menuPage) {
                 StationMenuPage.Main -> StationActionsMenu(
                     selectedPage = selectedPage,
+                    onCreatePlaylist = onCreatePlaylist,
+                    onAddToPlaylist = onAddToPlaylist,
+                    onRemoveFromPlaylist = onRemoveFromPlaylist,
+                    onRenamePlaylist = onRenamePlaylist,
+                    onDeletePlaylist = onDeletePlaylist,
                     onAddStation = onAddStation,
                     onSearchOnline = onSearchOnline,
                     onOpenSort = { menuPage = StationMenuPage.Sort },
                     onDismiss = { expanded = false },
                 )
                 StationMenuPage.Sort -> StationSortMenu(
-                    sortState = sortState,
+                    sortState = menuSortState,
                     onBack = { menuPage = StationMenuPage.Main },
                     onSortModeSelected = { option ->
                         if (option == StationSortMode.Custom) expanded = false
-                        onSortModeSelected(option)
+                        selectSortMode(option)
                     },
                 )
             }
@@ -220,6 +250,11 @@ private fun StationMenuButton(
 @Composable
 private fun StationActionsMenu(
     selectedPage: MainPage,
+    onCreatePlaylist: () -> Unit,
+    onAddToPlaylist: () -> Unit,
+    onRemoveFromPlaylist: () -> Unit,
+    onRenamePlaylist: () -> Unit,
+    onDeletePlaylist: () -> Unit,
     onAddStation: () -> Unit,
     onSearchOnline: () -> Unit,
     onOpenSort: () -> Unit,
@@ -272,6 +307,17 @@ private fun StationActionsMenu(
         )
         HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
     }
+    if (selectedPage is MainPage.Playlist) {
+        PlaylistMenuItem(R.string.playlist_add, R.drawable.ic_add) {
+            onDismiss()
+            onAddToPlaylist()
+        }
+        PlaylistMenuItem(R.string.playlist_remove, R.drawable.ic_remove) {
+            onDismiss()
+            onRemoveFromPlaylist()
+        }
+        HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
+    }
     DropdownMenuItem(
         modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
         contentPadding = PaddingValues(horizontal = RadioSpacing.large),
@@ -285,6 +331,46 @@ private fun StationActionsMenu(
                 tint = RadioText,
             )
         },
+    )
+    if (selectedPage == MainPage.Stations) {
+        HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
+        PlaylistMenuItem(R.string.playlist_create, R.drawable.ic_add) {
+            onDismiss()
+            onCreatePlaylist()
+        }
+    }
+    if (selectedPage is MainPage.Playlist) {
+        HorizontalDivider(color = RadioOutline.copy(alpha = 0.65f))
+        PlaylistMenuItem(R.string.playlist_rename, R.drawable.ic_edit) {
+            onDismiss()
+            onRenamePlaylist()
+        }
+        PlaylistMenuItem(R.string.playlist_delete, R.drawable.ic_delete) {
+            onDismiss()
+            onDeletePlaylist()
+        }
+    }
+}
+
+@Composable
+private fun PlaylistMenuItem(
+    @androidx.annotation.StringRes title: Int,
+    @androidx.annotation.DrawableRes icon: Int,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        modifier = Modifier.heightIn(min = RadioSizes.menuItemMinHeight),
+        contentPadding = PaddingValues(horizontal = RadioSpacing.large),
+        text = { Text(stringResource(title), color = RadioText) },
+        leadingIcon = {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                modifier = Modifier.size(RadioSizes.icon),
+                tint = RadioText,
+            )
+        },
+        onClick = onClick,
     )
 }
 
