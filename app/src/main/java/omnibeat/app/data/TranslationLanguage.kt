@@ -53,7 +53,6 @@ object TranslationLanguage {
     }
 
     suspend fun install(context: Context, repository: StationRepository, translation: ImportedTranslation) = withContext(NonCancellable) {
-        // A locale change can recreate the Activity; finish the persisted language transition.
         val manager = context.getSystemService(LocaleManager::class.java)
         val installed = repository.importTranslation(translation, manager.applicationLocales.toLanguageTags())
         imported = installed

@@ -2,8 +2,11 @@ package omnibeat.app.ui
 
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.rememberUpdatedState
+import kotlinx.coroutines.flow.drop
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.math.absoluteValue
@@ -30,14 +33,18 @@ fun <T> SyncPagerWithSelectedPage(
 ) {
     LaunchedEffect(selectedPage, pages) {
         val pageIndex = pages.indexOf(selectedPage)
-        if (pageIndex >= 0 && !pagerState.isScrollInProgress && pagerState.currentPage != pageIndex) {
+        if (pageIndex >= 0 && pagerState.currentPage != pageIndex) {
             pagerState.animateScrollToPage(pageIndex)
         }
     }
 
-    LaunchedEffect(pagerState, pages) {
-        snapshotFlow { pagerState.settledPage }.collect { pageIndex ->
-            pages.getOrNull(pageIndex)?.let(onPageSettled)
+    val currentPages by rememberUpdatedState(pages)
+    val pageSettled by rememberUpdatedState(onPageSettled)
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.isScrollInProgress }.drop(1).collect { scrolling ->
+            if (!scrolling) {
+                currentPages.getOrNull(pagerState.settledPage)?.let(pageSettled)
+            }
         }
     }
 

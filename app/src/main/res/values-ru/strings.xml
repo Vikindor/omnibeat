@@ -1,6 +1,8 @@
 <resources>
     <string name="action_add_manually">Добавить вручную</string>
     <string name="action_search_online">Искать онлайн</string>
+    <string name="action_sort_stations">Сортировка станций</string>
+    <string name="action_reorder_tabs">Порядок вкладок</string>
     <string name="action_cancel">Отмена</string>
     <string name="action_close">Закрыть</string>
     <string name="action_more_info">Подробнее</string>
@@ -17,6 +19,15 @@
     <string name="action_next">Далее</string>
     <string name="action_continue">Продолжить</string>
     <string name="action_finish">Готово</string>
+
+    <string name="playlist_title">Плейлист</string>
+    <string name="playlist_create">Создать плейлист</string>
+    <string name="playlist_add">Добавить в плейлист</string>
+    <string name="playlist_remove">Убрать из плейлиста</string>
+    <string name="playlist_rename">Переименовать плейлист</string>
+    <string name="playlist_delete">Удалить плейлист</string>
+    <string name="playlist_delete_message">Удалить этот плейлист? Станции останутся в библиотеке.</string>
+    <string name="playlist_empty">Этот плейлист пуст</string>
 
     <string name="sort_date_added">Дата добавления</string>
     <string name="sort_station_title">Название станции</string>
@@ -53,7 +64,7 @@
     <string name="sleep_timer_start">Запустить</string>
     <string name="sleep_timer_stop">Остановить</string>
 
-    <string name="settings_section_appearance">Внешний вид</string>
+    <string name="settings_section_general">Общие</string>
     <string name="settings_theme_title">Тема</string>
     <string name="settings_theme_system">Использовать системную тему</string>
     <string name="settings_theme_dark">Использовать тёмную тему</string>
@@ -61,12 +72,31 @@
     <string name="settings_language_title">Язык</string>
     <string name="settings_language_system">Использовать язык системы</string>
     <string name="settings_language_selected">Использовать выбранный язык</string>
+    <string name="settings_section_stations">Станции</string>
     <string name="settings_station_dividers_title">Разделители станций</string>
     <string name="settings_station_dividers_subtitle">Выберите вид линий между станциями</string>
     <string name="settings_station_dividers_none">Нет</string>
     <string name="settings_station_dividers_inset">Отступы</string>
     <string name="settings_station_dividers_inset_right">Отступ справа</string>
     <string name="settings_station_dividers_full_width">На всю ширину</string>
+    <string name="settings_show_playback_indicator_title">Показывать индикатор воспроизведения</string>
+    <string name="settings_show_playback_indicator_on">В списках станций будет видна анимация воспроизведения</string>
+    <string name="settings_show_playback_indicator_off">Анимация воспроизведения в списках станций будет скрыта</string>
+    <string name="settings_show_favorite_buttons_title">Показывать кнопки избранного</string>
+    <string name="settings_show_favorite_buttons_on">В списках станций будут видны кнопки избранного</string>
+    <string name="settings_show_favorite_buttons_off">Кнопки избранного в списках станций будут скрыты</string>
+    <string name="settings_show_empty_favorites_title">Показывать пустую вкладку «Избранное»</string>
+    <string name="settings_show_empty_favorites_on">Вкладка «Избранное» будет видна, даже если она пуста</string>
+    <string name="settings_show_empty_favorites_off">Пустая вкладка «Избранное» будет скрыта</string>
+    <string name="settings_confirm_station_deletion_title">Подтверждать удаление станций</string>
+    <string name="settings_confirm_station_deletion_on">Перед удалением станции появится запрос на подтверждение</string>
+    <string name="settings_confirm_station_deletion_off">Станции будут удаляться без подтверждения</string>
+    <string name="settings_section_artwork">Обложки</string>
+    <string name="settings_station_covers_title">Обложки станций</string>
+    <string name="settings_station_covers_on">В списке станций будут отображаться обложки</string>
+    <string name="settings_station_covers_off">В списке станций обложки отображаться не будут</string>
+    <string name="settings_sync_artwork_title">Загрузить обложки станций</string>
+    <string name="settings_sync_artwork_subtitle">Попробовать найти обложки для всех станций онлайн</string>
     <string name="settings_section_playback">Воспроизведение</string>
     <string name="settings_remember_last_station_title">Запоминать последнюю станцию</string>
     <string name="settings_remember_last_station_on">Воспроизведение начнётся с последней станции</string>
@@ -80,19 +110,6 @@
     <string name="settings_keep_media_card_on">Android будет сохранять плеер в панели быстрых настроек</string>
     <string name="settings_keep_media_card_off">Android не будет сохранять плеер в панели быстрых настроек</string>
     <string name="settings_keep_media_card_note">Возобновляйте воспроизведение прямо из панели быстрых настроек, нажав Play, даже когда OmniBeat не запущен.\nВыключите эту настройку, если не хотите видеть там последнюю прослушанную станцию.\n\nИзменения могут вступить в силу не сразу. Может потребоваться перезагрузка устройства.</string>
-    <string name="settings_section_artwork">Обложки</string>
-    <string name="settings_station_covers_title">Обложки станций</string>
-    <string name="settings_station_covers_on">В списке станций будут отображаться обложки</string>
-    <string name="settings_station_covers_off">В списке станций обложки отображаться не будут</string>
-    <string name="settings_sync_artwork_title">Загрузить обложки станций</string>
-    <string name="settings_sync_artwork_subtitle">Попробовать найти обложки для всех станций онлайн</string>
-    <string name="settings_section_library">Библиотека</string>
-    <string name="settings_show_empty_favorites_title">Показывать пустую вкладку «Избранное»</string>
-    <string name="settings_show_empty_favorites_on">Вкладка «Избранное» будет видна, даже если она пуста</string>
-    <string name="settings_show_empty_favorites_off">Пустая вкладка «Избранное» будет скрыта</string>
-    <string name="settings_confirm_station_deletion_title">Подтверждать удаление станций</string>
-    <string name="settings_confirm_station_deletion_on">Перед удалением станции появится запрос на подтверждение</string>
-    <string name="settings_confirm_station_deletion_off">Станции будут удаляться без подтверждения</string>
     <string name="settings_section_control_panel">Панель управления</string>
     <string name="settings_show_bitrate_title">Показывать битрейт на панели управления</string>
     <string name="settings_show_bitrate_on">На панели управления будет отображаться битрейт стрима</string>
@@ -130,9 +147,11 @@
     <string name="auto_station_not_found">Станция не найдена в библиотеке</string>
 
     <string name="dialog_clear_library_title">Очистить библиотеку?</string>
-    <string name="dialog_clear_library_text">Все станции, избранное и сортировка будут удалены</string>
+    <string name="dialog_clear_library_text">Все станции, избранное, плейлисты, сортировка и порядок вкладок будут удалены</string>
     <string name="dialog_error_title">Ошибка</string>
     <string name="toast_error_copied">Ошибка скопирована</string>
+    <string name="dialog_import_library_title">Импорт библиотеки</string>
+    <string name="dialog_import_library_text">Импортировать %1$d станций и %2$d плейлистов?&lt;br/&gt;&lt;b&gt;Замена&lt;/b&gt; восстанавливает всю библиотеку и порядок вкладок.&lt;br/&gt;&lt;b&gt;Объединение&lt;/b&gt; обновляет станции с совпадающими URL и объединяет состав существующих плейлистов. Текущая сортировка и порядок вкладок сохраняются.</string>
     <string name="dialog_import_stations_title">Импорт станций</string>
     <string name="dialog_import_stations_text">Импортировать %1$d станций?&lt;br/&gt;&lt;b&gt;Замена&lt;/b&gt; сначала очищает текущую библиотеку.&lt;br/&gt;&lt;b&gt;Объединение&lt;/b&gt; сохраняет текущую библиотеку и обновляет станции с совпадающими URL стримов.</string>
 
@@ -140,6 +159,7 @@
     <string name="toast_export_txt">TXT-файл экспортирован</string>
     <string name="toast_export_failed">Не удалось экспортировать: %1$s</string>
     <string name="toast_import_failed">Не удалось импортировать: %1$s</string>
+    <string name="import_invalid_format">Неверный формат данных</string>
     <string name="toast_stations_imported">Станции импортированы</string>
     <string name="toast_library_deleted">Библиотека удалена</string>
     <string name="toast_playback_error">Ошибка воспроизведения</string>
@@ -161,9 +181,9 @@
     <string name="track_text_no_metadata">Нет метаданных</string>
 
     <string name="export_import_library_title">Библиотека</string>
-    <string name="export_import_library_summary">станций: %1$d, в избранном: %2$d</string>
+    <string name="export_import_library_summary">станций: %1$d, в избранном: %2$d, плейлистов: %3$d</string>
     <string name="export_import_json_title">OmniBeat JSON</string>
-    <string name="export_import_json_description">Полная резервная копия OmniBeat: станции, избранное и сортировка.</string>
+    <string name="export_import_json_description">Резервная копия библиотеки OmniBeat: станции, избранное, плейлисты, порядок вкладок и сортировка.</string>
     <string name="export_import_json_export_title">Экспорт OmniBeat JSON</string>
     <string name="export_import_json_export_subtitle">Сохранить в родном JSON формате со всеми полями</string>
     <string name="export_import_json_import_title">Импорт OmniBeat JSON</string>
@@ -178,7 +198,8 @@
     <string name="empty_stations_prefix">Станций пока нет.</string>
     <string name="empty_stations_suffix_start">Нажмите</string>
     <string name="empty_stations_suffix_end">чтобы добавить</string>
-    <string name="empty_favorites">В избранном пока ничего нет</string>
+    <string name="empty_favorites_prefix">В избранном пока ничего нет.</string>
+    <string name="empty_favorites_suffix">Добавьте станции и нажмите</string>
 
     <string name="online_search_options">Параметры поиска</string>
     <string name="online_search_by_title">Поиск по названию</string>

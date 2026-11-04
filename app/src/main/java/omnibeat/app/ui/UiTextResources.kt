@@ -10,6 +10,7 @@ fun MainPage.titleRes(): Int {
     return when (this) {
         MainPage.Stations -> R.string.page_stations
         MainPage.Favorites -> R.string.page_favorites
+        is MainPage.Playlist -> R.string.playlist_title
         MainPage.ExportImport -> R.string.page_export_import
         MainPage.Translation -> R.string.page_translation
         MainPage.SearchOnline -> R.string.action_search_online

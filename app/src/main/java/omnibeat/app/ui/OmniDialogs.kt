@@ -151,6 +151,7 @@ fun ErrorDialog(
 @Composable
 fun ImportStationsDialog(
     stationCount: Int,
+    playlistCount: Int? = null,
     onImport: (StationImportMode) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -165,14 +166,17 @@ fun ImportStationsDialog(
         containerColor = RadioSurface,
         title = {
             Text(
-                text = stringResource(R.string.dialog_import_stations_title),
+                text = stringResource(if (playlistCount != null) R.string.dialog_import_library_title else R.string.dialog_import_stations_title),
                 color = RadioText,
                 fontWeight = FontWeight.SemiBold,
             )
         },
         text = {
             Text(
-                text = AnnotatedString.fromHtml(stringResource(R.string.dialog_import_stations_text, stationCount)),
+                text = AnnotatedString.fromHtml(
+                    if (playlistCount != null) stringResource(R.string.dialog_import_library_text, stationCount, playlistCount)
+                    else stringResource(R.string.dialog_import_stations_text, stationCount),
+                ),
                 color = RadioTextMuted,
                 lineHeight = RadioTextSizes.bodyLineHeight,
             )

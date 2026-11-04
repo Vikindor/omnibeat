@@ -142,13 +142,15 @@ fun SettingsPage(
     themeMode: ThemeMode,
     appLanguage: AppLanguage,
     stationDividers: StationDividerStyle,
+    showPlaybackIndicator: Boolean,
+    showFavoriteButtons: Boolean,
+    showEmptyFavoritesTab: Boolean,
+    confirmStationDeletion: Boolean,
+    showStationArtwork: Boolean,
+    syncingStationArtwork: Boolean,
     rememberLastStation: Boolean,
     stopServiceAfterPauseMinutes: Int,
     keepMediaCard: Boolean,
-    showStationArtwork: Boolean,
-    syncingStationArtwork: Boolean,
-    showEmptyFavoritesTab: Boolean,
-    confirmStationDeletion: Boolean,
     showBitrateInControlPanel: Boolean,
     showUnavailableBitrate: Boolean,
     marqueeTrackTitle: Boolean,
@@ -160,13 +162,15 @@ fun SettingsPage(
     onThemeModeChange: (ThemeMode) -> Unit,
     onAppLanguageChange: (AppLanguage) -> Unit,
     onStationDividersChange: (StationDividerStyle) -> Unit,
+    onShowPlaybackIndicatorChange: (Boolean) -> Unit,
+    onShowFavoriteButtonsChange: (Boolean) -> Unit,
+    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
+    onConfirmStationDeletionChange: (Boolean) -> Unit,
+    onShowStationArtworkChange: (Boolean) -> Unit,
+    onSyncStationArtwork: () -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
     onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
     onKeepMediaCardChange: (Boolean) -> Unit,
-    onShowStationArtworkChange: (Boolean) -> Unit,
-    onSyncStationArtwork: () -> Unit,
-    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
-    onConfirmStationDeletionChange: (Boolean) -> Unit,
     onShowBitrateInControlPanelChange: (Boolean) -> Unit,
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
@@ -191,7 +195,7 @@ fun SettingsPage(
                 .padding(top = RadioSpacing.rowVertical)
                 .padding(bottom = RadioSpacing.page),
         ) {
-            SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_general))
             SettingsThemeRow(
                 title = stringResource(R.string.settings_theme_title),
                 subtitle = when (themeMode) {
@@ -213,6 +217,9 @@ fun SettingsPage(
                 optionLabel = { appLanguageLabel(it) },
                 onOptionSelected = onAppLanguageChange,
             )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_stations))
             SettingsDropdownRow(
                 title = stringResource(R.string.settings_station_dividers_title),
                 subtitle = stringResource(R.string.settings_station_dividers_subtitle),
@@ -229,6 +236,63 @@ fun SettingsPage(
                     )
                 },
                 onOptionSelected = onStationDividersChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_show_playback_indicator_title),
+                subtitle = stringResource(
+                    if (showPlaybackIndicator) R.string.settings_show_playback_indicator_on
+                    else R.string.settings_show_playback_indicator_off,
+                ),
+                checked = showPlaybackIndicator,
+                onCheckedChange = onShowPlaybackIndicatorChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_show_favorite_buttons_title),
+                subtitle = stringResource(
+                    if (showFavoriteButtons) R.string.settings_show_favorite_buttons_on
+                    else R.string.settings_show_favorite_buttons_off,
+                ),
+                checked = showFavoriteButtons,
+                onCheckedChange = onShowFavoriteButtonsChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_show_empty_favorites_title),
+                subtitle = if (showEmptyFavoritesTab) {
+                    stringResource(R.string.settings_show_empty_favorites_on)
+                } else {
+                    stringResource(R.string.settings_show_empty_favorites_off)
+                },
+                checked = showEmptyFavoritesTab,
+                onCheckedChange = onShowEmptyFavoritesTabChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_confirm_station_deletion_title),
+                subtitle = if (confirmStationDeletion) {
+                    stringResource(R.string.settings_confirm_station_deletion_on)
+                } else {
+                    stringResource(R.string.settings_confirm_station_deletion_off)
+                },
+                checked = confirmStationDeletion,
+                onCheckedChange = onConfirmStationDeletionChange,
+            )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_artwork))
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_station_covers_title),
+                subtitle = if (showStationArtwork) {
+                    stringResource(R.string.settings_station_covers_on)
+                } else {
+                    stringResource(R.string.settings_station_covers_off)
+                },
+                checked = showStationArtwork,
+                onCheckedChange = onShowStationArtworkChange,
+            )
+            SettingsActionRow(
+                title = stringResource(R.string.settings_sync_artwork_title),
+                subtitle = stringResource(R.string.settings_sync_artwork_subtitle),
+                syncing = syncingStationArtwork,
+                onClick = onSyncStationArtwork,
             )
             SettingsDivider()
 
@@ -269,48 +333,6 @@ fun SettingsPage(
                         Text(stringResource(R.string.action_more_info))
                     }
                 },
-            )
-            SettingsDivider()
-
-            SettingsSectionHeader(title = stringResource(R.string.settings_section_artwork))
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_station_covers_title),
-                subtitle = if (showStationArtwork) {
-                    stringResource(R.string.settings_station_covers_on)
-                } else {
-                    stringResource(R.string.settings_station_covers_off)
-                },
-                checked = showStationArtwork,
-                onCheckedChange = onShowStationArtworkChange,
-            )
-            SettingsActionRow(
-                title = stringResource(R.string.settings_sync_artwork_title),
-                subtitle = stringResource(R.string.settings_sync_artwork_subtitle),
-                syncing = syncingStationArtwork,
-                onClick = onSyncStationArtwork,
-            )
-            SettingsDivider()
-
-            SettingsSectionHeader(title = stringResource(R.string.settings_section_library))
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_show_empty_favorites_title),
-                subtitle = if (showEmptyFavoritesTab) {
-                    stringResource(R.string.settings_show_empty_favorites_on)
-                } else {
-                    stringResource(R.string.settings_show_empty_favorites_off)
-                },
-                checked = showEmptyFavoritesTab,
-                onCheckedChange = onShowEmptyFavoritesTabChange,
-            )
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_confirm_station_deletion_title),
-                subtitle = if (confirmStationDeletion) {
-                    stringResource(R.string.settings_confirm_station_deletion_on)
-                } else {
-                    stringResource(R.string.settings_confirm_station_deletion_off)
-                },
-                checked = confirmStationDeletion,
-                onCheckedChange = onConfirmStationDeletionChange,
             )
             SettingsDivider()
 

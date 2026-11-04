@@ -78,7 +78,7 @@ fun EmptyStationsState(modifier: Modifier = Modifier) {
             ) {
                 Text(stringResource(R.string.empty_stations_suffix_start), color = RadioTextMuted, fontSize = RadioTextSizes.bodyLarge)
                 Icon(
-                    painter = painterResource(R.drawable.ic_add),
+                    painter = painterResource(R.drawable.ic_more_vert),
                     contentDescription = null,
                     tint = RadioTextMuted,
                     modifier = Modifier
@@ -97,12 +97,35 @@ fun EmptyFavoritesState(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
         modifier = modifier.padding(horizontal = RadioSpacing.page),
     ) {
-        Text(
-            text = stringResource(R.string.empty_favorites),
-            color = RadioTextMuted,
-            fontSize = RadioTextSizes.bodyLarge,
-            textAlign = TextAlign.Center,
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(RadioSpacing.small),
+        ) {
+            Text(
+                text = stringResource(R.string.empty_favorites_prefix),
+                color = RadioTextMuted,
+                fontSize = RadioTextSizes.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.empty_favorites_suffix),
+                    color = RadioTextMuted,
+                    fontSize = RadioTextSizes.bodyLarge,
+                )
+                Icon(
+                    painter = painterResource(R.drawable.ic_favorite_border),
+                    contentDescription = null,
+                    tint = RadioTextMuted,
+                    modifier = Modifier
+                        .padding(start = RadioSpacing.compact)
+                        .size(RadioSizes.iconInline),
+                )
+            }
+        }
     }
 }
 
@@ -115,6 +138,8 @@ fun StationList(
     scrollToSelectedRequest: Int,
     scrollToStationId: String?,
     showArtwork: Boolean,
+    showPlaybackIndicator: Boolean,
+    showFavoriteButtons: Boolean,
     dividerStyle: StationDividerStyle = StationDividerStyle.Inset,
     enabled: Boolean = true,
     reordering: Boolean = false,
@@ -176,6 +201,8 @@ fun StationList(
                         enabled = enabled,
                         reordering = reordering,
                         showArtwork = showArtwork,
+                        showPlaybackIndicator = showPlaybackIndicator,
+                        showFavoriteButtons = showFavoriteButtons,
                         dragging = isDragging,
                         showDivider = index < stations.lastIndex,
                         dividerStyle = dividerStyle,
@@ -372,6 +399,8 @@ private fun StationRow(
     enabled: Boolean,
     reordering: Boolean,
     showArtwork: Boolean,
+    showPlaybackIndicator: Boolean,
+    showFavoriteButtons: Boolean,
     dragging: Boolean,
     showDivider: Boolean,
     dividerStyle: StationDividerStyle,
@@ -413,29 +442,40 @@ private fun StationRow(
         } else {
             null
         },
-        trailingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(RadioSpacing.small),
-                modifier = Modifier.padding(start = RadioSpacing.medium),
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(width = RadioSizes.signalWidth, height = RadioSizes.signalHeight),
+        trailingContent = if (showPlaybackIndicator || showFavoriteButtons) {
+            {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(RadioSpacing.small),
+                    modifier = Modifier.padding(start = RadioSpacing.medium),
                 ) {
-                    if (playing && !reordering) {
-                        StationPlayingIndicator()
+                    if (showPlaybackIndicator) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(
+                                width = if (showFavoriteButtons) RadioSizes.signalWidth else RadioSizes.button,
+                                height = RadioSizes.signalHeight,
+                            ),
+                        ) {
+                            if (playing && !reordering) {
+                                StationPlayingIndicator()
+                            }
+                        }
+                    }
+                    if (showFavoriteButtons) {
+                        OmniIconButton(
+                            painter = painterResource(
+                                if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
+                            ),
+                            enabled = enabled && !reordering,
+                            onClick = onFavoriteClick,
+                            tint = if (station.isFavorite) RadioPrimary else RadioText,
+                        )
                     }
                 }
-                OmniIconButton(
-                    painter = painterResource(
-                        if (station.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
-                    ),
-                    enabled = enabled && !reordering,
-                    onClick = onFavoriteClick,
-                    tint = if (station.isFavorite) RadioPrimary else RadioText,
-                )
             }
+        } else {
+            null
         },
         modifier = modifier,
     )

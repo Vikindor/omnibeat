@@ -22,6 +22,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import omnibeat.app.model.ImportedTranslation
 import omnibeat.app.model.Station
+import omnibeat.app.model.Playlist
+import omnibeat.app.model.orderedTabs
 import omnibeat.app.model.StationSortMode
 import omnibeat.app.model.StationSortState
 import omnibeat.app.model.StationDividerStyle
@@ -39,16 +41,18 @@ const val STOP_SERVICE_AFTER_PAUSE_NEVER = 0
 const val DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES = 5
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val themeModeKey = stringPreferencesKey("theme_mode")
-private val stationDividersKey = stringPreferencesKey("station_dividers")
 private val sleepTimerCloseAppKey = booleanPreferencesKey("sleep_timer_close_app")
 private val sleepTimerPlacementKey = stringPreferencesKey("sleep_timer_placement")
 private val sleepTimerFreeXKey = floatPreferencesKey("sleep_timer_free_x")
 private val sleepTimerFreeYKey = floatPreferencesKey("sleep_timer_free_y")
-private val rememberLastStationKey = booleanPreferencesKey("remember_last_station")
-private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
-private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
+private val stationDividersKey = stringPreferencesKey("station_dividers")
+private val showPlaybackIndicatorKey = booleanPreferencesKey("show_playback_indicator")
+private val showFavoriteButtonsKey = booleanPreferencesKey("show_favorite_buttons")
 private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
 private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
+private val showStationArtworkKey = booleanPreferencesKey("show_station_artwork")
+private val rememberLastStationKey = booleanPreferencesKey("remember_last_station")
+private val stopServiceAfterPauseMinutesKey = intPreferencesKey("stop_service_after_pause_minutes")
 private val showBitrateInControlPanelKey = booleanPreferencesKey("show_bitrate_in_control_panel")
 private val showUnavailableBitrateKey = booleanPreferencesKey("show_unavailable_bitrate")
 private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
@@ -64,8 +68,11 @@ private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val recentlyPlayedStationIdsKey = stringPreferencesKey("recently_played_station_ids")
 private val stationSortKey = stringPreferencesKey("station_sort")
+private val favoriteSortKey = stringPreferencesKey("favorite_sort")
 private val customStationOrderKey = stringPreferencesKey("custom_station_order")
 private val customFavoriteOrderKey = stringPreferencesKey("custom_favorite_order")
+private val tabOrderKey = stringPreferencesKey("tab_order")
+private val playlistsJsonKey = stringPreferencesKey("playlists_json")
 private val stationsJsonKey = stringPreferencesKey("stations_json")
 private val translationEnabledKey = booleanPreferencesKey("translation_enabled")
 private val importedTranslationKey = stringPreferencesKey("imported_translation")
@@ -124,12 +131,6 @@ class StationRepository(private val context: Context) {
                 ?: ThemeMode.System
         }
 
-    val stationDividers: Flow<StationDividerStyle> = context.stationDataStore.data
-        .map { preferences ->
-            StationDividerStyle.entries.firstOrNull { it.name == preferences[stationDividersKey] }
-                ?: StationDividerStyle.Inset
-        }
-
     val sleepTimerCloseApp: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[sleepTimerCloseAppKey] ?: false }
 
@@ -150,6 +151,27 @@ class StationRepository(private val context: Context) {
             )
         }
 
+    val stationDividers: Flow<StationDividerStyle> = context.stationDataStore.data
+        .map { preferences ->
+            StationDividerStyle.entries.firstOrNull { it.name == preferences[stationDividersKey] }
+                ?: StationDividerStyle.Inset
+        }
+
+    val showPlaybackIndicator: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showPlaybackIndicatorKey] ?: true }
+
+    val showFavoriteButtons: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showFavoriteButtonsKey] ?: true }
+
+    val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
+
+    val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
+
+    val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[showStationArtworkKey] ?: true }
+
     val rememberLastStation: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[rememberLastStationKey] ?: true }
 
@@ -157,15 +179,6 @@ class StationRepository(private val context: Context) {
         .map { preferences -> preferences[stopServiceAfterPauseMinutesKey] ?: DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES }
 
     val keepMediaCard = keepMediaCardState.asStateFlow()
-
-    val showStationArtwork: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[showStationArtworkKey] ?: true }
-
-    val showEmptyFavoritesTab: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[showEmptyFavoritesTabKey] ?: true }
-
-    val confirmStationDeletion: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[confirmStationDeletionKey] ?: true }
 
     val showBitrateInControlPanel: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showBitrateInControlPanelKey] ?: true }
@@ -203,6 +216,12 @@ class StationRepository(private val context: Context) {
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
 
+    val tabOrder: Flow<List<String>> = context.stationDataStore.data
+        .map { decodeStringList(it[tabOrderKey]) }
+
+    val playlists: Flow<List<Playlist>> = context.stationDataStore.data
+        .map { decodePlaylists(it[playlistsJsonKey]) }
+
     val lastPlayedStationId: Flow<String?> = context.stationDataStore.data
         .map { preferences -> preferences[lastPlayedStationIdKey]?.takeIf { it.isNotBlank() } }
 
@@ -216,6 +235,9 @@ class StationRepository(private val context: Context) {
         .map { preferences ->
             decodeStationSortState(preferences[stationSortKey])
         }
+
+    val favoriteSortState: Flow<StationSortState> = context.stationDataStore.data
+        .map { preferences -> decodeStationSortState(preferences[favoriteSortKey]) }
 
     val customStationOrder: Flow<List<String>> = context.stationDataStore.data
         .map { preferences -> decodeStringList(preferences[customStationOrderKey]) }
@@ -232,12 +254,6 @@ class StationRepository(private val context: Context) {
     suspend fun saveThemeMode(themeMode: ThemeMode) {
         context.stationDataStore.edit { preferences ->
             preferences[themeModeKey] = themeMode.name
-        }
-    }
-
-    suspend fun saveStationDividers(style: StationDividerStyle) {
-        context.stationDataStore.edit { preferences ->
-            preferences[stationDividersKey] = style.name
         }
     }
 
@@ -261,6 +277,42 @@ class StationRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveStationDividers(style: StationDividerStyle) {
+        context.stationDataStore.edit { preferences ->
+            preferences[stationDividersKey] = style.name
+        }
+    }
+
+    suspend fun saveShowPlaybackIndicator(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showPlaybackIndicatorKey] = show
+        }
+    }
+
+    suspend fun saveShowFavoriteButtons(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showFavoriteButtonsKey] = show
+        }
+    }
+
+    suspend fun saveShowEmptyFavoritesTab(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showEmptyFavoritesTabKey] = show
+        }
+    }
+
+    suspend fun saveConfirmStationDeletion(confirm: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[confirmStationDeletionKey] = confirm
+        }
+    }
+
+    suspend fun saveShowStationArtwork(show: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[showStationArtworkKey] = show
+        }
+    }
+
     suspend fun saveRememberLastStation(remember: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[rememberLastStationKey] = remember
@@ -281,24 +333,6 @@ class StationRepository(private val context: Context) {
             PackageManager.DONT_KILL_APP,
         )
         keepMediaCardState.value = keep
-    }
-
-    suspend fun saveShowStationArtwork(show: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[showStationArtworkKey] = show
-        }
-    }
-
-    suspend fun saveShowEmptyFavoritesTab(show: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[showEmptyFavoritesTabKey] = show
-        }
-    }
-
-    suspend fun saveConfirmStationDeletion(confirm: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[confirmStationDeletionKey] = confirm
-        }
     }
 
     suspend fun saveShowBitrateInControlPanel(show: Boolean) {
@@ -392,6 +426,12 @@ class StationRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveFavoriteSortState(sortState: StationSortState) {
+        context.stationDataStore.edit { preferences ->
+            preferences[favoriteSortKey] = "${sortState.mode.name}:${sortState.ascending}"
+        }
+    }
+
     suspend fun saveCustomStationOrder(stationIds: List<String>) {
         context.stationDataStore.edit { preferences ->
             preferences[customStationOrderKey] = encodeStringList(stationIds)
@@ -404,24 +444,95 @@ class StationRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveImportedLibrary(importResult: StationImportResult) {
+    suspend fun exportLibrary(): StationExportData = withContext(Dispatchers.IO) {
+        val preferences = context.stationDataStore.data.first()
+        StationExportData(
+            stations = decodeStations(preferences[stationsJsonKey].orEmpty()),
+            stationSortState = decodeStationSortState(preferences[stationSortKey]),
+            favoriteSortState = decodeStationSortState(preferences[favoriteSortKey]),
+            customStationOrder = decodeStringList(preferences[customStationOrderKey]),
+            customFavoriteOrder = decodeStringList(preferences[customFavoriteOrderKey]),
+            collections = LibraryCollections(
+                playlists = decodePlaylists(preferences[playlistsJsonKey]),
+                tabOrder = decodeStringList(preferences[tabOrderKey]),
+            ),
+        )
+    }
+
+    suspend fun importLibrary(data: StationExportData, mode: StationImportMode): StationImportResult {
+        var result: StationImportResult? = null
         context.stationDataStore.edit { preferences ->
-            preferences[stationsJsonKey] = encodeStations(importResult.stations)
-            preferences[stationSortKey] = "${importResult.sortState.mode.name}:${importResult.sortState.ascending}"
-            preferences[customStationOrderKey] = encodeStringList(importResult.customStationOrder)
-            preferences[customFavoriteOrderKey] = encodeStringList(importResult.customFavoriteOrder)
+            val imported = StationExportCodec.buildImportResult(
+                importedData = data,
+                currentStations = decodeStations(preferences[stationsJsonKey].orEmpty()),
+                currentStationSortState = decodeStationSortState(preferences[stationSortKey]),
+                currentFavoriteSortState = decodeStationSortState(preferences[favoriteSortKey]),
+                currentCustomStationOrder = decodeStringList(preferences[customStationOrderKey]),
+                currentCustomFavoriteOrder = decodeStringList(preferences[customFavoriteOrderKey]),
+                currentCollections = LibraryCollections(
+                    playlists = decodePlaylists(preferences[playlistsJsonKey]),
+                    tabOrder = decodeStringList(preferences[tabOrderKey]),
+                ),
+                mode = mode,
+            )
+            preferences[stationsJsonKey] = encodeStations(imported.stations)
+            preferences[stationSortKey] = "${imported.stationSortState.mode.name}:${imported.stationSortState.ascending}"
+            preferences[favoriteSortKey] = "${imported.favoriteSortState.mode.name}:${imported.favoriteSortState.ascending}"
+            preferences[customStationOrderKey] = encodeStringList(imported.customStationOrder)
+            preferences[customFavoriteOrderKey] = encodeStringList(imported.customFavoriteOrder)
+            preferences[playlistsJsonKey] = encodePlaylists(imported.collections.playlists)
+            val tabs = orderedTabs(imported.collections.playlists, imported.collections.tabOrder).map { it.name }
+            preferences[tabOrderKey] = encodeStringList(tabs)
+            if (preferences[lastMainPageKey] !in tabs) preferences[lastMainPageKey] = "Stations"
+            val ids = imported.stations.mapTo(mutableSetOf()) { it.id }
+            if (preferences[lastPlayedStationIdKey] !in ids) preferences.remove(lastPlayedStationIdKey)
+            preferences[recentlyPlayedStationIdsKey] = encodeStringList(
+                decodeStringList(preferences[recentlyPlayedStationIdsKey]).filter(ids::contains),
+            )
+            result = imported
         }
+        return requireNotNull(result)
+    }
+
+    suspend fun saveTabOrder(tabIds: List<String>) {
+        context.stationDataStore.edit { preferences ->
+            val playlists = decodePlaylists(preferences[playlistsJsonKey])
+            preferences[tabOrderKey] = encodeStringList(orderedTabs(playlists, tabIds).map { it.name })
+        }
+    }
+
+    suspend fun createPlaylist(title: String): String {
+        val id = UUID.randomUUID().toString()
+        updatePlaylists { it + Playlist(id = id, title = title.trim()) }
+        return id
+    }
+
+    suspend fun updatePlaylist(id: String, transform: (Playlist) -> Playlist) {
+        updatePlaylists { list -> list.map { if (it.id == id) transform(it) else it } }
+    }
+
+    suspend fun deletePlaylist(id: String) {
+        updatePlaylists { list -> list.filterNot { it.id == id } }
     }
 
     suspend fun saveStations(stations: List<Station>) {
         context.stationDataStore.edit { preferences ->
             preferences[stationsJsonKey] = encodeStations(stations)
+            val ids = stations.mapTo(mutableSetOf()) { it.id }
+            preferences[playlistsJsonKey] = encodePlaylists(decodePlaylists(preferences[playlistsJsonKey]).map {
+                it.copy(stationIds = it.stationIds.filter(ids::contains))
+            })
         }
     }
 
     suspend fun clearLibrary() {
         context.stationDataStore.edit { preferences ->
             preferences[stationsJsonKey] = encodeStations(emptyList())
+            preferences.remove(playlistsJsonKey)
+            preferences.remove(tabOrderKey)
+            preferences.remove(stationSortKey)
+            preferences.remove(favoriteSortKey)
+            preferences[lastMainPageKey] = "Stations"
             preferences[customStationOrderKey] = encodeStringList(emptyList())
             preferences[customFavoriteOrderKey] = encodeStringList(emptyList())
             preferences.remove(lastPlayedStationIdKey)
@@ -439,6 +550,42 @@ class StationRepository(private val context: Context) {
             }
             preferences[stationsJsonKey] = encodeStations(nextStations)
         }
+    }
+
+    private suspend fun updatePlaylists(transform: (List<Playlist>) -> List<Playlist>) {
+        context.stationDataStore.edit { preferences ->
+            val playlists = transform(decodePlaylists(preferences[playlistsJsonKey]))
+            preferences[playlistsJsonKey] = encodePlaylists(playlists)
+            preferences[tabOrderKey] = encodeStringList(
+                orderedTabs(playlists, decodeStringList(preferences[tabOrderKey])).map { it.name },
+            )
+        }
+    }
+
+    private fun encodePlaylists(playlists: List<Playlist>): String = JSONArray().apply {
+        playlists.forEach { playlist ->
+            put(JSONObject()
+                .put("id", playlist.id)
+                .put("title", playlist.title)
+                .put("stationIds", JSONArray(playlist.stationIds))
+                .put("sort", "${playlist.sortState.mode.name}:${playlist.sortState.ascending}"))
+        }
+    }.toString()
+
+    private fun decodePlaylists(saved: String?): List<Playlist> {
+        if (saved.isNullOrBlank()) return emptyList()
+        return runCatching {
+            val items = JSONArray(saved)
+            List(items.length()) { index ->
+                val item = items.getJSONObject(index)
+                Playlist(
+                    id = item.getString("id"),
+                    title = item.getString("title"),
+                    stationIds = decodeStringList(item.optJSONArray("stationIds")?.toString()).distinct(),
+                    sortState = decodeStationSortState(item.optString("sort")),
+                )
+            }
+        }.getOrDefault(emptyList())
     }
 
     private fun encodeStations(stations: List<Station>): String {

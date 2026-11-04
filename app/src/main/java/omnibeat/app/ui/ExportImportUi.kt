@@ -17,10 +17,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -32,13 +28,13 @@ import androidx.compose.ui.unit.dp
 fun ExportImportPage(
     stationCount: Int,
     favoriteCount: Int,
+    playlistCount: Int,
     onExportStations: () -> Unit,
     onExportSimpleText: () -> Unit,
-    onImportStations: () -> Unit,
-    onClearLibrary: () -> Unit,
+    onImportJson: () -> Unit,
+    onImportSimpleText: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var confirmClearLibrary by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -49,29 +45,18 @@ fun ExportImportPage(
                 .padding(horizontal = RadioSpacing.page)
                 .padding(top = RadioSpacing.rowVertical, bottom = RadioSpacing.page),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(RadioSpacing.large),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.export_import_library_title),
-                        color = RadioText,
-                        fontSize = RadioTextSizes.headline,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = stringResource(R.string.export_import_library_summary, stationCount, favoriteCount),
-                        color = RadioTextMuted,
-                        fontSize = RadioTextSizes.bodySmall,
-                        modifier = Modifier.padding(top = RadioSpacing.compact),
-                    )
-                }
-                OmniIconButton(
-                    painter = painterResource(R.drawable.ic_delete),
-                    onClick = { confirmClearLibrary = true },
-                    tint = RadioDanger,
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = stringResource(R.string.export_import_library_title),
+                    color = RadioText,
+                    fontSize = RadioTextSizes.headline,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = stringResource(R.string.export_import_library_summary, stationCount, favoriteCount, playlistCount),
+                    color = RadioTextMuted,
+                    fontSize = RadioTextSizes.bodySmall,
+                    modifier = Modifier.padding(top = RadioSpacing.compact),
                 )
             }
 
@@ -94,7 +79,7 @@ fun ExportImportPage(
                 icon = R.drawable.ic_file_import,
                 title = stringResource(R.string.export_import_json_import_title),
                 subtitle = stringResource(R.string.export_import_json_import_subtitle),
-                onClick = onImportStations,
+                onClick = onImportJson,
             )
 
             HorizontalDivider(
@@ -116,7 +101,7 @@ fun ExportImportPage(
                 icon = R.drawable.ic_file_import,
                 title = stringResource(R.string.export_import_txt_import_title),
                 subtitle = stringResource(R.string.export_import_txt_import_subtitle),
-                onClick = onImportStations,
+                onClick = onImportSimpleText,
             )
         }
         OmniScrollIndicator(
@@ -127,19 +112,6 @@ fun ExportImportPage(
         )
     }
 
-    if (confirmClearLibrary) {
-        OmniConfirmDialog(
-            title = stringResource(R.string.dialog_clear_library_title),
-            text = stringResource(R.string.dialog_clear_library_text),
-            confirmText = stringResource(R.string.action_delete),
-            destructive = true,
-            onDismiss = { confirmClearLibrary = false },
-            onConfirm = {
-                confirmClearLibrary = false
-                onClearLibrary()
-            },
-        )
-    }
 }
 
 @Composable

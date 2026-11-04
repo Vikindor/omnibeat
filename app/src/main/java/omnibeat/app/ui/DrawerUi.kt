@@ -114,7 +114,7 @@ fun DrawerContent(
                 DrawerItem(
                     text = stringResource(R.string.page_stations),
                     iconRes = R.drawable.ic_list,
-                    selected = selectedPage in MainPage.tabPages,
+                    selected = selectedPage in MainPage.tabPages || selectedPage is MainPage.Playlist,
                     onClick = onStationsClick,
                 )
                 DrawerItem(

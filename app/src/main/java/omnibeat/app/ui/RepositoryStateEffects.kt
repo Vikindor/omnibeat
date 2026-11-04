@@ -2,6 +2,7 @@ package omnibeat.app.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.flow.first
 import omnibeat.app.data.StationRepository
 import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
@@ -11,17 +12,17 @@ import omnibeat.app.model.StationSortState
 @Composable
 fun RepositoryStateEffects(
     repository: StationRepository,
-    selectedPage: MainPage,
-    visibleTabPages: List<MainPage>,
     onStationsChange: (List<Station>) -> Unit,
     onAppVolumeChange: (Float) -> Unit,
     onStationDividersChange: (StationDividerStyle) -> Unit,
+    onShowPlaybackIndicatorChange: (Boolean) -> Unit,
+    onShowFavoriteButtonsChange: (Boolean) -> Unit,
+    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
+    onConfirmStationDeletionChange: (Boolean) -> Unit,
+    onShowStationArtworkChange: (Boolean) -> Unit,
     onRememberLastStationChange: (Boolean) -> Unit,
     onStopServiceAfterPauseMinutesChange: (Int) -> Unit,
     onKeepMediaCardChange: (Boolean) -> Unit,
-    onShowStationArtworkChange: (Boolean) -> Unit,
-    onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
-    onConfirmStationDeletionChange: (Boolean) -> Unit,
     onShowBitrateInControlPanelChange: (Boolean) -> Unit,
     onShowUnavailableBitrateChange: (Boolean) -> Unit,
     onMarqueeTrackTitleChange: (Boolean) -> Unit,
@@ -34,6 +35,7 @@ fun RepositoryStateEffects(
     onLastMainPageChange: (MainPage) -> Unit,
     onSelectedPageRestore: (MainPage) -> Unit,
     onStationSortStateChange: (StationSortState) -> Unit,
+    onFavoriteSortStateChange: (StationSortState) -> Unit,
     onCustomStationOrderChange: (List<String>) -> Unit,
     onCustomFavoriteOrderChange: (List<String>) -> Unit,
     onLastPlayedStationIdChange: (String?) -> Unit,
@@ -55,6 +57,32 @@ fun RepositoryStateEffects(
     }
 
     LaunchedEffect(repository) {
+        repository.showPlaybackIndicator.collect(onShowPlaybackIndicatorChange)
+    }
+
+    LaunchedEffect(repository) {
+        repository.showFavoriteButtons.collect(onShowFavoriteButtonsChange)
+    }
+
+    LaunchedEffect(repository) {
+        repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
+            onShowEmptyFavoritesTabChange(savedShowEmptyFavoritesTab)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.confirmStationDeletion.collect { savedConfirmStationDeletion ->
+            onConfirmStationDeletionChange(savedConfirmStationDeletion)
+        }
+    }
+
+    LaunchedEffect(repository) {
+        repository.showStationArtwork.collect { savedShowStationArtwork ->
+            onShowStationArtworkChange(savedShowStationArtwork)
+        }
+    }
+
+    LaunchedEffect(repository) {
         repository.rememberLastStation.collect { savedRememberLastStation ->
             onRememberLastStationChange(savedRememberLastStation)
         }
@@ -69,24 +97,6 @@ fun RepositoryStateEffects(
     LaunchedEffect(repository) {
         repository.keepMediaCard.collect { keep ->
             onKeepMediaCardChange(keep)
-        }
-    }
-
-    LaunchedEffect(repository) {
-        repository.showStationArtwork.collect { savedShowStationArtwork ->
-            onShowStationArtworkChange(savedShowStationArtwork)
-        }
-    }
-
-    LaunchedEffect(repository) {
-        repository.showEmptyFavoritesTab.collect { savedShowEmptyFavoritesTab ->
-            onShowEmptyFavoritesTabChange(savedShowEmptyFavoritesTab)
-        }
-    }
-
-    LaunchedEffect(repository) {
-        repository.confirmStationDeletion.collect { savedConfirmStationDeletion ->
-            onConfirmStationDeletionChange(savedConfirmStationDeletion)
         }
     }
 
@@ -142,20 +152,25 @@ fun RepositoryStateEffects(
         }
     }
 
-    LaunchedEffect(repository, selectedPage, visibleTabPages) {
-        repository.lastMainPage.collect { savedPage ->
-            val restoredPage = MainPage.tabPages.firstOrNull { it.name == savedPage } ?: MainPage.Stations
-            onLastMainPageChange(restoredPage)
-            if (selectedPage in visibleTabPages) {
-                onSelectedPageRestore(restoredPage)
-            }
+    LaunchedEffect(repository) {
+        val savedPage = repository.lastMainPage.first()
+        val restoredPage = if (savedPage?.startsWith("Playlist:") == true) {
+            MainPage.Playlist(savedPage.removePrefix("Playlist:"))
+        } else {
+            MainPage.tabPages.firstOrNull { it.name == savedPage } ?: MainPage.Stations
         }
+        onLastMainPageChange(restoredPage)
+        onSelectedPageRestore(restoredPage)
     }
 
     LaunchedEffect(repository) {
         repository.stationSortState.collect { savedSortState ->
             onStationSortStateChange(savedSortState)
         }
+    }
+
+    LaunchedEffect(repository) {
+        repository.favoriteSortState.collect(onFavoriteSortStateChange)
     }
 
     LaunchedEffect(repository) {
