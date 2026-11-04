@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="whats_new_entries">
+        <item>@string/whats_new_1_17_0</item>
         <item>@string/whats_new_1_12_0</item>
     </string-array>
 
+    <string name="whats_new_1_17_0">"v1.17.0
+• The app now supports playlists. Stations can now be grouped into playlists, each with its own tab.
+• Each tab remembers its own sorting.
+• Tabs can be rearranged.
+• Favorite icons (hearts) and the playback animation can now be hidden. Check out Settings.
+• JSON backups now include playlists, tab order, and sorting for each list.
+• JSON and TXT imports now accept only their respective formats.
+• Clearing the library now also removes playlists and resets sorting and tab order.
+• Fixed an issue where removing tracking parameters could alter other parts of a station URL."</string>
+
     <string name="whats_new_1_12_0">"v1.12.0
-• Added a Sleep Timer with a movable on-screen countdown.
-• Added customizable dividers to station lists.
-• Added a "What’s new" window.
-• Changed the "Check for updates" button in About.
+• A Sleep Timer is now available. With a movable on-screen countdown.
+• Station lists now support customizable dividers. Check out Settings.
+• Release notes can now be viewed in the What’s new window.
+• The Check for updates button in About (only in GitHub releases) has a new look.
 • Internal improvements and component updates."</string>
 </resources>
