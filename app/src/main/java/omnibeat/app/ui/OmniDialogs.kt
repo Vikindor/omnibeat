@@ -68,13 +68,34 @@ fun OmniInfoDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    OmniInfoDialog(
+        title = title,
+        text = AnnotatedString(text),
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun OmniInfoDialog(
+    title: String,
+    text: AnnotatedString,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    dismissEnabled: Boolean = true,
+    dismissText: String = stringResource(R.string.action_close),
+) {
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (dismissEnabled) onDismiss() },
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = RadioSpacing.large)
             .widthIn(max = 560.dp),
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = dismissEnabled,
+            dismissOnClickOutside = dismissEnabled,
+        ),
         containerColor = RadioSurface,
         titleContentColor = RadioText,
         textContentColor = RadioTextMuted,
@@ -87,7 +108,11 @@ fun OmniInfoDialog(
             )
         },
         confirmButton = {
-            OmniSecondaryButton(text = stringResource(R.string.action_close), onClick = onDismiss)
+            OmniSecondaryButton(
+                text = dismissText,
+                onClick = onDismiss,
+                enabled = dismissEnabled,
+            )
         },
     )
 }

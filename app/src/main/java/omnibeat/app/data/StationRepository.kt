@@ -64,6 +64,7 @@ private val showAndroidAutoArtworkKey = booleanPreferencesKey("show_android_auto
 private val playerPanelCollapsedKey = booleanPreferencesKey("player_panel_collapsed")
 private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
 private val whatsNewSeenVersionCodeKey = longPreferencesKey("whats_new_seen_version_code")
+private val releaseWarningSeenIdKey = stringPreferencesKey("release_warning_seen_id")
 private val lastMainPageKey = stringPreferencesKey("last_main_page")
 private val lastPlayedStationIdKey = stringPreferencesKey("last_played_station_id")
 private val recentlyPlayedStationIdsKey = stringPreferencesKey("recently_played_station_ids")
@@ -212,6 +213,9 @@ class StationRepository(private val context: Context) {
 
     val whatsNewSeenVersionCode: Flow<Long> = context.stationDataStore.data
         .map { preferences -> preferences[whatsNewSeenVersionCodeKey] ?: 0L }
+
+    val releaseWarningSeenId: Flow<String> = context.stationDataStore.data
+        .map { preferences -> preferences[releaseWarningSeenIdKey].orEmpty() }
 
     val stations: Flow<List<Station>> = context.stationDataStore.data
         .map { preferences -> decodeStations(preferences[stationsJsonKey].orEmpty()) }
@@ -396,6 +400,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveWhatsNewSeenVersionCode(versionCode: Long) {
         context.stationDataStore.edit { preferences ->
             preferences[whatsNewSeenVersionCodeKey] = versionCode
+        }
+    }
+
+    suspend fun saveReleaseWarningSeenId(id: String) {
+        context.stationDataStore.edit { preferences ->
+            preferences[releaseWarningSeenIdKey] = id
         }
     }
 

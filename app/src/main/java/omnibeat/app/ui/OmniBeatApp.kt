@@ -1519,6 +1519,11 @@ fun OmniBeatApp() {
             )
         }
 
+        ReleaseWarning.ShowIfNeeded(
+            repository = repository,
+            canShow = whatsNewSeenVersionCode == versionCode && !showWhatsNew,
+        )
+
         pendingImportData?.let { importData ->
             ImportStationsDialog(
                 stationCount = importData.stations.size,
