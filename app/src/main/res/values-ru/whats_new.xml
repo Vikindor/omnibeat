@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="whats_new_entries">
+        <item>@string/whats_new_1_17_1</item>
         <item>@string/whats_new_1_17_0</item>
         <item>@string/whats_new_1_12_0</item>
     </string-array>
+
+    <string name="whats_new_1_17_1">"v1.17.1
+• Исправлена сортировка по умолчанию в новых плейлистах. Станции теперь сортируются по дате добавления, новые сверху."</string>
 
     <string name="whats_new_1_17_0">"v1.17.0
 • В приложении появились плейлисты. Станции можно объединять в плейлисты, каждый со своей вкладкой.

@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="whats_new_entries">
+        <item>@string/whats_new_1_17_1</item>
         <item>@string/whats_new_1_17_0</item>
         <item>@string/whats_new_1_12_0</item>
     </string-array>
+
+    <string name="whats_new_1_17_1">"v1.17.1
+• Fixed the default sorting for new playlists. Stations are now sorted by date added, newest first."</string>
 
     <string name="whats_new_1_17_0">"v1.17.0
 • The app now supports playlists. Stations can now be grouped into playlists, each with its own tab.

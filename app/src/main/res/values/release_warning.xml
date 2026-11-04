@@ -3,7 +3,7 @@
     <string name="release_warning_title">Important</string>
     <string name="release_warning_message"><![CDATA[
 Sorry, one more thing.<br/><br/>
-The library data structure has changed significantly in this update. It now includes playlists and sorting order for each tab.<br/><br/>
+The library data structure has changed significantly in update v1.17.0. It now includes playlists and sorting order for each tab.<br/><br/>
 <b>If you previously created a JSON backup of your library, please create a new one.<br/>
 <font color=\"#EF5350\">Your current library in the app is fine, but old JSON backups can no longer be imported.</font></b><br/><br/>
 This is a one-time message. You won\'t see it again.

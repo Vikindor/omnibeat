@@ -4,7 +4,7 @@ data class Playlist(
     val id: String,
     val title: String,
     val stationIds: List<String> = emptyList(),
-    val sortState: StationSortState = StationSortState(StationSortMode.Custom),
+    val sortState: StationSortState = StationSortState(),
 ) {
     fun stations(library: List<Station>): List<Station> {
         val byId = library.associateBy { it.id }
