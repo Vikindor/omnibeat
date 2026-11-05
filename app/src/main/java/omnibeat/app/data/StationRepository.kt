@@ -60,6 +60,8 @@ private val autoExpandPlayerPanelOnPlaybackKey = booleanPreferencesKey("auto_exp
 private val collapsePlayerPanelInSearchKey = booleanPreferencesKey("collapse_player_panel_in_search")
 private val addRadioBrowserTagsKey = booleanPreferencesKey("add_radio_browser_tags")
 private val removeTrackingParametersKey = booleanPreferencesKey("remove_tracking_parameters")
+private val widgetFollowAppThemeKey = booleanPreferencesKey("widget_follow_app_theme")
+private val widgetMarqueeTrackTitleKey = booleanPreferencesKey("widget_marquee_track_title")
 private val showAndroidAutoArtworkKey = booleanPreferencesKey("show_android_auto_artwork")
 private val playerPanelCollapsedKey = booleanPreferencesKey("player_panel_collapsed")
 private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
@@ -201,6 +203,12 @@ class StationRepository(private val context: Context) {
 
     val removeTrackingParameters: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[removeTrackingParametersKey] ?: true }
+
+    val widgetFollowAppTheme: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[widgetFollowAppThemeKey] ?: false }
+
+    val widgetMarqueeTrackTitle: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[widgetMarqueeTrackTitleKey] ?: true }
 
     val showAndroidAutoArtwork: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showAndroidAutoArtworkKey] ?: true }
@@ -379,6 +387,14 @@ class StationRepository(private val context: Context) {
         context.stationDataStore.edit { preferences ->
             preferences[removeTrackingParametersKey] = remove
         }
+    }
+
+    suspend fun saveWidgetFollowAppTheme(follow: Boolean) {
+        context.stationDataStore.edit { preferences -> preferences[widgetFollowAppThemeKey] = follow }
+    }
+
+    suspend fun saveWidgetMarqueeTrackTitle(marquee: Boolean) {
+        context.stationDataStore.edit { preferences -> preferences[widgetMarqueeTrackTitleKey] = marquee }
     }
 
     suspend fun saveShowAndroidAutoArtwork(show: Boolean) {

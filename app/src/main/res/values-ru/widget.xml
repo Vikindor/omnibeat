@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Управление радио с главного экрана</string>
+    <string name="widget_previous">Предыдущая станция</string>
+    <string name="widget_play">Воспроизвести</string>
+    <string name="widget_pause">Пауза</string>
+    <string name="widget_next">Следующая станция</string>
+</resources>

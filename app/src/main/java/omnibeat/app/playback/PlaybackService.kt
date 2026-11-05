@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -53,8 +54,12 @@ import omnibeat.app.data.DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES
 import omnibeat.app.data.StationRepository
 import omnibeat.app.data.StationArtworkCache
 import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
+import omnibeat.app.model.MainPage
 import omnibeat.app.model.Station
+import omnibeat.app.model.sortedStations
 import omnibeat.app.network.NetworkStatus
+import omnibeat.app.widget.PlaybackWidget
+import omnibeat.app.widget.WidgetPlaybackState
 import omnibeat.app.stream.IcyMetadataParser
 import omnibeat.app.stream.StreamResolver
 import java.util.concurrent.CancellationException
@@ -110,8 +115,6 @@ class PlaybackService : MediaLibraryService() {
     private var playbackRequested = false
     private var recordedStationId: String? = null
     private var currentStreamIsHls = false
-    private var lastPlayedStationId: String? = null
-    private var rememberLastStation = true
     private var stopServiceAfterPauseMinutes = DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES
     private var showAndroidAutoArtwork = false
     private var navigationQueueIds: List<String> = emptyList()
@@ -153,6 +156,11 @@ class PlaybackService : MediaLibraryService() {
             .setSessionActivity(activityPendingIntent()).build()
         addSession(requireNotNull(mediaSession))
         scope.launch { state.collect { sessionPlayer.syncState() } }
+        scope.launch {
+            state.map(WidgetPlaybackState::from).distinctUntilChanged().collect {
+                PlaybackWidget.requestUpdate(this@PlaybackService)
+            }
+        }
         scope.launch {
             combine(state, repository.showAndroidAutoArtwork) { playback, show ->
                 playback.selectedStation?.imageUrl?.takeIf { show }
@@ -203,17 +211,7 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         scope.launch {
-            repository.lastPlayedStationId.collect { stationId ->
-                lastPlayedStationId = stationId
-            }
-        }
-        scope.launch {
             repository.sleepTimerCloseApp.collect { sleepTimerCloseApp = it }
-        }
-        scope.launch {
-            repository.rememberLastStation.collect { remember ->
-                rememberLastStation = remember
-            }
         }
         scope.launch {
             repository.stopServiceAfterPauseMinutes.collect { minutes ->
@@ -256,6 +254,17 @@ class PlaybackService : MediaLibraryService() {
             ACTION_PLAY_PREVIEW -> playPreviewStation(intent.toPreviewStation())
             ACTION_PLAY_PAUSE -> playOrPause()
             ACTION_STOP -> stopPlaybackService()
+            ACTION_PREVIOUS, ACTION_NEXT -> scope.launch {
+                if (stations.isEmpty()) stations = repository.stations.first()
+                if (navigationQueueIds.isEmpty()) {
+                    navigationQueueIds = defaultNavigationStations().map { it.id }
+                }
+                if (stations.isEmpty()) {
+                    stopPlaybackService()
+                } else {
+                    playAdjacentStation(if (intent.action == ACTION_PREVIOUS) -1 else 1)
+                }
+            }
             ACTION_START_SLEEP_TIMER -> startSleepTimer(intent.getLongExtra(EXTRA_SLEEP_TIMER_SECONDS, 0L))
             ACTION_CANCEL_SLEEP_TIMER -> cancelSleepTimer()
         }
@@ -279,6 +288,7 @@ class PlaybackService : MediaLibraryService() {
         sessionPlayer.release()
         player.release()
         _state.update { it.copy(isPlaying = false, resolving = false, buffering = false) }
+        PlaybackWidget.requestUpdate(this)
         serviceJob.cancel()
         super.onDestroy()
     }
@@ -316,19 +326,32 @@ class PlaybackService : MediaLibraryService() {
 
     private fun playLastOrFirstStation() {
         scope.launch {
-            if (stations.isEmpty()) {
-                stations = repository.stations.first()
-            }
-            val nextIndex = if (rememberLastStation) {
-                lastPlayedStationId
-                    ?.let { stationId -> stations.indexOfFirst { it.id == stationId } }
-                    ?.takeIf { it >= 0 }
-                    ?: 0
+            val queue = defaultNavigationStations()
+            val rememberedStationId = if (repository.rememberLastStation.first()) {
+                repository.lastPlayedStationId.first()
             } else {
-                0
+                null
             }
-            playStationAt(nextIndex)
+            val nextStation = queue.firstOrNull { it.id == rememberedStationId }
+                ?: queue.firstOrNull()
+            val nextIndex = stations.indexOfFirst { it.id == nextStation?.id }
+            playStationAt(nextIndex, queueIds = queue.map { it.id })
         }
+    }
+
+    private suspend fun defaultNavigationStations(): List<Station> {
+        if (stations.isEmpty()) {
+            stations = repository.stations.first()
+        }
+        val sortState = repository.stationSortState.first()
+        val customOrder = repository.customStationOrder.first()
+        return sortedStations(
+            source = stations,
+            page = MainPage.Stations,
+            sortState = sortState,
+            customStationOrder = customOrder,
+            customFavoriteOrder = emptyList(),
+        )
     }
 
     private fun buildPlayer(): ExoPlayer {
@@ -392,7 +415,6 @@ class PlaybackService : MediaLibraryService() {
         noMetadataJob?.cancel()
         playbackRequested = startPlayback
         if (!previewing) {
-            lastPlayedStationId = station.id
             scope.launch { repository.saveLastPlayedStationId(station.id) }
         }
         recordedStationId = null
@@ -960,8 +982,10 @@ class PlaybackService : MediaLibraryService() {
         private const val EXTRA_PREVIEW_IMAGE_URL = "preview_image_url"
         private const val ACTION_PLAY_STATION = "omnibeat.app.action.PLAY_STATION"
         private const val ACTION_PLAY_PREVIEW = "omnibeat.app.action.PLAY_PREVIEW"
-        private const val ACTION_PLAY_PAUSE = "omnibeat.app.action.PLAY_PAUSE"
+        internal const val ACTION_PLAY_PAUSE = "omnibeat.app.action.PLAY_PAUSE"
         private const val ACTION_STOP = "omnibeat.app.action.STOP"
+        internal const val ACTION_PREVIOUS = "omnibeat.app.action.PREVIOUS"
+        internal const val ACTION_NEXT = "omnibeat.app.action.NEXT"
         private const val ACTION_START_SLEEP_TIMER = "omnibeat.app.action.START_SLEEP_TIMER"
         private const val ACTION_CANCEL_SLEEP_TIMER = "omnibeat.app.action.CANCEL_SLEEP_TIMER"
         private const val EXTRA_SLEEP_TIMER_SECONDS = "sleep_timer_seconds"

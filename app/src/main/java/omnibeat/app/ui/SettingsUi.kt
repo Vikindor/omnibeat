@@ -158,6 +158,8 @@ fun SettingsPage(
     collapsePlayerPanelInSearch: Boolean,
     addRadioBrowserTags: Boolean,
     removeTrackingParameters: Boolean,
+    widgetFollowAppTheme: Boolean,
+    widgetMarqueeTrackTitle: Boolean,
     showAndroidAutoArtwork: Boolean,
     onThemeModeChange: (ThemeMode) -> Unit,
     onAppLanguageChange: (AppLanguage) -> Unit,
@@ -178,6 +180,8 @@ fun SettingsPage(
     onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
     onAddRadioBrowserTagsChange: (Boolean) -> Unit,
     onRemoveTrackingParametersChange: (Boolean) -> Unit,
+    onWidgetFollowAppThemeChange: (Boolean) -> Unit,
+    onWidgetMarqueeTrackTitleChange: (Boolean) -> Unit,
     onShowAndroidAutoArtworkChange: (Boolean) -> Unit,
     onClearLibrary: () -> Unit,
     modifier: Modifier = Modifier,
@@ -413,6 +417,27 @@ fun SettingsPage(
                 },
                 checked = removeTrackingParameters,
                 onCheckedChange = onRemoveTrackingParametersChange,
+            )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_widget))
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_widget_follow_app_theme_title),
+                subtitle = stringResource(
+                    if (widgetFollowAppTheme) R.string.settings_widget_follow_app_theme_on
+                    else R.string.settings_widget_follow_app_theme_off,
+                ),
+                checked = widgetFollowAppTheme,
+                onCheckedChange = onWidgetFollowAppThemeChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_marquee_track_title_title),
+                subtitle = stringResource(
+                    if (widgetMarqueeTrackTitle) R.string.settings_marquee_track_title_on
+                    else R.string.settings_marquee_track_title_off,
+                ),
+                checked = widgetMarqueeTrackTitle,
+                onCheckedChange = onWidgetMarqueeTrackTitleChange,
             )
             SettingsDivider()
 
