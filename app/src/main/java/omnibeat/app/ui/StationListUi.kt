@@ -139,6 +139,7 @@ fun StationList(
     scrollToStationId: String?,
     showArtwork: Boolean,
     showPlaybackIndicator: Boolean,
+    animatePlaybackIndicator: Boolean,
     showFavoriteButtons: Boolean,
     dividerStyle: StationDividerStyle = StationDividerStyle.Inset,
     enabled: Boolean = true,
@@ -202,6 +203,7 @@ fun StationList(
                         reordering = reordering,
                         showArtwork = showArtwork,
                         showPlaybackIndicator = showPlaybackIndicator,
+                        animatePlaybackIndicator = animatePlaybackIndicator,
                         showFavoriteButtons = showFavoriteButtons,
                         dragging = isDragging,
                         showDivider = index < stations.lastIndex,
@@ -400,6 +402,7 @@ private fun StationRow(
     reordering: Boolean,
     showArtwork: Boolean,
     showPlaybackIndicator: Boolean,
+    animatePlaybackIndicator: Boolean,
     showFavoriteButtons: Boolean,
     dragging: Boolean,
     showDivider: Boolean,
@@ -458,7 +461,7 @@ private fun StationRow(
                             ),
                         ) {
                             if (playing && !reordering) {
-                                StationPlayingIndicator()
+                                StationPlayingIndicator(animate = animatePlaybackIndicator)
                             }
                         }
                     }
@@ -482,19 +485,23 @@ private fun StationRow(
 }
 
 @Composable
-private fun StationPlayingIndicator(modifier: Modifier = Modifier) {
+private fun StationPlayingIndicator(animate: Boolean, modifier: Modifier = Modifier) {
     val indicatorColor = RadioPrimary
-    val transition = rememberInfiniteTransition(label = "station-playing-indicator")
-    val barFractions = List(3) { index ->
-        transition.animateFloat(
-            initialValue = 0.35f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 420 + index * 90, delayMillis = index * 70),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "station-playing-bar-$index",
-        ).value
+    val barFractions = if (animate) {
+        val transition = rememberInfiniteTransition(label = "station-playing-indicator")
+        List(3) { index ->
+            transition.animateFloat(
+                initialValue = 0.35f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 420 + index * 90, delayMillis = index * 70),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "station-playing-bar-$index",
+            ).value
+        }
+    } else {
+        listOf(0.35f, 0.65f, 1f)
     }
 
     Canvas(modifier = modifier.size(width = RadioSizes.signalWidth, height = RadioSizes.signalHeight)) {

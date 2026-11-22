@@ -72,8 +72,11 @@
     <string name="settings_station_dividers_inset_right">Inset right</string>
     <string name="settings_station_dividers_full_width">Full width</string>
     <string name="settings_show_playback_indicator_title">Show playback indicator</string>
-    <string name="settings_show_playback_indicator_on">Station lists will show the playback animation</string>
-    <string name="settings_show_playback_indicator_off">Station lists will hide the playback animation</string>
+    <string name="settings_show_playback_indicator_on">Station lists will show the playback indicator</string>
+    <string name="settings_show_playback_indicator_off">Station lists will hide the playback indicator</string>
+    <string name="settings_animate_playback_indicator_title">Animate indicator</string>
+    <string name="settings_animate_playback_indicator_on">The playback indicator will animate</string>
+    <string name="settings_animate_playback_indicator_off">The playback indicator will stay still</string>
     <string name="settings_show_favorite_buttons_title">Show favorite buttons</string>
     <string name="settings_show_favorite_buttons_on">Station lists will show favorite buttons</string>
     <string name="settings_show_favorite_buttons_off">Station lists will hide favorite buttons</string>

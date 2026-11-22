@@ -196,6 +196,7 @@ fun OmniBeatApp() {
         var appVolume by remember { mutableFloatStateOf(0.75f) }
         var stationDividers by remember { mutableStateOf(StationDividerStyle.Inset) }
         var showPlaybackIndicator by remember { mutableStateOf(true) }
+        var animatePlaybackIndicator by remember { mutableStateOf(true) }
         var showFavoriteButtons by remember { mutableStateOf(true) }
         var showEmptyFavoritesTab by remember { mutableStateOf(true) }
         var confirmStationDeletion by remember { mutableStateOf(true) }
@@ -279,6 +280,7 @@ fun OmniBeatApp() {
             onAppVolumeChange = { appVolume = it },
             onStationDividersChange = { stationDividers = it },
             onShowPlaybackIndicatorChange = { showPlaybackIndicator = it },
+            onAnimatePlaybackIndicatorChange = { animatePlaybackIndicator = it },
             onShowFavoriteButtonsChange = { showFavoriteButtons = it },
             onShowEmptyFavoritesTabChange = { showEmptyFavoritesTab = it },
             onConfirmStationDeletionChange = { confirmStationDeletion = it },
@@ -1223,6 +1225,7 @@ fun OmniBeatApp() {
                                     selectedStationId = playbackState.selectedStation?.id,
                                     playingStationId = playbackState.selectedStation?.id.takeIf { playbackState.isPlaying },
                                     showPlaybackIndicator = showPlaybackIndicator,
+                                    animatePlaybackIndicator = animatePlaybackIndicator,
                                     showFavoriteButtons = showFavoriteButtons,
                                     stationSortState = stationSortState,
                                     favoriteSortState = favoriteSortState,
@@ -1296,6 +1299,7 @@ fun OmniBeatApp() {
                                     appLanguage = appLanguage,
                                     stationDividers = stationDividers,
                                     showPlaybackIndicator = showPlaybackIndicator,
+                                    animatePlaybackIndicator = animatePlaybackIndicator,
                                     showFavoriteButtons = showFavoriteButtons,
                                     showEmptyFavoritesTab = showEmptyFavoritesTab,
                                     confirmStationDeletion = confirmStationDeletion,
@@ -1330,6 +1334,10 @@ fun OmniBeatApp() {
                                     onShowPlaybackIndicatorChange = { show ->
                                         showPlaybackIndicator = show
                                         scope.launch { repository.saveShowPlaybackIndicator(show) }
+                                    },
+                                    onAnimatePlaybackIndicatorChange = { animate ->
+                                        animatePlaybackIndicator = animate
+                                        scope.launch { repository.saveAnimatePlaybackIndicator(animate) }
                                     },
                                     onShowFavoriteButtonsChange = { show ->
                                         showFavoriteButtons = show

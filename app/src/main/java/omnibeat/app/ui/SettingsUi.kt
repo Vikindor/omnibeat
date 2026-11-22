@@ -144,6 +144,7 @@ fun SettingsPage(
     appLanguage: AppLanguage,
     stationDividers: StationDividerStyle,
     showPlaybackIndicator: Boolean,
+    animatePlaybackIndicator: Boolean,
     showFavoriteButtons: Boolean,
     showEmptyFavoritesTab: Boolean,
     confirmStationDeletion: Boolean,
@@ -169,6 +170,7 @@ fun SettingsPage(
     onAppLanguageChange: (AppLanguage) -> Unit,
     onStationDividersChange: (StationDividerStyle) -> Unit,
     onShowPlaybackIndicatorChange: (Boolean) -> Unit,
+    onAnimatePlaybackIndicatorChange: (Boolean) -> Unit,
     onShowFavoriteButtonsChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
     onConfirmStationDeletionChange: (Boolean) -> Unit,
@@ -256,6 +258,16 @@ fun SettingsPage(
                 ),
                 checked = showPlaybackIndicator,
                 onCheckedChange = onShowPlaybackIndicatorChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_animate_playback_indicator_title),
+                subtitle = stringResource(
+                    if (animatePlaybackIndicator) R.string.settings_animate_playback_indicator_on
+                    else R.string.settings_animate_playback_indicator_off,
+                ),
+                checked = animatePlaybackIndicator,
+                onCheckedChange = onAnimatePlaybackIndicatorChange,
+                enabled = showPlaybackIndicator,
             )
             SettingsSwitchRow(
                 title = stringResource(R.string.settings_show_favorite_buttons_title),

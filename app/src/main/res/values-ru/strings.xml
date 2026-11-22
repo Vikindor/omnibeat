@@ -70,8 +70,11 @@
     <string name="settings_station_dividers_inset_right">Отступ справа</string>
     <string name="settings_station_dividers_full_width">На всю ширину</string>
     <string name="settings_show_playback_indicator_title">Показывать индикатор воспроизведения</string>
-    <string name="settings_show_playback_indicator_on">В списках станций будет видна анимация воспроизведения</string>
-    <string name="settings_show_playback_indicator_off">Анимация воспроизведения в списках станций будет скрыта</string>
+    <string name="settings_show_playback_indicator_on">В списках станций будет виден индикатор воспроизведения</string>
+    <string name="settings_show_playback_indicator_off">Индикатор воспроизведения в списках станций будет скрыт</string>
+    <string name="settings_animate_playback_indicator_title">Анимировать индикатор</string>
+    <string name="settings_animate_playback_indicator_on">Полосы индикатора будут двигаться</string>
+    <string name="settings_animate_playback_indicator_off">Полосы индикатора будут неподвижны</string>
     <string name="settings_show_favorite_buttons_title">Показывать кнопки избранного</string>
     <string name="settings_show_favorite_buttons_on">В списках станций будут видны кнопки избранного</string>
     <string name="settings_show_favorite_buttons_off">Кнопки избранного в списках станций будут скрыты</string>

@@ -26,6 +26,7 @@ fun StationTabsPager(
     selectedStationId: String?,
     playingStationId: String?,
     showPlaybackIndicator: Boolean,
+    animatePlaybackIndicator: Boolean,
     showFavoriteButtons: Boolean,
     stationSortState: StationSortState,
     favoriteSortState: StationSortState,
@@ -67,6 +68,7 @@ fun StationTabsPager(
                 selectedStationId = selectedStationId,
                 playingStationId = playingStationId,
                 showPlaybackIndicator = showPlaybackIndicator,
+                animatePlaybackIndicator = animatePlaybackIndicator,
                 showFavoriteButtons = showFavoriteButtons,
                 emptyContent = {
                     when (page) {
@@ -96,6 +98,7 @@ private fun StationPageList(
     selectedStationId: String?,
     playingStationId: String?,
     showPlaybackIndicator: Boolean,
+    animatePlaybackIndicator: Boolean,
     showFavoriteButtons: Boolean,
     emptyContent: @Composable () -> Unit,
     scrollToSelectedRequest: Int,
@@ -119,6 +122,7 @@ private fun StationPageList(
         selectedIndex = stations.indexOfFirst { it.id == selectedStationId },
         playingStationId = playingStationId,
         showPlaybackIndicator = showPlaybackIndicator,
+        animatePlaybackIndicator = animatePlaybackIndicator,
         showFavoriteButtons = showFavoriteButtons,
         scrollToSelectedRequest = scrollToSelectedRequest,
         scrollToStationId = scrollToStationId,

@@ -43,6 +43,7 @@ private val appVolumeKey = floatPreferencesKey("app_volume")
 private val themeModeKey = stringPreferencesKey("theme_mode")
 private val stationDividersKey = stringPreferencesKey("station_dividers")
 private val showPlaybackIndicatorKey = booleanPreferencesKey("show_playback_indicator")
+private val animatePlaybackIndicatorKey = booleanPreferencesKey("animate_playback_indicator")
 private val showFavoriteButtonsKey = booleanPreferencesKey("show_favorite_buttons")
 private val showEmptyFavoritesTabKey = booleanPreferencesKey("show_empty_favorites_tab")
 private val confirmStationDeletionKey = booleanPreferencesKey("confirm_station_deletion")
@@ -143,6 +144,9 @@ class StationRepository(private val context: Context) {
 
     val showPlaybackIndicator: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showPlaybackIndicatorKey] ?: true }
+
+    val animatePlaybackIndicator: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[animatePlaybackIndicatorKey] ?: true }
 
     val showFavoriteButtons: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[showFavoriteButtonsKey] ?: true }
@@ -282,6 +286,12 @@ class StationRepository(private val context: Context) {
     suspend fun saveShowPlaybackIndicator(show: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[showPlaybackIndicatorKey] = show
+        }
+    }
+
+    suspend fun saveAnimatePlaybackIndicator(animate: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[animatePlaybackIndicatorKey] = animate
         }
     }
 

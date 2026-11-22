@@ -16,6 +16,7 @@ fun RepositoryStateEffects(
     onAppVolumeChange: (Float) -> Unit,
     onStationDividersChange: (StationDividerStyle) -> Unit,
     onShowPlaybackIndicatorChange: (Boolean) -> Unit,
+    onAnimatePlaybackIndicatorChange: (Boolean) -> Unit,
     onShowFavoriteButtonsChange: (Boolean) -> Unit,
     onShowEmptyFavoritesTabChange: (Boolean) -> Unit,
     onConfirmStationDeletionChange: (Boolean) -> Unit,
@@ -60,6 +61,10 @@ fun RepositoryStateEffects(
 
     LaunchedEffect(repository) {
         repository.showPlaybackIndicator.collect(onShowPlaybackIndicatorChange)
+    }
+
+    LaunchedEffect(repository) {
+        repository.animatePlaybackIndicator.collect(onAnimatePlaybackIndicatorChange)
     }
 
     LaunchedEffect(repository) {
