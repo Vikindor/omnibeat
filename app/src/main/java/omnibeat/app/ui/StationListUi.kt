@@ -76,16 +76,26 @@ fun EmptyStationsState(modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
-                Text(stringResource(R.string.empty_stations_suffix_start), color = RadioTextMuted, fontSize = RadioTextSizes.bodyLarge)
+                Text(
+                    text = stringResource(R.string.empty_stations_suffix_start),
+                    color = RadioTextMuted,
+                    fontSize = RadioTextSizes.bodyLarge,
+                    textAlign = TextAlign.Center,
+                )
                 Icon(
-                    painter = painterResource(R.drawable.ic_more_vert),
+                    painter = painterResource(R.drawable.ic_more_vertical),
                     contentDescription = null,
                     tint = RadioTextMuted,
                     modifier = Modifier
                         .padding(horizontal = RadioSpacing.compact)
                         .size(RadioSizes.iconInline),
                 )
-                Text(stringResource(R.string.empty_stations_suffix_end), color = RadioTextMuted, fontSize = RadioTextSizes.bodyLarge)
+                Text(
+                    text = stringResource(R.string.empty_stations_suffix_end),
+                    color = RadioTextMuted,
+                    fontSize = RadioTextSizes.bodyLarge,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
@@ -115,6 +125,7 @@ fun EmptyFavoritesState(modifier: Modifier = Modifier) {
                     text = stringResource(R.string.empty_favorites_suffix),
                     color = RadioTextMuted,
                     fontSize = RadioTextSizes.bodyLarge,
+                    textAlign = TextAlign.Center,
                 )
                 Icon(
                     painter = painterResource(R.drawable.ic_favorite_border),
@@ -284,24 +295,28 @@ fun StationListItem(
             }
             trailingContent?.invoke()
         }
-        if (showDivider && dividerStyle != StationDividerStyle.None) {
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = RadioOutline.copy(alpha = 0.65f),
-                modifier = Modifier.padding(
-                    start = when (dividerStyle) {
-                        StationDividerStyle.Inset, StationDividerStyle.InsetRight -> RadioSpacing.page
-                        else -> 0.dp
-                    },
-                    end = when (dividerStyle) {
-                        StationDividerStyle.Inset -> RadioSpacing.page
-                        StationDividerStyle.InsetRight -> RadioSpacing.page + RadioSizes.playerCollapseButton
-                        else -> 0.dp
-                    },
-                ),
-            )
-        }
+        if (showDivider) ListItemDivider(dividerStyle)
     }
+}
+
+@Composable
+internal fun ListItemDivider(dividerStyle: StationDividerStyle) {
+    if (dividerStyle == StationDividerStyle.None) return
+    HorizontalDivider(
+        thickness = 1.dp,
+        color = RadioOutline.copy(alpha = 0.65f),
+        modifier = Modifier.padding(
+            start = when (dividerStyle) {
+                StationDividerStyle.Inset, StationDividerStyle.InsetRight -> RadioSpacing.page
+                else -> 0.dp
+            },
+            end = when (dividerStyle) {
+                StationDividerStyle.Inset -> RadioSpacing.page
+                StationDividerStyle.InsetRight -> RadioSpacing.page + RadioSizes.playerCollapseButton
+                else -> 0.dp
+            },
+        ),
+    )
 }
 
 @Composable

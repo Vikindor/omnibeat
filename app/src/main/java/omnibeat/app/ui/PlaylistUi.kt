@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import omnibeat.app.R
@@ -138,6 +139,11 @@ fun PlaylistMembershipPage(
 @Composable
 fun PlaylistEmptyState() {
     Box(Modifier.fillMaxSize().padding(RadioSpacing.page), contentAlignment = Alignment.Center) {
-        Text(stringResource(R.string.playlist_empty), color = RadioTextMuted, fontSize = RadioTextSizes.bodyLarge)
+        Text(
+            text = stringResource(R.string.playlist_empty),
+            color = RadioTextMuted,
+            fontSize = RadioTextSizes.bodyLarge,
+            textAlign = TextAlign.Center,
+        )
     }
 }

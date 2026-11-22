@@ -4,9 +4,6 @@ import androidx.compose.foundation.layout.heightIn
 
 import omnibeat.app.R
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -23,6 +20,7 @@ import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,10 +33,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -90,7 +90,8 @@ fun PlayerPanel(
     onStop: () -> Unit,
     onPreviousStation: () -> Unit,
     onNextStation: () -> Unit,
-    onRandomStation: () -> Unit,
+    onSleepTimerClick: () -> Unit,
+    onTrackHistoryClick: () -> Unit,
     onVolumeChange: (Float) -> Unit,
 ) {
     var showStreamInfo by remember { mutableStateOf(false) }
@@ -239,19 +240,11 @@ fun PlayerPanel(
                         .fillMaxWidth()
                         .padding(top = RadioSpacing.large),
                 ) {
-                    PlayerIconButton(
-                        enabled = true,
-                        onClick = onRandomStation,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .size(RadioSizes.button),
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_shuffle),
-                            contentDescription = null,
-                            modifier = Modifier.size(RadioSizes.icon),
-                        )
-                    }
+                    PlayerActionsButton(
+                        onSleepTimerClick = onSleepTimerClick,
+                        onTrackHistoryClick = onTrackHistoryClick,
+                        modifier = Modifier.align(Alignment.CenterStart),
+                    )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(RadioSpacing.fieldGap),
@@ -423,10 +416,68 @@ private fun StreamInfoRow(label: String, value: String) {
     }
 }
 
-private fun copyTextToClipboard(context: Context, label: String, text: String) {
-    val clipboardManager = context.getSystemService(ClipboardManager::class.java)
-    @Suppress("UsePropertyAccessSyntax")
-    clipboardManager.setPrimaryClip(ClipData.newPlainText(label, text))
+@Composable
+private fun PlayerActionsButton(
+    onSleepTimerClick: () -> Unit,
+    onTrackHistoryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val popupOffsetY = with(LocalDensity.current) {
+        -(RadioSizes.button + RadioSpacing.small).roundToPx()
+    }
+
+    Box(contentAlignment = Alignment.Center, modifier = modifier) {
+        PlayerIconButton(
+            enabled = true,
+            onClick = { expanded = !expanded },
+            modifier = Modifier.size(RadioSizes.button),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_more_horizontal),
+                contentDescription = stringResource(R.string.player_actions),
+                modifier = Modifier.size(RadioSizes.icon),
+            )
+        }
+        if (expanded) {
+            Popup(
+                alignment = Alignment.BottomStart,
+                offset = IntOffset(x = 0, y = popupOffsetY),
+                onDismissRequest = { expanded = false },
+                properties = PopupProperties(focusable = true),
+            ) {
+                Surface(
+                    color = RadioSurfaceHigh,
+                    shape = RoundedCornerShape(RadioCorners.extraLarge),
+                    shadowElevation = 6.dp,
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(RadioSpacing.small),
+                        modifier = Modifier.width(IntrinsicSize.Max).padding(RadioSpacing.small),
+                    ) {
+                        OmniPrimaryButton(
+                            text = stringResource(R.string.page_sleep_timer),
+                            icon = painterResource(R.drawable.ic_sleep_timer),
+                            onClick = {
+                                expanded = false
+                                onSleepTimerClick()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OmniPrimaryButton(
+                            text = stringResource(R.string.page_track_history),
+                            icon = painterResource(R.drawable.ic_history),
+                            onClick = {
+                                expanded = false
+                                onTrackHistoryClick()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

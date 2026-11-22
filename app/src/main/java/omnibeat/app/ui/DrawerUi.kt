@@ -48,8 +48,6 @@ fun DrawerContent(
     onToggleTranslation: () -> Unit,
     onTranslationClick: () -> Unit,
     onStationsClick: () -> Unit = {},
-    onSleepTimerClick: () -> Unit = {},
-    sleepTimerOpen: Boolean = false,
     onExportImportClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onAboutClick: () -> Unit = {},
@@ -116,12 +114,6 @@ fun DrawerContent(
                     iconRes = R.drawable.ic_list,
                     selected = selectedPage in MainPage.tabPages || selectedPage is MainPage.Playlist,
                     onClick = onStationsClick,
-                )
-                DrawerItem(
-                    text = stringResource(R.string.page_sleep_timer),
-                    iconRes = R.drawable.ic_sleep_timer,
-                    selected = sleepTimerOpen,
-                    onClick = onSleepTimerClick,
                 )
                 DrawerItem(
                     text = stringResource(R.string.page_export_import),
