@@ -16,6 +16,7 @@ fun MainPage.titleRes(): Int {
         MainPage.SearchOnline -> R.string.action_search_online
         MainPage.Settings -> R.string.page_settings
         MainPage.About -> R.string.page_about
+        MainPage.TrackHistory -> R.string.page_track_history
     }
 }
 

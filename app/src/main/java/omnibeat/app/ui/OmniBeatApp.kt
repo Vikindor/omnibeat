@@ -64,6 +64,9 @@ import omnibeat.app.data.SimpleStationTextCodec
 import omnibeat.app.data.StationExportCodec
 import omnibeat.app.data.StationImportMode
 import omnibeat.app.data.StationRepository
+import omnibeat.app.data.TrackHistoryRepository
+import omnibeat.app.data.TrackHistoryTextCodec
+import omnibeat.app.data.DEFAULT_TRACK_HISTORY_LIMIT
 import omnibeat.app.data.StationArtworkCache
 import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.model.SleepTimerPlacement
@@ -92,12 +95,12 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import kotlin.random.Random
 
 @Composable
 fun OmniBeatApp() {
     val context = LocalContext.current
     val repository = remember(context) { StationRepository(context.applicationContext) }
+    val trackHistoryRepository = remember(context) { TrackHistoryRepository(context.applicationContext) }
     val translationEnabled by repository.translationEnabled.collectAsState(initial = false)
     var translationLoaded by remember(repository) { mutableStateOf(false) }
     LaunchedEffect(repository) {
@@ -193,7 +196,7 @@ fun OmniBeatApp() {
         var membershipMode by rememberSaveable { mutableStateOf<PlaylistMembershipMode?>(null) }
         var playbackQueueIds by rememberSaveable { mutableStateOf<List<String>?>(null) }
         var stations by remember { mutableStateOf(emptyList<Station>()) }
-        var appVolume by remember { mutableFloatStateOf(0.75f) }
+        var appVolume by remember { mutableFloatStateOf(1f) }
         var stationDividers by remember { mutableStateOf(StationDividerStyle.Inset) }
         var showPlaybackIndicator by remember { mutableStateOf(true) }
         var animatePlaybackIndicator by remember { mutableStateOf(true) }
@@ -214,6 +217,8 @@ fun OmniBeatApp() {
         val sleepTimerCloseApp by repository.sleepTimerCloseApp.collectAsState(initial = false)
         val sleepTimerPlacement by repository.sleepTimerPlacement.collectAsState(initial = SleepTimerPlacement.PanelRight)
         val sleepTimerAlwaysShow by repository.sleepTimerAlwaysShow.collectAsState(initial = false)
+        val trackHistoryLimit by trackHistoryRepository.limit.collectAsState(initial = DEFAULT_TRACK_HISTORY_LIMIT)
+        val trackHistoryCopyStation by trackHistoryRepository.copyStation.collectAsState(initial = false)
         var removeTrackingParametersFromUrls by remember { mutableStateOf(true) }
         var widgetFollowAppTheme by remember { mutableStateOf(false) }
         var widgetMarqueeTrackTitle by remember { mutableStateOf(true) }
@@ -221,6 +226,7 @@ fun OmniBeatApp() {
         var playerPanelCollapsed by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
         var selectedPage by remember { mutableStateOf<MainPage>(MainPage.Stations) }
+        val trackHistory by trackHistoryRepository.entries.collectAsState(initial = emptyList())
         var lastMainPage by remember { mutableStateOf<MainPage>(MainPage.Stations) }
         var stationSortState by remember { mutableStateOf(StationSortState()) }
         var favoriteSortState by remember { mutableStateOf(StationSortState()) }
@@ -989,25 +995,6 @@ fun OmniBeatApp() {
             else playStation(station)
         }
 
-        fun playRandomStation() {
-            val pageStations = playbackStations()
-            if (pageStations.isEmpty()) return
-            val currentIndex = pageStations.indexOfFirst { it.id == playbackState.selectedStation?.id }
-            val nextIndex = if (pageStations.size == 1) {
-                0
-            } else {
-                var randomIndex: Int
-                do {
-                    randomIndex = Random.nextInt(pageStations.size)
-                } while (randomIndex == currentIndex)
-                randomIndex
-            }
-            val station = pageStations[nextIndex]
-            val index = stations.indexOfFirst { it.id == station.id }
-            if (index >= 0) playStationAt(index, queue = pageStations)
-            else playStation(station)
-        }
-
         fun playOrPause() {
             val pageStations = navigationStations()
             val hasActivePlaybackRequest = playbackState.isPlaying || playbackState.resolving || playbackState.buffering
@@ -1064,11 +1051,6 @@ fun OmniBeatApp() {
                         selectedPage = lastMainPage
                         scope.launch { drawerState.close() }
                     },
-                    onSleepTimerClick = {
-                        showSleepTimer = true
-                        scope.launch { drawerState.close() }
-                    },
-                    sleepTimerOpen = showSleepTimer,
                     onExportImportClick = {
                         selectedPage = MainPage.ExportImport
                         scope.launch { drawerState.close() }
@@ -1158,6 +1140,29 @@ fun OmniBeatApp() {
                             onSearchOnline = {
                                 selectedPage = MainPage.SearchOnline
                             },
+                            trackHistoryActions = {
+                                TrackHistoryActions(
+                                    enabled = trackHistory.isNotEmpty(),
+                                    onExport = {
+                                        pendingExportContent = TrackHistoryTextCodec.encode(trackHistory)
+                                        textExportLauncher.launch("omnibeat-track-history-${LocalDate.now()}.txt")
+                                    },
+                                    onClear = {
+                                        scope.launch {
+                                            try {
+                                                trackHistoryRepository.clear()
+                                            } catch (cancelled: CancellationException) {
+                                                throw cancelled
+                                            } catch (error: Exception) {
+                                                errorDialog = resources.appString(
+                                                    R.string.track_history_clear_failed,
+                                                    error.message.orEmpty(),
+                                                )
+                                            }
+                                        }
+                                    },
+                                )
+                            },
                             onlineSearchControl = if (selectedPage == MainPage.SearchOnline) {
                                 { controlModifier ->
                                     SearchOptionsTopBarControl(
@@ -1203,7 +1208,8 @@ fun OmniBeatApp() {
                                 onStop = { PlaybackService.stop(context) },
                                 onPreviousStation = { playAdjacentStation(-1) },
                                 onNextStation = { playAdjacentStation(1) },
-                                onRandomStation = { playRandomStation() },
+                                onSleepTimerClick = { showSleepTimer = true },
+                                onTrackHistoryClick = { selectedPage = MainPage.TrackHistory },
                                 onVolumeChange = { volume ->
                                     appVolume = volume
                                     scope.launch { repository.saveAppVolume(volume) }
@@ -1317,6 +1323,8 @@ fun OmniBeatApp() {
                                     sleepTimerCloseApp = sleepTimerCloseApp,
                                     sleepTimerPlacement = sleepTimerPlacement,
                                     sleepTimerAlwaysShow = sleepTimerAlwaysShow,
+                                    trackHistoryLimit = trackHistoryLimit,
+                                    trackHistoryCopyStation = trackHistoryCopyStation,
                                     removeTrackingParameters = removeTrackingParametersFromUrls,
                                     widgetFollowAppTheme = widgetFollowAppTheme,
                                     widgetMarqueeTrackTitle = widgetMarqueeTrackTitle,
@@ -1401,6 +1409,12 @@ fun OmniBeatApp() {
                                     onSleepTimerAlwaysShowChange = { alwaysShow ->
                                         scope.launch { repository.saveSleepTimerAlwaysShow(alwaysShow) }
                                     },
+                                    onTrackHistoryLimitChange = { limit ->
+                                        scope.launch { trackHistoryRepository.saveLimit(limit) }
+                                    },
+                                    onTrackHistoryCopyStationChange = { copyStation ->
+                                        scope.launch { trackHistoryRepository.saveCopyStation(copyStation) }
+                                    },
                                     onRemoveTrackingParametersChange = { remove ->
                                         removeTrackingParametersFromUrls = remove
                                         scope.launch { repository.saveRemoveTrackingParameters(remove) }
@@ -1433,6 +1447,15 @@ fun OmniBeatApp() {
                                     onWhatsNewClick = { showWhatsNew = true },
                                     modifier = Modifier.fillMaxSize(),
                                     updates = updates,
+                                )
+                            }
+
+                            MainPage.TrackHistory -> {
+                                TrackHistoryPage(
+                                    entries = trackHistory,
+                                    dividerStyle = stationDividers,
+                                    copyStation = trackHistoryCopyStation,
+                                    modifier = Modifier.fillMaxSize(),
                                 )
                             }
                         }

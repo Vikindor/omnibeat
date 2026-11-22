@@ -72,6 +72,7 @@ fun MainTopBar(
     onAddStation: () -> Unit,
     onSearchOnline: () -> Unit,
     onlineSearchControl: (@Composable (Modifier) -> Unit)? = null,
+    trackHistoryActions: (@Composable () -> Unit)? = null,
     overlayTitle: String? = null,
 ) {
     val density = LocalDensity.current
@@ -196,6 +197,8 @@ fun MainTopBar(
                     onSearchOnline = onSearchOnline,
                 )
             }
+        } else if (overlayTitle == null && selectedPage == MainPage.TrackHistory) {
+            trackHistoryActions?.invoke()
         }
     }
 }
@@ -226,7 +229,7 @@ private fun StationMenuButton(
 
     Box {
         OmniIconButton(
-            painter = painterResource(R.drawable.ic_more_vert),
+            painter = painterResource(R.drawable.ic_more_vertical),
             onClick = {
                 menuPage = StationMenuPage.Main
                 expanded = true

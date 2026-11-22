@@ -52,6 +52,7 @@ import kotlinx.coroutines.withContext
 import omnibeat.app.MainActivity
 import omnibeat.app.data.DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES
 import omnibeat.app.data.StationRepository
+import omnibeat.app.data.TrackHistoryRepository
 import omnibeat.app.data.StationArtworkCache
 import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
 import omnibeat.app.model.MainPage
@@ -87,7 +88,7 @@ data class PlaybackState(
     val buffering: Boolean = false,
     val isPlaying: Boolean = false,
     val errorText: String? = null,
-    val volume: Float = 0.75f,
+    val volume: Float = 1f,
     val streamInfo: PlaybackStreamInfo = PlaybackStreamInfo(),
 )
 
@@ -156,6 +157,7 @@ class PlaybackService : MediaLibraryService() {
             .setSessionActivity(activityPendingIntent()).build()
         addSession(requireNotNull(mediaSession))
         scope.launch { state.collect { sessionPlayer.syncState() } }
+        scope.launch { recordTrackHistory(state, TrackHistoryRepository(applicationContext)) }
         scope.launch {
             state.map(WidgetPlaybackState::from).distinctUntilChanged().collect {
                 PlaybackWidget.requestUpdate(this@PlaybackService)

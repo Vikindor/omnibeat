@@ -35,6 +35,7 @@ sealed class MainPage(val name: String) {
     data object SearchOnline : MainPage("SearchOnline")
     data object Settings : MainPage("Settings")
     data object About : MainPage("About")
+    data object TrackHistory : MainPage("TrackHistory")
 
     companion object {
         val tabPages: List<MainPage>

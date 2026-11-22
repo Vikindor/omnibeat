@@ -36,7 +36,7 @@ import java.time.Instant
 import java.util.UUID
 
 private val Context.stationDataStore by preferencesDataStore(name = "stations")
-private const val DEFAULT_APP_VOLUME = 0.75f
+private const val DEFAULT_APP_VOLUME = 1f
 const val STOP_SERVICE_AFTER_PAUSE_NEVER = 0
 const val DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES = 5
 private val appVolumeKey = floatPreferencesKey("app_volume")

@@ -20,7 +20,7 @@
 • Fixed an issue where removing tracking parameters could alter other parts of a station URL."</string>
 
     <string name="whats_new_1_12_0">"v1.12.0
-• A Sleep Timer is now available. With a movable on-screen countdown.
+• A Sleep timer is now available. With a movable on-screen countdown.
 • Station lists now support customizable dividers. Check out Settings.
 • Release notes can now be viewed in the What’s new window.
 • The Check for updates button in About (only in GitHub releases) has a new look.
