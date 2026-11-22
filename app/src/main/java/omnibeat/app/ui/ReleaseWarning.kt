@@ -20,7 +20,7 @@ import omnibeat.app.data.StationRepository
 import kotlin.time.Duration.Companion.milliseconds
 
 object ReleaseWarning {
-    private const val ENABLED = true
+    private const val ENABLED = false
     private const val WARNING_ID = "library_backup_v2"
     private const val DISMISS_DELAY_MILLIS = 5_000L
 
