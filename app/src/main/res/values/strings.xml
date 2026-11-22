@@ -136,6 +136,10 @@
     <string name="settings_remove_tracking_title">Remove tracking from URLs</string>
     <string name="settings_remove_tracking_on">Tracking parameters will be cleaned for new stations</string>
     <string name="settings_remove_tracking_off">New station URLs will be saved unchanged</string>
+    <string name="settings_section_widget">Widget</string>
+    <string name="settings_widget_follow_app_theme_title">Follow app theme</string>
+    <string name="settings_widget_follow_app_theme_on">The widget will use the app theme</string>
+    <string name="settings_widget_follow_app_theme_off">The widget will use the Android theme</string>
     <string name="settings_section_android_auto" translatable="false">Android Auto</string>
     <string name="settings_android_auto_artwork_title">Station artwork</string>
     <string name="settings_android_auto_artwork_on">Android Auto and the media notification will show artwork</string>

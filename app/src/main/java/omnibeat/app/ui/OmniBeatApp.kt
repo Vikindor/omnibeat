@@ -85,6 +85,7 @@ import omnibeat.app.model.customSortedStations
 import omnibeat.app.model.sortedStations
 import omnibeat.app.network.NetworkStatus
 import omnibeat.app.playback.PlaybackService
+import omnibeat.app.widget.PlaybackWidget
 import omnibeat.app.radio.RadioBrowserStation
 import omnibeat.app.radio.stationTags
 import java.time.Instant
@@ -104,6 +105,9 @@ fun OmniBeatApp() {
         translationLoaded = true
     }
     val themeMode by repository.themeMode.collectAsState(initial = ThemeMode.System)
+    LaunchedEffect(themeMode) {
+        PlaybackWidget.requestUpdate(context)
+    }
     val appLanguage = context.applicationContext.currentAppLanguage()
     val useDarkTheme = shouldUseDarkTheme(themeMode)
 
@@ -209,6 +213,8 @@ fun OmniBeatApp() {
         var collapsePlayerPanelInSearch by remember { mutableStateOf(true) }
         var addRadioBrowserTags by remember { mutableStateOf(true) }
         var removeTrackingParametersFromUrls by remember { mutableStateOf(true) }
+        var widgetFollowAppTheme by remember { mutableStateOf(false) }
+        var widgetMarqueeTrackTitle by remember { mutableStateOf(true) }
         var showAndroidAutoArtwork by remember { mutableStateOf(true) }
         var playerPanelCollapsed by remember { mutableStateOf(false) }
         var editorState by remember { mutableStateOf<StationEditorState?>(null) }
@@ -286,6 +292,8 @@ fun OmniBeatApp() {
             onCollapsePlayerPanelInSearchChange = { collapsePlayerPanelInSearch = it },
             onAddRadioBrowserTagsChange = { addRadioBrowserTags = it },
             onRemoveTrackingParametersChange = { removeTrackingParametersFromUrls = it },
+            onWidgetFollowAppThemeChange = { widgetFollowAppTheme = it },
+            onWidgetMarqueeTrackTitleChange = { widgetMarqueeTrackTitle = it },
             onShowAndroidAutoArtworkChange = { showAndroidAutoArtwork = it },
             onPlayerPanelCollapsedChange = { playerPanelCollapsed = it },
             onLastMainPageChange = { lastMainPage = it },
@@ -1302,6 +1310,8 @@ fun OmniBeatApp() {
                                     collapsePlayerPanelInSearch = collapsePlayerPanelInSearch,
                                     addRadioBrowserTags = addRadioBrowserTags,
                                     removeTrackingParameters = removeTrackingParametersFromUrls,
+                                    widgetFollowAppTheme = widgetFollowAppTheme,
+                                    widgetMarqueeTrackTitle = widgetMarqueeTrackTitle,
                                     showAndroidAutoArtwork = showAndroidAutoArtwork,
                                     onThemeModeChange = { nextThemeMode ->
                                         scope.launch { repository.saveThemeMode(nextThemeMode) }
@@ -1373,6 +1383,20 @@ fun OmniBeatApp() {
                                     onRemoveTrackingParametersChange = { remove ->
                                         removeTrackingParametersFromUrls = remove
                                         scope.launch { repository.saveRemoveTrackingParameters(remove) }
+                                    },
+                                    onWidgetFollowAppThemeChange = { follow ->
+                                        widgetFollowAppTheme = follow
+                                        scope.launch {
+                                            repository.saveWidgetFollowAppTheme(follow)
+                                            PlaybackWidget.requestUpdate(context)
+                                        }
+                                    },
+                                    onWidgetMarqueeTrackTitleChange = { marquee ->
+                                        widgetMarqueeTrackTitle = marquee
+                                        scope.launch {
+                                            repository.saveWidgetMarqueeTrackTitle(marquee)
+                                            PlaybackWidget.requestUpdate(context)
+                                        }
                                     },
                                     onShowAndroidAutoArtworkChange = { show ->
                                         showAndroidAutoArtwork = show

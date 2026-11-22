@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 val translationAssets = tasks.register<Sync>("prepareTranslationAssets") {
+    description = "Copies built-in translations into generated assets for export."
     from("src/main/res") { include("values*/strings.xml") }
     into(layout.buildDirectory.dir("generated/translationAssets/translations"))
 }
@@ -74,6 +75,8 @@ dependencies {
     implementation(libs.media3.exoplayer.hls)
     implementation(libs.media3.session)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.reorderable)
     debugImplementation(libs.compose.ui.tooling)

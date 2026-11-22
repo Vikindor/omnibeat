@@ -99,7 +99,7 @@ fun OmniBeatTheme(
     val radioColors = if (useDarkTheme) DarkRadioColors else LightRadioColors
     CompositionLocalProvider(LocalRadioColors provides radioColors) {
         MaterialTheme(
-            colorScheme = radioColors.toMaterialColorScheme(useDarkTheme),
+            colorScheme = radioColorScheme(useDarkTheme),
             typography = RadioTypography,
             content = content,
         )
@@ -114,6 +114,9 @@ fun shouldUseDarkTheme(themeMode: ThemeMode): Boolean {
         ThemeMode.Light -> false
     }
 }
+
+internal fun radioColorScheme(useDarkTheme: Boolean): ColorScheme =
+    (if (useDarkTheme) DarkRadioColors else LightRadioColors).toMaterialColorScheme(useDarkTheme)
 
 private fun RadioColors.toMaterialColorScheme(useDarkTheme: Boolean): ColorScheme {
     return if (useDarkTheme) {

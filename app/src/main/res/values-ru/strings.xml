@@ -134,6 +134,10 @@
     <string name="settings_remove_tracking_title">Удалять трекеры из URL</string>
     <string name="settings_remove_tracking_on">Из URL новых станций будут удаляться метки трекеров</string>
     <string name="settings_remove_tracking_off">URL новых станций будут сохраняться без изменений</string>
+    <string name="settings_section_widget">Виджет</string>
+    <string name="settings_widget_follow_app_theme_title">Следовать теме приложения</string>
+    <string name="settings_widget_follow_app_theme_on">Виджет будет использовать тему приложения</string>
+    <string name="settings_widget_follow_app_theme_off">Виджет будет использовать тему Android</string>
     <string name="settings_android_auto_artwork_title">Обложки станций</string>
     <string name="settings_android_auto_artwork_on">Android Auto и уведомление плеера будут показывать обложки</string>
     <string name="settings_android_auto_artwork_off">Android Auto и уведомление плеера будут скрывать обложки</string>

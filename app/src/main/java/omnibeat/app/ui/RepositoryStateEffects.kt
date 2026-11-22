@@ -30,6 +30,8 @@ fun RepositoryStateEffects(
     onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
     onAddRadioBrowserTagsChange: (Boolean) -> Unit,
     onRemoveTrackingParametersChange: (Boolean) -> Unit,
+    onWidgetFollowAppThemeChange: (Boolean) -> Unit,
+    onWidgetMarqueeTrackTitleChange: (Boolean) -> Unit,
     onShowAndroidAutoArtworkChange: (Boolean) -> Unit,
     onPlayerPanelCollapsedChange: (Boolean) -> Unit,
     onLastMainPageChange: (MainPage) -> Unit,
@@ -140,6 +142,14 @@ fun RepositoryStateEffects(
         repository.removeTrackingParameters.collect { savedRemoveTrackingParameters ->
             onRemoveTrackingParametersChange(savedRemoveTrackingParameters)
         }
+    }
+
+    LaunchedEffect(repository) {
+        repository.widgetFollowAppTheme.collect(onWidgetFollowAppThemeChange)
+    }
+
+    LaunchedEffect(repository) {
+        repository.widgetMarqueeTrackTitle.collect(onWidgetMarqueeTrackTitleChange)
     }
 
     LaunchedEffect(repository) {
