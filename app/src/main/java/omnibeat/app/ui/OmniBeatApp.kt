@@ -1236,7 +1236,7 @@ fun OmniBeatApp() {
                                     scrollToStationId = scrollToStationId,
                                     showArtwork = showStationArtwork,
                                     dividerStyle = stationDividers,
-                                    listEnabled = drawerState.isClosed && reorderDraft == null && tabOrderDraft == null && membershipMode == null && !showSleepTimer,
+                                    listEnabled = reorderDraft == null && tabOrderDraft == null && membershipMode == null && !showSleepTimer,
                                     onMove = ::moveReorderDraft,
                                     onFavoriteClick = ::toggleFavorite,
                                     onEditStation = { editorState = it },
