@@ -3,9 +3,13 @@ package omnibeat.app.playback
 import omnibeat.app.data.appString
 import omnibeat.app.R
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.SystemClock
 import androidx.annotation.OptIn
@@ -248,6 +252,9 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val result = super.onStartCommand(intent, flags, startId)
+        if (intent?.getBooleanExtra(EXTRA_FOREGROUND_START, false) == true && !isPlaybackOngoing) {
+            startForegroundForCommand()
+        }
         when (intent?.action) {
             ACTION_PLAY_STATION -> playStationAt(
                 index = intent.getIntExtra(EXTRA_INDEX, -1),
@@ -271,6 +278,31 @@ class PlaybackService : MediaLibraryService() {
             ACTION_CANCEL_SLEEP_TIMER -> cancelSleepTimer()
         }
         return result
+    }
+
+    private fun startForegroundForCommand() {
+        val channelId = DefaultMediaNotificationProvider.DEFAULT_CHANNEL_ID
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(
+                channelId,
+                getString(DefaultMediaNotificationProvider.DEFAULT_CHANNEL_NAME_RESOURCE_ID),
+                NotificationManager.IMPORTANCE_LOW,
+            ),
+        )
+        val notification = Notification.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_play_arrow)
+            .setContentTitle(resources.appString(R.string.app_name))
+            .setContentText(trackText(PlaybackTrackStatus.LoadingStations))
+            .setContentIntent(activityPendingIntent())
+            .setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_DEFERRED)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .build()
+        startForeground(
+            DefaultMediaNotificationProvider.DEFAULT_NOTIFICATION_ID,
+            notification,
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
+        )
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = mediaSession
@@ -977,6 +1009,7 @@ class PlaybackService : MediaLibraryService() {
         private val METADATA_WAIT_TIMEOUT = 15.seconds
         private const val EXTRA_INDEX = "index"
         private const val EXTRA_QUEUE_IDS = "queue_ids"
+        internal const val EXTRA_FOREGROUND_START = "foreground_start"
         private const val EXTRA_PREVIEW_ID = "preview_id"
         private const val EXTRA_PREVIEW_TITLE = "preview_title"
         private const val EXTRA_PREVIEW_STREAM_URL = "preview_stream_url"

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="whats_new_entries">
-        <item>@string/whats_new_1_22_0</item>
+        <item>@string/whats_new_1_22_1</item>
         <item>@string/whats_new_1_17_1</item>
         <item>@string/whats_new_1_17_0</item>
         <item>@string/whats_new_1_12_0</item>
     </string-array>
 
-    <string name="whats_new_1_22_0">"v1.22.0
-• Added an Android home screen widget with playback controls and resizable layouts.
+    <string name="whats_new_1_22_1">"v1.22.1
+• Added an Android home screen widget with playback controls and resizable layouts. (It's not perfect, will be fixed with future updates.)
 • Added Track history with copying and TXT export.
 • Sleep timer and Track history are now available from the control panel menu.
 • Sleep timer can now remain visible when inactive. Its options are in Settings.

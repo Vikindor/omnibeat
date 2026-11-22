@@ -316,7 +316,9 @@ class PlaybackWidget : GlanceAppWidget() {
     }
 
     private fun playbackAction(context: Context, command: String): Action = actionStartService(
-        Intent(context, PlaybackService::class.java).setAction(command),
+        Intent(context, PlaybackService::class.java)
+            .setAction(command)
+            .putExtra(PlaybackService.EXTRA_FOREGROUND_START, true),
         isForegroundService = true,
     )
 
