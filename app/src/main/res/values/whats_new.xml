@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="whats_new_entries">
+        <item>@string/whats_new_1_22_0</item>
         <item>@string/whats_new_1_17_1</item>
         <item>@string/whats_new_1_17_0</item>
         <item>@string/whats_new_1_12_0</item>
     </string-array>
+
+    <string name="whats_new_1_22_0">"v1.22.0
+• Added an Android home screen widget with playback controls and resizable layouts.
+• Added Track history with copying and TXT export.
+• Sleep timer and Track history are now available from the control panel menu.
+• Sleep timer can now remain visible when inactive. Its options are in Settings.
+• Starting or stopping the sleep timer now returns to the previous screen.
+• Playback indicator animation can now be turned off in Settings.
+• Fixed favorite icons changing color when opening the side menu.
+• Default app volume is now 100%.
+• Internal improvements and component updates."</string>
 
     <string name="whats_new_1_17_1">"v1.17.1
 • Fixed the default sorting for new playlists. Stations are now sorted by date added, newest first."</string>
