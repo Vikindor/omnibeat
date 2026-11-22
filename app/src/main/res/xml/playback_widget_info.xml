@@ -5,7 +5,7 @@
     android:previewLayout="@layout/playback_widget_preview"
     android:minWidth="240dp"
     android:minHeight="64dp"
-    android:minResizeWidth="240dp"
+    android:minResizeWidth="56dp"
     android:minResizeHeight="56dp"
     android:targetCellWidth="4"
     android:targetCellHeight="1"

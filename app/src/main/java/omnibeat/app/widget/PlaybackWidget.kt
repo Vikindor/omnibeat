@@ -137,17 +137,21 @@ class PlaybackWidget : GlanceAppWidget() {
     private fun PlayerContent(context: Context, content: WidgetContent) {
         val size = LocalSize.current
         val expanded = size.height >= 120.dp
+        val showSkipButtons = size.width >= 200.dp
+        val showArtwork = size.width >= 280.dp
         val padding = when {
-            expanded && size.height >= 168.dp -> 16.dp
-            expanded -> 12.dp
-            size.height < 64.dp -> 4.dp
+            size.width < 120.dp || size.height < 64.dp -> 4.dp
+            expanded && size.width >= 200.dp && size.height >= 168.dp -> 16.dp
+            expanded && size.width >= 200.dp -> 12.dp
             else -> 8.dp
         }
-        val playSize = when {
+        val preferredPlaySize = when {
             expanded && size.height >= 144.dp -> 64.dp
             size.height >= 72.dp && !expanded -> 56.dp
             else -> 48.dp
         }
+        val skipButtonsWidth = if (showSkipButtons) 96.dp + (if (expanded) 24.dp else 0.dp) else 0.dp
+        val playSize = minOf(preferredPlaySize, size.width - padding - padding - skipButtonsWidth)
         val modifier = GlanceModifier.fillMaxSize()
             .appWidgetBackground()
             .background(GlanceTheme.colors.surface)
@@ -155,20 +159,23 @@ class PlaybackWidget : GlanceAppWidget() {
             .padding(padding)
 
         if (expanded) {
-            val artworkSize = (size.height - padding - padding - playSize - 8.dp)
-                .coerceIn(40.dp, 128.dp)
+            val artworkSize = if (showArtwork) {
+                (size.height - padding - padding - playSize - 8.dp).coerceIn(40.dp, 128.dp)
+            } else {
+                null
+            }
             Column(modifier) {
                 StationInfo(
                     context = context,
                     content = content,
                     modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
                     artworkSize = artworkSize,
-                    spacious = size.height >= 168.dp,
+                    spacious = size.width >= 200.dp && size.height >= 168.dp,
                     trackLines = if (size.height >= 200.dp) 2 else 1,
                 )
                 Spacer(GlanceModifier.height(8.dp))
                 Row(GlanceModifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    PlaybackControls(context, content.playback, playSize, expanded = true)
+                    PlaybackControls(context, content.playback, playSize, expanded = true, showSkipButtons = showSkipButtons)
                 }
             }
         } else {
@@ -177,10 +184,10 @@ class PlaybackWidget : GlanceAppWidget() {
                     context = context,
                     content = content,
                     modifier = GlanceModifier.defaultWeight(),
-                    artworkSize = if (size.width >= 320.dp) minOf(56.dp, size.height - padding - padding) else null,
+                    artworkSize = if (showArtwork) minOf(56.dp, size.height - padding - padding) else null,
                 )
                 Spacer(GlanceModifier.width(8.dp))
-                PlaybackControls(context, content.playback, playSize, expanded = false)
+                PlaybackControls(context, content.playback, playSize, expanded = false, showSkipButtons = showSkipButtons)
             }
         }
     }
@@ -266,14 +273,17 @@ class PlaybackWidget : GlanceAppWidget() {
         playback: WidgetPlaybackState,
         playSize: Dp,
         expanded: Boolean,
+        showSkipButtons: Boolean,
     ) {
         val gap = if (expanded) 12.dp else 0.dp
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SkipButton(
-                context, R.drawable.ic_skip_previous, R.string.widget_previous,
-                PlaybackService.ACTION_PREVIOUS, playback.canSkip,
-            )
-            Spacer(GlanceModifier.width(gap))
+            if (showSkipButtons) {
+                SkipButton(
+                    context, R.drawable.ic_skip_previous, R.string.widget_previous,
+                    PlaybackService.ACTION_PREVIOUS, playback.canSkip,
+                )
+                Spacer(GlanceModifier.width(gap))
+            }
             SquareIconButton(
                 imageProvider = ImageProvider(if (playback.active) R.drawable.ic_pause else R.drawable.ic_play_arrow),
                 contentDescription = context.getString(if (playback.active) R.string.widget_pause else R.string.widget_play),
@@ -282,11 +292,13 @@ class PlaybackWidget : GlanceAppWidget() {
                 backgroundColor = GlanceTheme.colors.primary,
                 contentColor = GlanceTheme.colors.onPrimary,
             )
-            Spacer(GlanceModifier.width(gap))
-            SkipButton(
-                context, R.drawable.ic_skip_next, R.string.widget_next,
-                PlaybackService.ACTION_NEXT, playback.canSkip,
-            )
+            if (showSkipButtons) {
+                Spacer(GlanceModifier.width(gap))
+                SkipButton(
+                    context, R.drawable.ic_skip_next, R.string.widget_next,
+                    PlaybackService.ACTION_NEXT, playback.canSkip,
+                )
+            }
         }
     }
 
