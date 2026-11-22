@@ -51,16 +51,6 @@
     <string name="sleep_timer_minutes">Минуты</string>
     <string name="sleep_timer_seconds">Секунды</string>
     <string name="sleep_timer_preset_minutes">%1$dм</string>
-    <string name="sleep_timer_close_app_title">Закрывать приложение</string>
-    <string name="sleep_timer_close_app_off">Таймер только остановит воспроизведение</string>
-    <string name="sleep_timer_close_app_on">Таймер закроет приложение</string>
-    <string name="sleep_timer_position_title">Положение таймера</string>
-    <string name="sleep_timer_position_panel_left">Слева над панелью</string>
-    <string name="sleep_timer_position_panel_left_description">Будет закреплён над панелью слева</string>
-    <string name="sleep_timer_position_panel_right">Справа над панелью</string>
-    <string name="sleep_timer_position_panel_right_description">Будет закреплён над панелью справа</string>
-    <string name="sleep_timer_position_free">Свободное размещение</string>
-    <string name="sleep_timer_position_free_description">Нажмите и удерживайте для перемещения</string>
     <string name="sleep_timer_start">Запустить</string>
     <string name="sleep_timer_stop">Остановить</string>
 
@@ -130,6 +120,20 @@
     <string name="settings_save_radio_browser_tags_title">Сохранять теги Radio Browser</string>
     <string name="settings_save_radio_browser_tags_on">Станции из онлайн-поиска будут сохраняться с тегами</string>
     <string name="settings_save_radio_browser_tags_off">Станции из онлайн-поиска будут сохраняться без тегов</string>
+    <string name="settings_section_sleep_timer">Таймер сна</string>
+    <string name="sleep_timer_close_app_title">Закрывать приложение</string>
+    <string name="sleep_timer_close_app_off">Таймер только остановит воспроизведение</string>
+    <string name="sleep_timer_close_app_on">Таймер закроет приложение</string>
+    <string name="sleep_timer_position_title">Положение таймера</string>
+    <string name="sleep_timer_position_panel_left">Слева над панелью</string>
+    <string name="sleep_timer_position_panel_left_description">Будет закреплён над панелью слева</string>
+    <string name="sleep_timer_position_panel_right">Справа над панелью</string>
+    <string name="sleep_timer_position_panel_right_description">Будет закреплён над панелью справа</string>
+    <string name="sleep_timer_position_free">Свободное размещение</string>
+    <string name="sleep_timer_position_free_description">Нажмите и удерживайте для перемещения</string>
+    <string name="sleep_timer_always_show_title">Всегда показывать таймер</string>
+    <string name="sleep_timer_always_show_on">Таймер виден даже без отсчёта</string>
+    <string name="sleep_timer_always_show_off">Таймер виден только во время отсчёта</string>
     <string name="settings_section_urls">Ссылки</string>
     <string name="settings_remove_tracking_title">Удалять трекеры из URL</string>
     <string name="settings_remove_tracking_on">Из URL новых станций будут удаляться метки трекеров</string>

@@ -50,13 +50,15 @@ fun OmniPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     icon: Painter? = null,
+    containerColor: Color? = null,
+    contentColor: Color? = null,
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
         colors = ButtonDefaults.buttonColors(
-            containerColor = RadioPrimary,
-            contentColor = RadioText,
+            containerColor = containerColor ?: RadioPrimary,
+            contentColor = contentColor ?: RadioText,
             disabledContainerColor = RadioSurfaceHigh,
             disabledContentColor = RadioTextMuted,
         ),

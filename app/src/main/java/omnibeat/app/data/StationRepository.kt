@@ -41,10 +41,6 @@ const val STOP_SERVICE_AFTER_PAUSE_NEVER = 0
 const val DEFAULT_STOP_SERVICE_AFTER_PAUSE_MINUTES = 5
 private val appVolumeKey = floatPreferencesKey("app_volume")
 private val themeModeKey = stringPreferencesKey("theme_mode")
-private val sleepTimerCloseAppKey = booleanPreferencesKey("sleep_timer_close_app")
-private val sleepTimerPlacementKey = stringPreferencesKey("sleep_timer_placement")
-private val sleepTimerFreeXKey = floatPreferencesKey("sleep_timer_free_x")
-private val sleepTimerFreeYKey = floatPreferencesKey("sleep_timer_free_y")
 private val stationDividersKey = stringPreferencesKey("station_dividers")
 private val showPlaybackIndicatorKey = booleanPreferencesKey("show_playback_indicator")
 private val showFavoriteButtonsKey = booleanPreferencesKey("show_favorite_buttons")
@@ -59,6 +55,11 @@ private val marqueeTrackTitleKey = booleanPreferencesKey("marquee_track_title")
 private val autoExpandPlayerPanelOnPlaybackKey = booleanPreferencesKey("auto_expand_player_panel_on_playback")
 private val collapsePlayerPanelInSearchKey = booleanPreferencesKey("collapse_player_panel_in_search")
 private val addRadioBrowserTagsKey = booleanPreferencesKey("add_radio_browser_tags")
+private val sleepTimerCloseAppKey = booleanPreferencesKey("sleep_timer_close_app")
+private val sleepTimerPlacementKey = stringPreferencesKey("sleep_timer_placement")
+private val sleepTimerAlwaysShowKey = booleanPreferencesKey("sleep_timer_always_show")
+private val sleepTimerFreeXKey = floatPreferencesKey("sleep_timer_free_x")
+private val sleepTimerFreeYKey = floatPreferencesKey("sleep_timer_free_y")
 private val removeTrackingParametersKey = booleanPreferencesKey("remove_tracking_parameters")
 private val widgetFollowAppThemeKey = booleanPreferencesKey("widget_follow_app_theme")
 private val widgetMarqueeTrackTitleKey = booleanPreferencesKey("widget_marquee_track_title")
@@ -134,26 +135,6 @@ class StationRepository(private val context: Context) {
                 ?: ThemeMode.System
         }
 
-    val sleepTimerCloseApp: Flow<Boolean> = context.stationDataStore.data
-        .map { preferences -> preferences[sleepTimerCloseAppKey] ?: false }
-
-    val sleepTimerPlacement: Flow<SleepTimerPlacement> = context.stationDataStore.data
-        .map { preferences ->
-            SleepTimerPlacement.entries.firstOrNull { it.name == preferences[sleepTimerPlacementKey] }
-                ?: SleepTimerPlacement.PanelRight
-        }
-
-    val sleepTimerFreePosition: Flow<SleepTimerFreePosition> = context.stationDataStore.data
-        .map { preferences ->
-            val defaults = SleepTimerFreePosition()
-            SleepTimerFreePosition(
-                xFraction = preferences[sleepTimerFreeXKey]?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
-                    ?: defaults.xFraction,
-                yFraction = preferences[sleepTimerFreeYKey]?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
-                    ?: defaults.yFraction,
-            )
-        }
-
     val stationDividers: Flow<StationDividerStyle> = context.stationDataStore.data
         .map { preferences ->
             StationDividerStyle.entries.firstOrNull { it.name == preferences[stationDividersKey] }
@@ -200,6 +181,29 @@ class StationRepository(private val context: Context) {
 
     val addRadioBrowserTags: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[addRadioBrowserTagsKey] ?: true }
+
+    val sleepTimerCloseApp: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[sleepTimerCloseAppKey] ?: false }
+
+    val sleepTimerPlacement: Flow<SleepTimerPlacement> = context.stationDataStore.data
+        .map { preferences ->
+            SleepTimerPlacement.entries.firstOrNull { it.name == preferences[sleepTimerPlacementKey] }
+                ?: SleepTimerPlacement.PanelRight
+        }
+
+    val sleepTimerAlwaysShow: Flow<Boolean> = context.stationDataStore.data
+        .map { preferences -> preferences[sleepTimerAlwaysShowKey] ?: false }
+
+    val sleepTimerFreePosition: Flow<SleepTimerFreePosition> = context.stationDataStore.data
+        .map { preferences ->
+            val defaults = SleepTimerFreePosition()
+            SleepTimerFreePosition(
+                xFraction = preferences[sleepTimerFreeXKey]?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
+                    ?: defaults.xFraction,
+                yFraction = preferences[sleepTimerFreeYKey]?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
+                    ?: defaults.yFraction,
+            )
+        }
 
     val removeTrackingParameters: Flow<Boolean> = context.stationDataStore.data
         .map { preferences -> preferences[removeTrackingParametersKey] ?: true }
@@ -266,26 +270,6 @@ class StationRepository(private val context: Context) {
     suspend fun saveThemeMode(themeMode: ThemeMode) {
         context.stationDataStore.edit { preferences ->
             preferences[themeModeKey] = themeMode.name
-        }
-    }
-
-    suspend fun saveSleepTimerCloseApp(closeApp: Boolean) {
-        context.stationDataStore.edit { preferences ->
-            preferences[sleepTimerCloseAppKey] = closeApp
-        }
-    }
-
-    suspend fun saveSleepTimerPlacement(placement: SleepTimerPlacement) {
-        context.stationDataStore.edit { preferences ->
-            preferences[sleepTimerPlacementKey] = placement.name
-        }
-    }
-
-    suspend fun saveSleepTimerFreePosition(position: SleepTimerFreePosition) {
-        if (!position.xFraction.isFinite() || !position.yFraction.isFinite()) return
-        context.stationDataStore.edit { preferences ->
-            preferences[sleepTimerFreeXKey] = position.xFraction.coerceIn(0f, 1f)
-            preferences[sleepTimerFreeYKey] = position.yFraction.coerceIn(0f, 1f)
         }
     }
 
@@ -380,6 +364,32 @@ class StationRepository(private val context: Context) {
     suspend fun saveAddRadioBrowserTags(add: Boolean) {
         context.stationDataStore.edit { preferences ->
             preferences[addRadioBrowserTagsKey] = add
+        }
+    }
+
+    suspend fun saveSleepTimerCloseApp(closeApp: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[sleepTimerCloseAppKey] = closeApp
+        }
+    }
+
+    suspend fun saveSleepTimerPlacement(placement: SleepTimerPlacement) {
+        context.stationDataStore.edit { preferences ->
+            preferences[sleepTimerPlacementKey] = placement.name
+        }
+    }
+
+    suspend fun saveSleepTimerAlwaysShow(alwaysShow: Boolean) {
+        context.stationDataStore.edit { preferences ->
+            preferences[sleepTimerAlwaysShowKey] = alwaysShow
+        }
+    }
+
+    suspend fun saveSleepTimerFreePosition(position: SleepTimerFreePosition) {
+        if (!position.xFraction.isFinite() || !position.yFraction.isFinite()) return
+        context.stationDataStore.edit { preferences ->
+            preferences[sleepTimerFreeXKey] = position.xFraction.coerceIn(0f, 1f)
+            preferences[sleepTimerFreeYKey] = position.yFraction.coerceIn(0f, 1f)
         }
     }
 

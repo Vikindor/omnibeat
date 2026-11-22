@@ -179,8 +179,6 @@ fun OmniBeatApp() {
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val playbackState by PlaybackService.state.collectAsState()
         val sleepTimerRemainingSeconds by PlaybackService.sleepTimerRemainingSeconds.collectAsState()
-        val sleepTimerCloseApp by repository.sleepTimerCloseApp.collectAsState(initial = false)
-        val sleepTimerPlacement by repository.sleepTimerPlacement.collectAsState(initial = SleepTimerPlacement.PanelRight)
         val sleepTimerFreePosition by repository.sleepTimerFreePosition.collectAsState(initial = SleepTimerFreePosition())
         var showSleepTimer by rememberSaveable { mutableStateOf(false) }
 
@@ -212,6 +210,9 @@ fun OmniBeatApp() {
         var autoExpandPlayerPanelOnPlayback by remember { mutableStateOf(true) }
         var collapsePlayerPanelInSearch by remember { mutableStateOf(true) }
         var addRadioBrowserTags by remember { mutableStateOf(true) }
+        val sleepTimerCloseApp by repository.sleepTimerCloseApp.collectAsState(initial = false)
+        val sleepTimerPlacement by repository.sleepTimerPlacement.collectAsState(initial = SleepTimerPlacement.PanelRight)
+        val sleepTimerAlwaysShow by repository.sleepTimerAlwaysShow.collectAsState(initial = false)
         var removeTrackingParametersFromUrls by remember { mutableStateOf(true) }
         var widgetFollowAppTheme by remember { mutableStateOf(false) }
         var widgetMarqueeTrackTitle by remember { mutableStateOf(true) }
@@ -259,7 +260,7 @@ fun OmniBeatApp() {
             ?: if (selectedPage == MainPage.Favorites) favoriteSortState else stationSortState
         val showPlayerPanel = !showSleepTimer && tabOrderDraft == null &&
             (selectedPage in visibleTabPages || selectedPage == MainPage.SearchOnline)
-        val showSleepTimerPill = showPlayerPanel && sleepTimerRemainingSeconds > 0L
+        val showSleepTimerPill = showPlayerPanel && (sleepTimerAlwaysShow || sleepTimerRemainingSeconds > 0L)
         val layoutDirection = LocalLayoutDirection.current
         val pagerState = rememberPagerState(pageCount = { visibleTabPagesState.value.size })
         val visualSelectedPage by remember(pagerState, visibleTabPages, selectedPage) {
@@ -1309,6 +1310,9 @@ fun OmniBeatApp() {
                                     autoExpandPlayerPanelOnPlayback = autoExpandPlayerPanelOnPlayback,
                                     collapsePlayerPanelInSearch = collapsePlayerPanelInSearch,
                                     addRadioBrowserTags = addRadioBrowserTags,
+                                    sleepTimerCloseApp = sleepTimerCloseApp,
+                                    sleepTimerPlacement = sleepTimerPlacement,
+                                    sleepTimerAlwaysShow = sleepTimerAlwaysShow,
                                     removeTrackingParameters = removeTrackingParametersFromUrls,
                                     widgetFollowAppTheme = widgetFollowAppTheme,
                                     widgetMarqueeTrackTitle = widgetMarqueeTrackTitle,
@@ -1379,6 +1383,15 @@ fun OmniBeatApp() {
                                     onAddRadioBrowserTagsChange = { add ->
                                         addRadioBrowserTags = add
                                         scope.launch { repository.saveAddRadioBrowserTags(add) }
+                                    },
+                                    onSleepTimerCloseAppChange = { closeApp ->
+                                        scope.launch { repository.saveSleepTimerCloseApp(closeApp) }
+                                    },
+                                    onSleepTimerPlacementChange = { placement ->
+                                        scope.launch { repository.saveSleepTimerPlacement(placement) }
+                                    },
+                                    onSleepTimerAlwaysShowChange = { alwaysShow ->
+                                        scope.launch { repository.saveSleepTimerAlwaysShow(alwaysShow) }
                                     },
                                     onRemoveTrackingParametersChange = { remove ->
                                         removeTrackingParametersFromUrls = remove
@@ -1464,19 +1477,13 @@ fun OmniBeatApp() {
                         if (showSleepTimer) {
                             SleepTimerPage(
                                 remainingSeconds = sleepTimerRemainingSeconds,
-                                closeApp = sleepTimerCloseApp,
-                                placement = sleepTimerPlacement,
-                                onPlacementChange = { placement ->
-                                    scope.launch { repository.saveSleepTimerPlacement(placement) }
-                                },
-                                onCloseAppChange = { closeApp ->
-                                    scope.launch { repository.saveSleepTimerCloseApp(closeApp) }
-                                },
                                 onStart = { seconds ->
                                     PlaybackService.startSleepTimer(context, seconds)
+                                    showSleepTimer = false
                                 },
                                 onStop = {
                                     PlaybackService.cancelSleepTimer(context)
+                                    showSleepTimer = false
                                 },
                             )
                         }

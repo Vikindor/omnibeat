@@ -31,7 +31,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import omnibeat.app.R
-import omnibeat.app.model.SleepTimerPlacement
 import omnibeat.app.ui.appStringResource as stringResource
 import java.util.Locale
 
@@ -40,10 +39,6 @@ private val SleepTimerPickerHeight = 180.dp
 @Composable
 fun SleepTimerPage(
     remainingSeconds: Long,
-    closeApp: Boolean,
-    onCloseAppChange: (Boolean) -> Unit,
-    placement: SleepTimerPlacement,
-    onPlacementChange: (SleepTimerPlacement) -> Unit,
     onStart: (Long) -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
@@ -115,36 +110,6 @@ fun SleepTimerPage(
                     )
                 }
             }
-            SettingsSwitchRow(
-                title = stringResource(R.string.sleep_timer_close_app_title),
-                subtitle = stringResource(
-                    if (closeApp) R.string.sleep_timer_close_app_on else R.string.sleep_timer_close_app_off,
-                ),
-                checked = closeApp,
-                onCheckedChange = onCloseAppChange,
-            )
-            SettingsDropdownRow(
-                title = stringResource(R.string.sleep_timer_position_title),
-                subtitle = stringResource(
-                    when (placement) {
-                        SleepTimerPlacement.PanelLeft -> R.string.sleep_timer_position_panel_left_description
-                        SleepTimerPlacement.PanelRight -> R.string.sleep_timer_position_panel_right_description
-                        SleepTimerPlacement.FreePlacement -> R.string.sleep_timer_position_free_description
-                    },
-                ),
-                selectedOption = placement,
-                options = SleepTimerPlacement.entries,
-                optionLabel = {
-                    stringResource(
-                        when (it) {
-                            SleepTimerPlacement.PanelLeft -> R.string.sleep_timer_position_panel_left
-                            SleepTimerPlacement.PanelRight -> R.string.sleep_timer_position_panel_right
-                            SleepTimerPlacement.FreePlacement -> R.string.sleep_timer_position_free
-                        },
-                    )
-                },
-                onOptionSelected = onPlacementChange,
-            )
             OmniPrimaryButton(
                 text = stringResource(if (active) R.string.sleep_timer_stop else R.string.sleep_timer_start),
                 icon = painterResource(if (active) R.drawable.ic_stop else R.drawable.ic_play_arrow),
@@ -212,9 +177,12 @@ fun SleepTimerPill(
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.page_sleep_timer)
+    val active = remainingSeconds > 0L
     OmniPrimaryButton(
-        text = formatSleepTimer(remainingSeconds),
+        text = if (active) formatSleepTimer(remainingSeconds) else "00:00",
         onClick = onClick,
+        containerColor = if (active) RadioPrimary else RadioSurfaceHigh,
+        contentColor = if (active) RadioText else RadioTextMuted,
         modifier = modifier.semantics { contentDescription = description },
     )
 }

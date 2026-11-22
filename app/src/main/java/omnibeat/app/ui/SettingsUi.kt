@@ -51,6 +51,7 @@ import omnibeat.app.R
 import omnibeat.app.data.STOP_SERVICE_AFTER_PAUSE_NEVER
 import omnibeat.app.model.AppLanguage
 import omnibeat.app.data.TranslationLanguage
+import omnibeat.app.model.SleepTimerPlacement
 import omnibeat.app.model.StationDividerStyle
 import omnibeat.app.model.ThemeMode
 
@@ -157,6 +158,9 @@ fun SettingsPage(
     autoExpandPlayerPanelOnPlayback: Boolean,
     collapsePlayerPanelInSearch: Boolean,
     addRadioBrowserTags: Boolean,
+    sleepTimerCloseApp: Boolean,
+    sleepTimerPlacement: SleepTimerPlacement,
+    sleepTimerAlwaysShow: Boolean,
     removeTrackingParameters: Boolean,
     widgetFollowAppTheme: Boolean,
     widgetMarqueeTrackTitle: Boolean,
@@ -179,6 +183,9 @@ fun SettingsPage(
     onAutoExpandPlayerPanelOnPlaybackChange: (Boolean) -> Unit,
     onCollapsePlayerPanelInSearchChange: (Boolean) -> Unit,
     onAddRadioBrowserTagsChange: (Boolean) -> Unit,
+    onSleepTimerCloseAppChange: (Boolean) -> Unit,
+    onSleepTimerPlacementChange: (SleepTimerPlacement) -> Unit,
+    onSleepTimerAlwaysShowChange: (Boolean) -> Unit,
     onRemoveTrackingParametersChange: (Boolean) -> Unit,
     onWidgetFollowAppThemeChange: (Boolean) -> Unit,
     onWidgetMarqueeTrackTitleChange: (Boolean) -> Unit,
@@ -404,6 +411,47 @@ fun SettingsPage(
                 },
                 checked = addRadioBrowserTags,
                 onCheckedChange = onAddRadioBrowserTagsChange,
+            )
+            SettingsDivider()
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_sleep_timer))
+            SettingsSwitchRow(
+                title = stringResource(R.string.sleep_timer_close_app_title),
+                subtitle = stringResource(
+                    if (sleepTimerCloseApp) R.string.sleep_timer_close_app_on else R.string.sleep_timer_close_app_off,
+                ),
+                checked = sleepTimerCloseApp,
+                onCheckedChange = onSleepTimerCloseAppChange,
+            )
+            SettingsDropdownRow(
+                title = stringResource(R.string.sleep_timer_position_title),
+                subtitle = stringResource(
+                    when (sleepTimerPlacement) {
+                        SleepTimerPlacement.PanelLeft -> R.string.sleep_timer_position_panel_left_description
+                        SleepTimerPlacement.PanelRight -> R.string.sleep_timer_position_panel_right_description
+                        SleepTimerPlacement.FreePlacement -> R.string.sleep_timer_position_free_description
+                    },
+                ),
+                selectedOption = sleepTimerPlacement,
+                options = SleepTimerPlacement.entries,
+                optionLabel = {
+                    stringResource(
+                        when (it) {
+                            SleepTimerPlacement.PanelLeft -> R.string.sleep_timer_position_panel_left
+                            SleepTimerPlacement.PanelRight -> R.string.sleep_timer_position_panel_right
+                            SleepTimerPlacement.FreePlacement -> R.string.sleep_timer_position_free
+                        },
+                    )
+                },
+                onOptionSelected = onSleepTimerPlacementChange,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.sleep_timer_always_show_title),
+                subtitle = stringResource(
+                    if (sleepTimerAlwaysShow) R.string.sleep_timer_always_show_on else R.string.sleep_timer_always_show_off,
+                ),
+                checked = sleepTimerAlwaysShow,
+                onCheckedChange = onSleepTimerAlwaysShowChange,
             )
             SettingsDivider()
 

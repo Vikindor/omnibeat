@@ -53,16 +53,6 @@
     <string name="sleep_timer_minutes">Minutes</string>
     <string name="sleep_timer_seconds">Seconds</string>
     <string name="sleep_timer_preset_minutes">%1$dm</string>
-    <string name="sleep_timer_close_app_title">Close app</string>
-    <string name="sleep_timer_close_app_off">The timer will only stop playback</string>
-    <string name="sleep_timer_close_app_on">The timer will close the app</string>
-    <string name="sleep_timer_position_title">Timer position</string>
-    <string name="sleep_timer_position_panel_left">Panel left</string>
-    <string name="sleep_timer_position_panel_left_description">Will be pinned above the panel on the left</string>
-    <string name="sleep_timer_position_panel_right">Panel right</string>
-    <string name="sleep_timer_position_panel_right_description">Will be pinned above the panel on the right</string>
-    <string name="sleep_timer_position_free">Free placement</string>
-    <string name="sleep_timer_position_free_description">Press and hold to drag</string>
     <string name="sleep_timer_start">Start</string>
     <string name="sleep_timer_stop">Stop</string>
 
@@ -132,6 +122,20 @@
     <string name="settings_save_radio_browser_tags_title">Save Radio Browser tags</string>
     <string name="settings_save_radio_browser_tags_on">Stations from online search will be saved with tags</string>
     <string name="settings_save_radio_browser_tags_off">Stations from online search will be saved without tags</string>
+    <string name="settings_section_sleep_timer">Sleep Timer</string>
+    <string name="sleep_timer_close_app_title">Close app</string>
+    <string name="sleep_timer_close_app_off">The timer will only stop playback</string>
+    <string name="sleep_timer_close_app_on">The timer will close the app</string>
+    <string name="sleep_timer_position_title">Timer position</string>
+    <string name="sleep_timer_position_panel_left">Panel left</string>
+    <string name="sleep_timer_position_panel_left_description">Will be pinned above the panel on the left</string>
+    <string name="sleep_timer_position_panel_right">Panel right</string>
+    <string name="sleep_timer_position_panel_right_description">Will be pinned above the panel on the right</string>
+    <string name="sleep_timer_position_free">Free placement</string>
+    <string name="sleep_timer_position_free_description">Press and hold to drag</string>
+    <string name="sleep_timer_always_show_title">Always show timer</string>
+    <string name="sleep_timer_always_show_on">The timer will remain visible when inactive</string>
+    <string name="sleep_timer_always_show_off">The timer will only appear while running</string>
     <string name="settings_section_urls">URLs</string>
     <string name="settings_remove_tracking_title">Remove tracking from URLs</string>
     <string name="settings_remove_tracking_on">Tracking parameters will be cleaned for new stations</string>
